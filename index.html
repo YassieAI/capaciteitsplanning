@@ -1,0 +1,3305 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v17d FINAL — Capaciteitsplanning 24/7</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f5f7;color:#1a1a1a;min-height:100vh;font-size:14px}
+
+/* ===== LOGIN SCREEN ===== */
+#loginScreen{position:fixed;inset:0;background:#1e2a3a;z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px}
+#loginScreen.hidden{display:none}
+.login-box{width:560px;max-width:96vw}
+.login-logo{text-align:center;margin-bottom:1.75rem}
+.login-logo h1{font-size:22px;font-weight:600;color:white;letter-spacing:.3px}
+.login-logo p{font-size:13px;color:#94a3b8;margin-top:4px}
+.role-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.role-card{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:1rem .7rem;text-align:center;cursor:pointer;transition:all .15s}
+.role-card:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.25)}
+.role-card.selected{border-color:#3b82f6;background:rgba(59,130,246,.15)}
+.role-icon{font-size:24px;margin-bottom:.35rem}
+.role-name{font-size:12.5px;font-weight:600;color:white}
+.role-desc{font-size:10.5px;color:#94a3b8;margin-top:3px;line-height:1.35}
+.pin-block{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:1.1rem;margin-bottom:1rem}
+.pin-block label{font-size:12px;color:#94a3b8;display:block;margin-bottom:.5rem;text-align:center}
+.pin-dots{display:flex;gap:8px;justify-content:center;margin-bottom:.85rem}
+.pin-dot{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.2);transition:all .15s}
+.pin-dot.filled{background:#3b82f6;border-color:#3b82f6}
+.pin-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:220px;margin:0 auto}
+.pin-key{height:44px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:white;font-size:16px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .1s}
+.pin-key:hover{background:rgba(255,255,255,.16)}
+.pin-key:active{transform:scale(.96)}
+.pin-key.del{font-size:13px;color:#94a3b8}
+.pin-error{font-size:12px;color:#f87171;text-align:center;margin-top:.6rem;min-height:18px}
+.login-btn{width:100%;padding:.8rem;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.login-btn:hover{background:#2563eb}
+.login-btn:disabled{background:rgba(255,255,255,.15);color:rgba(255,255,255,.4);cursor:not-allowed}
+.pin-hint{font-size:10.5px;color:#64748b;text-align:center;margin-top:.5rem}
+
+/* ===== ROL BADGE in nav ===== */
+.rol-badge{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:99px;cursor:pointer;border:1px solid rgba(255,255,255,.15);color:white;background:rgba(255,255,255,.08);white-space:nowrap}
+.rol-badge:hover{background:rgba(255,255,255,.14)}
+.rol-badge .rol-dot{width:7px;height:7px;border-radius:50%}
+
+/* ===== LOCK ===== */
+.locked-area{pointer-events:none;opacity:.55;position:relative}
+.readonly-banner{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:.55rem .85rem;border-radius:8px;font-size:12px;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+
+/* ===== NAV ===== */
+nav.nav{background:#1e2a3a;color:white;padding:.7rem 1.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.nav-brand h1{font-size:16px;font-weight:600;letter-spacing:.3px}
+.nav-brand .sub{font-size:11px;color:#94a3b8;margin-top:2px}
+.nav-tabs{display:flex;gap:4px;margin-left:auto}
+.nav-tab{padding:6px 14px;border:none;background:transparent;color:#94a3b8;font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;font-family:inherit;transition:all .15s}
+.nav-tab:hover{background:rgba(255,255,255,.07);color:white}
+.nav-tab.active{background:rgba(59,130,246,.2);color:#93c5fd}
+.nav-clock{font-size:12px;color:#94a3b8;font-variant-numeric:tabular-nums}
+
+/* ===== CONTAINERS ===== */
+.page{display:none !important}
+.page.active{display:block !important}
+/* === FORCED HIDE — versie v17b === */
+body[data-role="viewer"] #page-regio,
+body[data-role="viewer"] #page-jaar,
+body[data-role="viewer"] #page-rooster,
+body[data-role="viewer"] #page-dag,
+body[data-role="viewer"] #page-teams { display: none !important; }
+/* SECTION-CARDS alleen binnen actieve page zichtbaar */
+.section-card,
+.regio-compare-card { display: none !important; }
+.page.active .section-card,
+.page.active .regio-compare-card { display: block !important; }
+.container{max-width:1400px;margin:0 auto;padding:1.25rem 1.5rem}
+.card{background:white;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:1.1rem}
+.card-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:.85rem}
+h3{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:.85rem}
+
+/* ===== CONTROLS ===== */
+select,input[type=text],input[type=number]{padding:.4rem .65rem;border:1px solid #d1d5db;border-radius:6px;background:white;font-family:inherit;font-size:13px;color:#1a1a1a}
+select:focus,input:focus{outline:none;border-color:#3b82f6}
+button{font-family:inherit;cursor:pointer}
+
+/* ===== DAY SELECTOR ===== */
+.day-selector{display:flex;gap:4px}
+.day-btn{padding:7px 13px;border:1px solid #d1d5db;background:white;border-radius:6px;font-size:12px;font-weight:500;color:#374151;cursor:pointer;font-family:inherit;min-width:44px}
+.day-btn:hover{background:#f3f4f6}
+.day-btn.active{background:#1e2a3a;color:white;border-color:#1e2a3a}
+.day-btn.weekend{color:#94a3b8}
+.day-btn.weekend.active{background:#d97706;border-color:#d97706;color:white}
+.day-btn.holiday{color:#92400e;background:#fef9c3;border-color:#fde68a}
+.day-btn.holiday.active{background:#92400e;color:white;border-color:#92400e}
+
+.wk-nav-btn{width:27px;height:27px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.wk-nav-btn:hover{background:#f3f4f6}
+
+.waakbanner{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:.65rem .9rem;border-radius:8px;font-size:13px;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+
+/* ===== METRICS ===== */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem}
+.metric{background:white;border:1px solid #e5e7eb;border-radius:9px;padding:.8rem 1rem}
+.metric-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px}
+.metric-value{font-size:22px;font-weight:700;color:#1e2a3a;line-height:1.1}
+.metric-sub{font-size:11px;color:#6b7280;margin-top:2px}
+.c-ok{color:#16a34a}.c-warn{color:#d97706}.c-danger{color:#dc2626}
+
+/* ===== SHIFT GRID ===== */
+.shift-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.shift-card{padding:.7rem .8rem;border:1.5px solid #e5e7eb;border-radius:8px;background:white}
+.shift-card.active{border-color:#3b82f6;background:#eff6ff}
+.shift-label{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.4px}
+.shift-time{font-size:11px;color:#6b7280;margin-top:2px}
+.shift-h{font-size:17px;font-weight:700;color:#1e2a3a;margin-top:4px}
+.shift-h span{font-size:11px;font-weight:500;color:#6b7280}
+
+/* ===== ALERTS ===== */
+.alert-list{list-style:none;max-height:200px;overflow-y:auto}
+.alert-list li{display:flex;gap:8px;padding:.5rem 0;border-bottom:1px solid #f3f4f6;font-size:12.5px}
+.alert-list li:last-child{border-bottom:none}
+.alert-list .badge{font-size:9px;padding:1px 7px;border-radius:99px;font-weight:700;flex-shrink:0;margin-top:2px}
+.b-danger{background:#fee2e2;color:#b91c1c}
+.b-warn{background:#fef3c7;color:#92400e}
+.b-ok{background:#d1fae5;color:#065f46}
+.b-neutral{background:#e5e7eb;color:#6b7280}
+.alert-label{font-weight:600;color:#1e2a3a}
+
+/* ===== TABLES ===== */
+.team-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.team-table th{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700;text-align:left;padding:7px 8px;border-bottom:2px solid #e5e7eb;background:#f8fafc}
+.team-table th.r{text-align:right}
+.team-table th.c{text-align:center}
+.team-table td{padding:6px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.team-table td.r{text-align:right}
+.team-table td.c{text-align:center}
+.team-table tr:hover{background:#fafafa}
+.team-table tfoot td{background:#f8fafc;font-weight:700;border-top:2px solid #e5e7eb;border-bottom:none}
+.team-row-header td{background:#eef2ff;font-weight:700;color:#3730a3;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.gap-cell input{width:70px;text-align:right}
+
+/* ===== YEAR PAGE ===== */
+.year-nav{display:flex;align-items:center;gap:8px}
+.year-nav button{width:30px;height:30px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.year-nav button:hover{background:#f3f4f6}
+.year-label{font-size:19px;font-weight:600;color:#1e2a3a;min-width:52px;text-align:center}
+.year-table-wrap{overflow-x:auto}
+.year-table{border-collapse:collapse;width:100%;min-width:800px;font-size:12px}
+.year-table th{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:5px 7px;border-bottom:2px solid #e5e7eb;text-align:center;white-space:nowrap;background:#f8fafc}
+.year-table th.l{text-align:left}
+.year-table td{padding:4px 7px;border-bottom:1px solid #f3f4f6;font-size:12px;text-align:center}
+.year-table td.l{text-align:left}
+.year-table tr.mh td{background:#f8fafc;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid #e5e7eb}
+.cell-ok{background:#dcfce7;color:#15803d;font-weight:700;border-radius:4px;display:inline-block;padding:1px 7px}
+.cell-warn{background:#fef9c3;color:#92400e;font-weight:700;border-radius:4px;display:inline-block;padding:1px 7px}
+.cell-danger{background:#fee2e2;color:#b91c1c;font-weight:700;border-radius:4px;display:inline-block;padding:1px 7px}
+.cell-waak{background:#f1f5f9;color:#94a3b8;font-size:11px;border-radius:4px;display:inline-block;padding:1px 7px}
+.legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:12px;color:#6b7280}
+.legend-dot{width:11px;height:11px;border-radius:3px}
+
+/* ===== REGIO OVERVIEW (Grote Manager) ===== */
+.regio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:1rem;margin-bottom:1.25rem}
+.regio-card{background:white;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem}
+.regio-card-title{font-size:14px;font-weight:700;color:#1e2a3a;margin-bottom:.35rem;display:flex;align-items:center;justify-content:space-between}
+.regio-card-sub{font-size:11px;color:#6b7280;margin-bottom:.9rem}
+.regio-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.regio-stat{padding:.55rem .7rem;background:#f8fafc;border-radius:7px}
+.regio-stat-lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.regio-stat-val{font-size:18px;font-weight:700;color:#1e2a3a;margin-top:2px}
+.regio-dekking{margin-top:.85rem;padding-top:.85rem;border-top:1px solid #f3f4f6}
+.dekking-bar{width:100%;height:10px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-top:5px}
+.dekking-fill{height:100%;border-radius:99px;transition:width .3s}
+.dekking-fill.ok{background:#16a34a}
+.dekking-fill.warn{background:#d97706}
+.dekking-fill.danger{background:#dc2626}
+.regio-pct{font-size:20px;font-weight:700}
+.regio-pct-row{display:flex;align-items:center;justify-content:space-between}
+
+/* ===== DASHBOARD SECTIE-CARDS (Optie B) ===== */
+.section-card{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.section-card-hdr{padding-bottom:.75rem;border-bottom:2px solid #f1f5f9;margin-bottom:1rem;display:flex;align-items:center;gap:12px}
+.section-badge{padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.section-title-txt{font-size:15px;font-weight:700;color:#1e2a3a}
+.section-sub{font-size:11px;color:#94a3b8;margin-left:auto}
+.section-grid{display:grid;gap:12px}
+.section-grid-5{grid-template-columns:repeat(5,1fr)}
+.section-grid-4{grid-template-columns:repeat(4,1fr)}
+.section-grid-1{grid-template-columns:1fr}
+@media (max-width: 1100px){.section-grid-5,.section-grid-4{grid-template-columns:repeat(2,1fr)}}
+.sec-regio .section-badge{background:#dbeafe;color:#1e40af}
+.sec-zara .section-badge{background:#fce7f3;color:#9d174d}
+.sec-techno .section-badge{background:#cffafe;color:#155e75}
+.dash-tile{background:#f8fafc;border-radius:10px;padding:1rem;border-left:4px solid;cursor:pointer;transition:transform .15s, box-shadow .15s}
+.dash-tile:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);background:white}
+.dash-tile-name{font-size:13px;font-weight:700;color:#1e2a3a;display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.dash-tile-sub{font-size:10px;color:#64748b;margin-bottom:.8rem}
+.dash-tile-data{padding-top:.7rem;border-top:1px solid #e2e8f0}
+.dash-tile-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin-bottom:4px}
+.dash-tile-row-lbl{color:#64748b}
+.dash-tile-row-val{font-weight:700;color:#1e2a3a}
+.dash-tile-pct{font-size:18px;font-weight:800}
+.dash-tile-status{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.st-ok{background:#dcfce7;color:#166534}
+.st-warn{background:#fef3c7;color:#92400e}
+.st-danger{background:#fee2e2;color:#991b1b}
+.st-neutral{background:#f1f5f9;color:#64748b}
+.tile-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.tile-dot.s-ok{background:#22c55e}
+.tile-dot.s-warn{background:#f59e0b}
+.tile-dot.s-danger{background:#ef4444}
+.tile-dot.s-neutral{background:#cbd5e1}
+
+/* ===== NL KAART ===== */
+.map-card{background:white;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:1.1rem;position:relative}
+.map-wrap{position:relative;width:100%;max-width:680px;margin:0 auto}
+.nl-map{width:100%;height:auto;display:block}
+
+/* Provincies: scherpe vlakken met witte grenzen tussen */
+.nl-map path.province{stroke:white;stroke-width:1.2;stroke-linejoin:round;transition:filter .15s;fill-opacity:.88}
+
+/* Regio groups zijn klikbaar */
+.nl-map .regio-group{cursor:pointer;transition:filter .2s}
+.nl-map .regio-group:hover path.province{fill-opacity:1;filter:brightness(1.08) drop-shadow(0 0 5px rgba(0,0,0,.18));stroke-width:1.5}
+.nl-map .regio-group.selected path.province{fill-opacity:1;stroke:#1e2a3a;stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(30,42,58,.35))}
+/* ===== VARIANT C CHARTS (vervangt NL-kaart) ===== */
+.rc-bar-group{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative;}
+.rc-bar-stack{width:100%;max-width:50px;display:flex;flex-direction:column-reverse;position:relative;}
+.rc-bar-bezet{background:linear-gradient(180deg,#1c7293 0%,#065a82 100%);border-radius:3px 3px 0 0;position:relative;}
+.rc-bar-bezet.dc{background:linear-gradient(180deg,#d97706 0%,#b45309 100%);}
+.rc-bar-vrij{background:#cbd5e1;}
+.rc-bar-num{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#1e2a3a;white-space:nowrap;}
+.rc-bar-num small{font-size:9px;color:#64748b;font-weight:600;}
+.rc-bar-pct{position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:white;background:rgba(0,0,0,0.25);padding:1px 5px;border-radius:3px;white-space:nowrap;}
+.rc-bar-label{font-size:10px;font-weight:700;color:#1e2a3a;margin-top:8px;text-align:center;}
+.rc-legend{display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;color:#64748b;}
+.rc-legend-item{display:flex;align-items:center;gap:5px;}
+.rc-legend-swatch{width:11px;height:11px;border-radius:2px;}
+
+
+.dc-marker{cursor:pointer;transition:transform .15s, opacity .25s}
+.dc-marker:hover{filter:drop-shadow(0 2px 6px rgba(0,0,0,.3))}
+.dc-marker.active{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.dc-label{font:600 10px 'Segoe UI',sans-serif;fill:#1e2a3a;pointer-events:none;text-anchor:middle}
+.dc-label-bg{fill:white;stroke:#1e2a3a;stroke-width:.5;rx:3}
+.map-tooltip{position:absolute;background:#1e2a3a;color:white;padding:.6rem .8rem;border-radius:8px;font-size:12px;pointer-events:none;z-index:10;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:220px}
+.map-tooltip.show{display:block}
+.map-tooltip-title{font-weight:700;font-size:13px;margin-bottom:3px}
+.map-tooltip-row{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#cbd5e1}
+.map-tooltip-row strong{color:white}
+.map-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:1rem;padding-top:.85rem;border-top:1px solid #f3f4f6;font-size:12px;color:#6b7280}
+.map-legend-item{display:flex;align-items:center;gap:6px}
+.map-legend-swatch{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+.drill-hint{font-size:11px;color:#94a3b8;text-align:center;margin-top:.5rem;font-style:italic}
+
+/* ===== SCENARIO C: SLIDE-IN PANEEL ===== */
+.slide-panel{position:fixed;top:0;right:0;width:420px;max-width:95vw;height:100vh;background:white;box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:500;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.slide-panel.open{transform:translateX(0)}
+.slide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:499;opacity:0;pointer-events:none;transition:opacity .25s}
+.slide-backdrop.show{opacity:1;pointer-events:auto}
+.sp-header{padding:1.25rem 1.5rem;background:linear-gradient(135deg,#1e2a3a,#334155);color:white;position:sticky;top:0;z-index:10}
+.sp-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:none;color:white;width:30px;height:30px;border-radius:99px;cursor:pointer;font-size:16px;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.sp-close:hover{background:rgba(255,255,255,.25)}
+.sp-title{font-size:18px;font-weight:700;margin-bottom:4px;padding-right:35px}
+.sp-sub{font-size:12px;color:#cbd5e1}
+.sp-body{padding:1.25rem 1.5rem}
+.sp-section{margin-bottom:1.5rem}
+.sp-section h4{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:.6rem}
+.sp-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.sp-stat{padding:.7rem .85rem;background:#f8fafc;border-radius:7px;border:1px solid #f1f5f9}
+.sp-stat-lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px}
+.sp-stat-val{font-size:18px;font-weight:700;color:#1e2a3a;line-height:1.1}
+.sp-pct-big{font-size:32px;font-weight:700}
+.sp-bar{width:100%;height:10px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-top:6px}
+.sp-bar-fill{height:100%;border-radius:99px;transition:width .4s}
+.sp-mont-list{display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto}
+.sp-mont-item{padding:7px 10px;background:#f8fafc;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.sp-mont-item strong{font-size:12px;color:#1e2a3a}
+.sp-mont-status{font-size:9.5px;padding:2px 7px;border-radius:99px;font-weight:600}
+.sp-week-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.sp-week-table th{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;font-weight:700;padding:4px 5px;text-align:center;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+.sp-week-table th.l{text-align:left}
+.sp-week-table td{padding:4px 5px;border-bottom:1px solid #f3f4f6;text-align:center}
+.sp-week-table td.l{text-align:left}
+.rs-toolbar{display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.rs-view-toggle{display:flex;border:1px solid #d1d5db;border-radius:6px;overflow:hidden}
+.rs-view-btn{padding:4px 14px;font-size:12px;font-family:inherit;border:none;background:white;color:#6b7280;cursor:pointer}
+.rs-view-btn.active{background:#1e2a3a;color:white;font-weight:600}
+.rs-team-filter{font-size:13px;border:1px solid #d1d5db;border-radius:6px;padding:4px 9px;background:white;font-family:inherit;cursor:pointer}
+.rs-legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.rs-pill{font-size:11px;padding:2px 10px;border-radius:99px;font-weight:600;border:1px solid transparent}
+.rs-table-wrap{overflow-x:auto}
+.rs-tbl{border-collapse:collapse;width:100%;min-width:900px}
+.rs-tbl th{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600;padding:6px 8px;border-bottom:2px solid #e5e7eb;white-space:nowrap;text-align:center;background:#f8fafc}
+.rs-tbl th.name-col{text-align:left;min-width:150px}
+.rs-tbl td{padding:3px 4px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.rs-tbl tr:hover td{background:#fafafa}
+.rs-tbl tr.team-hdr td{background:#f1f5f9;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid #e5e7eb;padding:5px 8px}
+.rs-cell{display:flex;align-items:center;justify-content:center;border-radius:5px;min-height:30px;cursor:pointer;font-size:11px;font-weight:600;border:1.5px solid transparent;user-select:none;white-space:nowrap;padding:0 4px}
+.rs-cell:hover{filter:brightness(.93)}
+.rs-cell.empty{background:#f9fafb;color:#d1d5db;border-color:#f3f4f6;font-weight:400;font-size:10px}
+.rs-cell.empty:hover{background:#f3f4f6;color:#9ca3af}
+.rs-cell.weekend{background:#f1f5f9;color:#cbd5e1;border-color:#e2e8f0;cursor:default}
+.rs-cell.holiday{background:#fef9c3;color:#92400e;border-color:#fde68a;cursor:default;font-size:10px}
+.rs-cell.vroeg{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.rs-cell.dag{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+.rs-cell.zara{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.rs-cell.techno{background:#cffafe;color:#0e7490;border-color:#67e8f9}
+.rs-cell.laat{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+.rs-cell.waak{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.rs-cell.verlof{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.rs-cell.cursus{background:#ede9fe;color:#6d28d9;border-color:#c4b5fd}
+.rs-cell.ziek{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+.rs-cell.c-nk{background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe}
+.rs-cell.c-wkd{background:#fce7f3;color:#9f1239;border-color:#f9a8d4}
+.rs-cell.c-atw{background:#e0e7ff;color:#3730a3;border-color:#a5b4fc}
+.rs-cell.c-sw{background:#ecfccb;color:#3f6212;border-color:#bef264}
+.rs-name{font-size:12px;font-weight:600;color:#1e2a3a;padding:3px 8px;white-space:nowrap}
+.rs-team-tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:99px;font-weight:700;margin-right:4px;background:#e0e7ff;color:#3730a3}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:white;border-radius:12px;width:100%;max-width:480px;padding:1.5rem;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:14px;color:#1e2a3a;text-transform:none;letter-spacing:normal;margin-bottom:1rem;font-weight:700}
+.modal-row{margin-bottom:.85rem}
+.modal-row label{display:block;font-size:12px;color:#6b7280;font-weight:600;margin-bottom:4px}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem;justify-content:flex-end}
+.btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;font-family:inherit;border:1px solid transparent;cursor:pointer}
+.btn-primary{background:#3b82f6;color:white;border-color:#3b82f6}
+.btn-primary:hover{background:#2563eb}
+.btn-ghost{background:transparent;color:#6b7280;border-color:#d1d5db}
+.btn-ghost:hover{background:#f3f4f6}
+.btn-danger{background:#dc2626;color:white;border-color:#dc2626}
+.opt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px}
+.opt-btn{padding:7px 9px;border:1.5px solid #e5e7eb;border-radius:7px;background:white;text-align:left;font-size:12px;font-family:inherit;cursor:pointer}
+.opt-btn:hover{border-color:#3b82f6;background:#eff6ff}
+.opt-btn.sel{border-color:#3b82f6;background:#dbeafe;color:#1e3a8a;font-weight:700}
+
+footer{text-align:center;padding:1.5rem;color:#6b7280;font-size:11px}
+
+@media (max-width:800px){
+  .nav-tabs{order:3;width:100%;margin-left:0;overflow-x:auto}
+  .container{padding:1rem}
+  .role-cards{grid-template-columns:1fr 1fr}
+}
+/* === MIJN ROOSTER (Uitvoering) - CLEAN VERSION === */
+
+/* Hero - clean wit met subtiele blauwe accent */
+.mr2-hero{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem 1.75rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;overflow:hidden}
+.mr2-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#3b82f6,#1e3a8a)}
+.mr2-hero-left{padding-left:.5rem}
+.mr2-greet{font-size:14px;color:#64748b;margin-bottom:.25rem;font-weight:500}
+.mr2-name{font-size:26px;font-weight:700;color:#0f172a;margin-bottom:.35rem}
+.mr2-team{font-size:13px;color:#475569}
+.mr2-hero-right{text-align:right}
+.mr2-today-pill{display:inline-block;font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem}
+.mr2-today-date{font-size:14px;font-weight:600;color:#0f172a}
+
+/* Wie ben jij selectbar */
+.mr2-select-bar{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:.85rem 1.1rem;display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.mr2-select-bar label{font-size:13px;font-weight:600;color:#475569}
+.mr2-select-bar select{padding:.45rem .75rem;border:1.5px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;min-width:240px;background:white}
+.mr2-select-bar select:focus{outline:none;border-color:#3b82f6}
+.mr2-help{margin-left:auto;font-size:12px;color:#94a3b8}
+
+/* Section blocks */
+.mr2-section{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mr2-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:.5rem}
+.mr2-section-title{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.85rem}
+.mr2-section-head .mr2-section-title{margin-bottom:0}
+
+/* VANDAAG card */
+.mr2-today-card{display:flex;align-items:center;gap:1.25rem;padding:1.25rem;border-radius:12px;border:1.5px solid #e2e8f0;background:linear-gradient(135deg,#f8fafc,#fff)}
+.mr2-today-icon{font-size:48px;line-height:1}
+.mr2-today-info{flex:1;min-width:0}
+.mr2-today-shift{font-size:22px;font-weight:700;color:#0f172a;margin-bottom:.25rem}
+.mr2-today-time{font-size:14px;color:#475569;margin-bottom:.15rem}
+.mr2-today-hrs{font-size:13px;color:#94a3b8}
+.mr2-today-card.verlof{background:linear-gradient(135deg,#dbeafe,#fff);border-color:#bfdbfe}
+.mr2-today-card.cursus{background:linear-gradient(135deg,#ede9fe,#fff);border-color:#ddd6fe}
+.mr2-today-card.ziek{background:linear-gradient(135deg,#fee2e2,#fff);border-color:#fecaca}
+.mr2-today-card.weekend{background:linear-gradient(135deg,#f1f5f9,#fff);border-color:#cbd5e1}
+
+/* DEZE WEEK lijst */
+.mr2-week-nav{display:flex;align-items:center;gap:.5rem}
+.mr2-week-nav button{padding:3px 9px;border:1px solid #cbd5e1;background:white;border-radius:5px;cursor:pointer;font-size:13px}
+.mr2-week-nav button:hover{background:#f1f5f9}
+.mr2-week-nav span{font-size:12px;color:#475569;font-weight:600}
+.mr2-week-list{display:flex;flex-direction:column;gap:6px}
+.mr2-week-row{display:flex;align-items:center;gap:1rem;padding:.65rem .85rem;border:1px solid #e2e8f0;border-radius:8px;background:#fafbfc;transition:all .15s}
+.mr2-week-row.today{background:#dbeafe;border-color:#3b82f6;font-weight:600}
+.mr2-week-row.weekend{opacity:.55}
+.mr2-week-day-info{display:flex;align-items:center;gap:.6rem;min-width:140px}
+.mr2-week-day-name{font-size:13px;font-weight:600;color:#0f172a;min-width:30px}
+.mr2-week-day-num{font-size:13px;color:#64748b}
+.mr2-week-shift-badge{flex:1;display:flex;align-items:center;gap:.5rem;font-size:13px}
+.mr2-shift-icon{font-size:16px}
+.mr2-shift-name{font-weight:600}
+.mr2-shift-time{margin-left:auto;font-size:12px;color:#64748b}
+.mr2-week-shift-badge.werk-vroeg{color:#a16207}
+.mr2-week-shift-badge.werk-dag{color:#1d4ed8}
+.mr2-week-shift-badge.werk-zara{color:#a16207}
+.mr2-week-shift-badge.werk-techno{color:#155e75}
+.mr2-week-shift-badge.werk-laat{color:#9d174d}
+.mr2-week-shift-badge.afw-verlof{color:#1d4ed8}
+.mr2-week-shift-badge.afw-cursus{color:#6d28d9}
+.mr2-week-shift-badge.afw-ziek{color:#991b1b}
+.mr2-week-shift-badge.geen{color:#94a3b8}
+.mr2-today-tag{font-size:10px;font-weight:700;color:white;background:#3b82f6;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em}
+.mr2-week-foot{margin-top:.85rem;padding-top:.75rem;border-top:1px solid #e2e8f0;font-size:12px;color:#475569;text-align:right}
+
+/* MIJN JAAR stat-tegels */
+.mr2-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+@media(max-width:680px){.mr2-stats-grid{grid-template-columns:repeat(2,1fr)}}
+.mr2-stat-card{background:#fafbfc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem .85rem;text-align:center;transition:all .15s}
+.mr2-stat-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.mr2-stat-icon{font-size:24px;margin-bottom:.35rem;line-height:1}
+.mr2-stat-val{font-size:28px;font-weight:700;color:#0f172a;line-height:1.1}
+.mr2-stat-lbl{font-size:11px;color:#475569;font-weight:600;margin-top:.35rem;text-transform:uppercase;letter-spacing:.04em}
+.mr2-stat-sub{font-size:11px;color:#94a3b8;margin-top:.15rem}
+.mr2-stat-card.verlof{background:#eff6ff;border-color:#bfdbfe}
+.mr2-stat-card.cursus{background:#f5f3ff;border-color:#ddd6fe}
+.mr2-stat-card.ziek{background:#fef2f2;border-color:#fecaca}
+.mr2-stat-card.werk{background:#f0fdf4;border-color:#bbf7d0}
+
+/* MIJN KALENDER */
+.mr2-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mr2-cal-hdr{font-size:10px;font-weight:700;color:#94a3b8;text-align:center;padding:5px 0;text-transform:uppercase}
+.mr2-cal-day{aspect-ratio:1;border:1.5px solid #e5e7eb;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#0f172a;transition:all .12s;position:relative;cursor:default}
+.mr2-cal-day.empty{background:transparent;border-color:transparent}
+.mr2-cal-day.weekend{background:#f1f5f9;color:#94a3b8}
+.mr2-cal-day.holiday{background:#fee2e2;color:#991b1b}
+.mr2-cal-day.today{background:#dbeafe;border-color:#3b82f6;color:#1d4ed8}
+.mr2-cal-day.has-verlof{background:#dbeafe;border-color:#3b82f6;color:#1d4ed8}
+.mr2-cal-day.has-cursus{background:#ede9fe;border-color:#8b5cf6;color:#6d28d9}
+.mr2-cal-day.has-ziek{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+.mr2-cal-day.has-werk{background:#f0fdf4;color:#166534}
+.mr2-cal-legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.85rem;padding-top:.75rem;border-top:1px solid #e2e8f0;font-size:12px;color:#475569}
+.mr2-cal-legend span{display:flex;align-items:center;gap:5px}
+.mr2-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.mr2-dot-werk{background:#bbf7d0}
+.mr2-dot-verlof{background:#bfdbfe}
+.mr2-dot-cursus{background:#ddd6fe}
+.mr2-dot-ziek{background:#fecaca}
+/* MIJN ROOSTER switcher */
+.mr2-overview-controls{display:flex;align-items:center;gap:.85rem;flex-wrap:wrap}
+.mr2-mode-select{padding:.4rem .7rem;border:1.5px solid #cbd5e1;border-radius:6px;font-size:13px;font-weight:600;background:white;color:#0f172a;font-family:inherit;cursor:pointer}
+.mr2-mode-select:focus{outline:none;border-color:#3b82f6}
+
+/* Kwartaal-overzicht */
+.mr2-quarter-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0}
+@media(max-width:680px){.mr2-quarter-summary{grid-template-columns:repeat(2,1fr)}}
+.mr2-quarter-stat{background:#fafbfc;border:1px solid #e2e8f0;border-radius:7px;padding:.65rem;text-align:center}
+.mr2-quarter-stat-val{font-size:20px;font-weight:700;color:#0f172a;line-height:1}
+.mr2-quarter-stat-lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:600;margin-top:4px;letter-spacing:.04em}
+.mr2-quarter-months{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+@media(max-width:780px){.mr2-quarter-months{grid-template-columns:1fr}}
+.mr2-quarter-month{border:1px solid #e2e8f0;border-radius:8px;padding:.75rem;background:#fafbfc}
+.mr2-quarter-month-title{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:.5rem;text-align:center}
+.mr2-quarter-mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mr2-mini-day{aspect-ratio:1;border-radius:3px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#64748b}
+.mr2-mini-day.empty{background:transparent}
+.mr2-mini-day.weekend{background:#f1f5f9;color:#cbd5e1}
+.mr2-mini-day.holiday{background:#fee2e2;color:#991b1b}
+.mr2-mini-day.dag-vroeg{background:#fde68a;color:#a16207}
+.mr2-mini-day.dag-dag{background:#bfdbfe;color:#1d4ed8}
+.mr2-mini-day.dag-zara{background:#fbcfe8;color:#9d174d}
+.mr2-mini-day.dag-techno{background:#a5f3fc;color:#155e75}
+.mr2-mini-day.dag-laat{background:#c7d2fe;color:#4338ca}
+.mr2-mini-day.dag-verlof{background:#dbeafe;color:#1d4ed8}
+.mr2-mini-day.dag-cursus{background:#ede9fe;color:#6d28d9}
+.mr2-mini-day.dag-ziek{background:#fee2e2;color:#991b1b}
+
+/* Maand-cal kleuren per dienst */
+.mr2-cal-day.shift-vroeg{background:#fef3c7;color:#a16207;border-color:#fde68a}
+.mr2-cal-day.shift-dag{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+.mr2-cal-day.shift-zara{background:#fce7f3;color:#9d174d;border-color:#fbcfe8}
+.mr2-cal-day.shift-techno{background:#cffafe;color:#155e75;border-color:#a5f3fc}
+.mr2-cal-day.shift-laat{background:#e0e7ff;color:#4338ca;border-color:#c7d2fe}
+
+/* Legenda dots per dienst */
+.mr2-dot-vroeg{background:#fde68a}
+.mr2-dot-dag{background:#bfdbfe}
+.mr2-dot-zara{background:#fbcfe8}
+.mr2-dot-techno{background:#a5f3fc}
+.mr2-dot-laat{background:#c7d2fe}
+
+/* Mijn diensten grid */
+.mr2-shifts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem}
+@media(max-width:980px){.mr2-shifts-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.mr2-shifts-grid{grid-template-columns:1fr}}
+.mr2-shift-card{background:#fafbfc;border:1.5px solid #e2e8f0;border-radius:10px;padding:.85rem;text-align:center;transition:all .15s;border-left-width:4px}
+.mr2-shift-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.mr2-shift-card.vroeg{border-left-color:#f59e0b}
+.mr2-shift-card.dag{border-left-color:#3b82f6}
+.mr2-shift-card.zara{border-left-color:#ec4899}
+.mr2-shift-card.techno{border-left-color:#06b6d4}
+.mr2-shift-card.laat{border-left-color:#6366f1}
+.mr2-shift-card-icon{font-size:28px;margin-bottom:.4rem;line-height:1}
+.mr2-shift-card-name{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:.25rem}
+.mr2-shift-card-time{font-size:11px;color:#475569;font-weight:600}
+.mr2-shift-card-hrs{font-size:11px;color:#94a3b8;margin-top:.35rem}
+
+.mr2-cal-help{font-size:11px;color:#64748b;margin-top:.5rem;font-style:italic}
+
+/* MIJN KWARTAAL */
+.mr2-quarter-grid{display:flex;flex-direction:column;gap:8px}
+.mr2-quarter-row{display:flex;align-items:center;gap:1rem;padding:.85rem 1rem;border:1px solid #e2e8f0;border-radius:10px;background:#fafbfc;transition:all .15s}
+.mr2-quarter-row.current{background:#eff6ff;border-color:#3b82f6}
+.mr2-quarter-row.released{background:#f0fdf4;border-color:#bbf7d0}
+.mr2-quarter-row.pending{background:#fefce8;border-color:#fde68a;opacity:.85}
+.mr2-quarter-info{flex:1;min-width:0;display:flex;align-items:center;gap:.85rem}
+.mr2-quarter-icon{font-size:24px;line-height:1}
+.mr2-quarter-text{flex:1}
+.mr2-quarter-label{font-size:14px;font-weight:700;color:#0f172a}
+.mr2-quarter-period{font-size:12px;color:#64748b;margin-top:2px}
+.mr2-quarter-status{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+.mr2-quarter-status.released{color:#16a34a}
+.mr2-quarter-status.pending{color:#a16207}
+.mr2-quarter-stats{font-size:12px;color:#64748b;text-align:right;min-width:100px}
+.mr2-quarter-stats strong{color:#0f172a;font-size:14px;display:block}
+
+/* Aanvraag modal (behoud oude) */
+.mr-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.mr-modal.show{display:flex}
+.mr-modal-card{background:white;border-radius:12px;padding:1.5rem;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.mr-modal-title{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:.25rem}
+.mr-modal-date{font-size:13px;color:#64748b;margin-bottom:1.25rem}
+.mr-types{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem}
+.mr-type-btn{padding:.7rem .5rem;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#475569;transition:all .15s}
+.mr-type-btn:hover{border-color:#3b82f6;background:#eff6ff}
+.mr-type-btn.verlof:hover{border-color:#3b82f6}
+.mr-type-btn.cursus:hover{border-color:#8b5cf6}
+.mr-type-btn.ziek:hover{border-color:#ef4444}
+.mr-modal-actions{display:flex;gap:.5rem;justify-content:flex-end}
+.mr-modal-btn{padding:.5rem 1rem;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#475569}
+.mr-modal-btn.danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.mr-modal-btn.primary{background:#3b82f6;border-color:#3b82f6;color:white}
+</style>
+</head>
+<body>
+
+<!-- =================== LOGIN SCREEN =================== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Capaciteitsplanning — 24/7</h1>
+      <p>Field Force Planning &bull; Kies je rol om in te loggen</p>
+    </div>
+
+    <div class="role-cards" id="roleCards">
+      <div class="role-card" data-role="viewer" onclick="selectRole('viewer')">
+        <div class="role-icon">&#128065;</div>
+        <div class="role-name">Uitvoering</div>
+        <div class="role-desc">Alleen inzien</div>
+      </div>
+      <div class="role-card" data-role="teamleider" onclick="selectRole('teamleider')">
+        <div class="role-icon">&#128100;</div>
+        <div class="role-name">Teamleider Z</div>
+        <div class="role-desc">Alleen eigen team</div>
+      </div>
+      <div class="role-card" data-role="teammgr" onclick="selectRole('teammgr')">
+        <div class="role-icon">&#128736;</div>
+        <div class="role-name">Teammanager Buiten</div>
+        <div class="role-desc">Minimale admin taken</div>
+      </div>
+      <div class="role-card" data-role="planner" onclick="selectRole('planner')">
+        <div class="role-icon">&#128203;</div>
+        <div class="role-name">Planner</div>
+        <div class="role-desc">Dagplanning beheren</div>
+      </div>
+      <div class="role-card" data-role="manager" onclick="selectRole('manager')">
+        <div class="role-icon">&#127970;</div>
+        <div class="role-name">Manager R / D</div>
+        <div class="role-desc">Volledige rechten</div>
+      </div>
+      <div class="role-card" data-role="grotemgr" onclick="selectRole('grotemgr')">
+        <div class="role-icon">&#127968;</div>
+        <div class="role-name">Grote Manager</div>
+        <div class="role-desc">Cap. overzicht per regio</div>
+      </div>
+    </div>
+
+    <div class="pin-block" id="pinBlock">
+      <label id="pinLabel">Voer PIN-code in voor deze rol</label>
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-numpad">
+        <button class="pin-key" onclick="pinKey('1')">1</button>
+        <button class="pin-key" onclick="pinKey('2')">2</button>
+        <button class="pin-key" onclick="pinKey('3')">3</button>
+        <button class="pin-key" onclick="pinKey('4')">4</button>
+        <button class="pin-key" onclick="pinKey('5')">5</button>
+        <button class="pin-key" onclick="pinKey('6')">6</button>
+        <button class="pin-key" onclick="pinKey('7')">7</button>
+        <button class="pin-key" onclick="pinKey('8')">8</button>
+        <button class="pin-key" onclick="pinKey('9')">9</button>
+        <button class="pin-key del" onclick="pinDel()">&#8592;</button>
+        <button class="pin-key" onclick="pinKey('0')">0</button>
+        <button class="pin-key del" onclick="pinBuffer='';updatePinDots();">C</button>
+      </div>
+      <div class="pin-hint">Demo: viewer=0000, teamleider=1111, teammgr=2222, planner=3333, mgr=4444, grotemgr=5555</div>
+      <div class="pin-error" id="pinError"></div>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()" disabled>Inloggen</button>
+  </div>
+</div>
+
+<!-- =================== NAV =================== -->
+<nav class="nav">
+  <div class="nav-brand">
+    <h1>Capaciteitsplanning — 24/7</h1>
+    <div class="sub">Regio Noorden &bull; Zuiden &bull; Randstad &bull; ZARA &bull; Technocenter</div>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <button class="nav-tab" data-page="mijnrooster" onclick="showPage('mijnrooster',this)">Mijn Rooster</button>
+    <button class="nav-tab active" data-page="regio" onclick="showPage('regio',this)">Regio-overzicht</button>
+    <button class="nav-tab" data-page="dag" onclick="showPage('dag',this)">Dagplanning</button>
+    <button class="nav-tab" data-page="jaar" onclick="showPage('jaar',this)">Jaaroverzicht</button>
+    <button class="nav-tab" data-page="rooster" onclick="showPage('rooster',this)">Inroostering</button>
+    <button class="nav-tab" data-page="teams" onclick="showPage('teams',this)">Teams</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="nav-clock" id="clockDisplay"></div>
+    <div class="rol-badge" id="rolBadge" onclick="logoutPrompt()" title="Klik om uit te loggen">
+      <span class="rol-dot" id="rolDot"></span>
+      <span id="rolLabel">—</span>
+      <span style="color:#94a3b8;font-size:10px">&#10006;</span>
+    </div>
+  </div>
+</nav>
+
+<!-- =================== PAGE: MIJN ROOSTER (Uitvoering) =================== -->
+<div class="page" id="page-mijnrooster">
+<div class="container">
+
+  <!-- 1. HERO -->
+  <div class="mr2-hero">
+    <div class="mr2-hero-left">
+      <div class="mr2-greet">Hallo,</div>
+      <div class="mr2-name" id="mrName">—</div>
+      <div class="mr2-team" id="mrTeam">Selecteer hieronder je naam om je rooster te bekijken</div>
+    </div>
+    <div class="mr2-hero-right">
+      <div class="mr2-today-pill" id="mrTodayPill">Dinsdag</div>
+      <div class="mr2-today-date" id="mrTodayDate">—</div>
+    </div>
+  </div>
+
+  <!-- 2. WIE BEN JIJ DROPDOWN -->
+  <div class="mr2-select-bar">
+    <label for="mrMonteurSel">Wie ben jij?</label>
+    <select id="mrMonteurSel" onchange="mrSelectMonteur()"></select>
+    <div class="mr2-help" id="mrInfoText">Geen rooster zichtbaar zolang je niet bent geselecteerd</div>
+  </div>
+
+  <!-- 3. VANDAAG (groot blok) -->
+  <div class="mr2-section" id="mrTodaySection" style="display:none">
+    <div class="mr2-section-title">Vandaag</div>
+    <div class="mr2-today-card" id="mrTodayCard"></div>
+  </div>
+
+  <!-- 4. MIJN ROOSTER (Week/Maand/Kwartaal switcher) -->
+  <div class="mr2-section" id="mrOverviewSection" style="display:none">
+    <div class="mr2-section-head">
+      <div class="mr2-section-title">Mijn rooster</div>
+      <div class="mr2-overview-controls">
+        <select id="mrOverviewMode" onchange="mrSwitchMode()" class="mr2-mode-select">
+          <option value="week">Deze week</option>
+          <option value="month">Deze maand</option>
+          <option value="quarter">Dit kwartaal</option>
+        </select>
+        <div class="mr2-week-nav">
+          <button onclick="mrOverviewShift(-1)">&lsaquo;</button>
+          <span id="mrOverviewLabel">—</span>
+          <button onclick="mrOverviewShift(1)">&rsaquo;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week view -->
+    <div id="mrViewWeek">
+      <div class="mr2-week-list" id="mrWeekList"></div>
+      <div class="mr2-week-foot" id="mrWeekFoot"></div>
+    </div>
+
+    <!-- Maand view -->
+    <div id="mrViewMonth" style="display:none">
+      <div class="mr2-cal-grid" id="mrCalHeader"></div>
+      <div class="mr2-cal-grid" id="mrCalGrid" style="margin-top:3px"></div>
+      <div class="mr2-cal-legend">
+        <span><span class="mr2-dot mr2-dot-vroeg"></span>Dag vroeg</span>
+        <span><span class="mr2-dot mr2-dot-dag"></span>Dag</span>
+        <span><span class="mr2-dot mr2-dot-zara"></span>ZARA</span>
+        <span><span class="mr2-dot mr2-dot-techno"></span>Technocenter</span>
+        <span><span class="mr2-dot mr2-dot-laat"></span>Daglaat + Waak</span>
+        <span><span class="mr2-dot mr2-dot-verlof"></span>Verlof</span>
+        <span><span class="mr2-dot mr2-dot-ziek"></span>Ziek</span>
+      </div>
+    </div>
+
+    <!-- Kwartaal view -->
+    <div id="mrViewQuarter" style="display:none">
+      <div class="mr2-quarter-months" id="mrQuarterMonths"></div>
+    </div>
+  </div>
+
+  <!-- Mijn jaar sectie verwijderd op verzoek -->
+
+  <!-- Mijn diensten sectie verwijderd op verzoek -->
+
+</div>
+</div>
+
+<!-- =================== PAGE: DAG =================== -->
+<div class="page" id="page-dag">
+<div class="container">
+  <div id="readOnlyBanner" class="readonly-banner" style="display:none">
+    <span>&#128274;</span>
+    <span id="readOnlyText">Alleen-lezen modus — wijzigingen vereisen een hogere rol.</span>
+  </div>
+
+  <div style="display:flex;gap:1.5rem;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap">
+    <div>
+      <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Dag</div>
+      <div class="day-selector" id="daySelector"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Week</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="wk-nav-btn" onclick="changeWeek(-1)">&#8249;</button>
+        <div style="font-size:13px;font-weight:600;color:#1e2a3a;min-width:65px;text-align:center" id="weekNumLabel"></div>
+        <button class="wk-nav-btn" onclick="changeWeek(1)">&#8250;</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+      <div style="font-size:12px;color:#6b7280" id="dagDateLabel"></div>
+    </div>
+  </div>
+
+  <div id="waakBanner" style="display:none" class="waakbanner">
+    &#9888;&nbsp;<span><strong>Waakdienst</strong> — geen productie-werkdag. Productie alleen tot 19:00. Voor/na geldt waakdienst.</span>
+  </div>
+
+  <div class="metrics" id="metricsBar"></div>
+
+  <div style="margin-bottom:1.25rem">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">Risicosignalering</div>
+      <ul class="alert-list" id="alertList"></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Teams — Capaciteit &amp; Benodigde uren</div>
+    <p style="font-size:11px;color:#94a3b8;margin-bottom:.85rem">Vul benodigde uren per team in. Tool berekent automatisch tekort of overschot.</p>
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th class="r">Monteurs</th>
+          <th>Afwezig</th>
+          <th class="r">Aanwezig</th>
+          <th class="r">Beschikbaar<br><span style="font-weight:400;font-size:10px;text-transform:none">(uren)</span></th>
+          <th class="c">Benodigd<br><span style="font-weight:400;font-size:10px;text-transform:none">(invullen)</span></th>
+          <th class="r">Gap</th>
+          <th class="c">Dekking</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="teamBody"></tbody>
+      <tfoot id="teamFoot"></tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- =================== PAGE: REGIO (Grote Manager view) =================== -->
+<div class="page" id="page-regio" style="display:none">
+<div class="container">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">
+    <h2 style="font-size:17px;font-weight:600;color:#1e2a3a;margin:0">Dashboard — Capaciteitsoverzicht</h2>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <label style="font-size:12px;color:#6b7280">Periode:</label>
+      <select id="regioPeriode" onchange="renderRegio()">
+        <option value="vandaag">Vandaag</option>
+        <option value="deze_week" selected>Week</option>
+        <option value="deze_maand">Maand</option>
+        <option value="komende_4w">Kwartaal</option>
+        <option value="heel_jaar">Jaar</option>
+      </select>
+      <span style="font-size:11px;color:#94a3b8;padding:2px 9px;background:#f1f5f9;border-radius:99px">Norm: 60% Field Force</span>
+    </div>
+  </div>
+
+  <!-- Jaar-KPI's bovenaan -->
+  <div class="metrics" id="jaarKpis" style="margin-bottom:1rem"></div>
+
+  <div class="metrics" id="regioKpis"></div>
+
+  <div class="map-card" id="mapCard">
+    <div class="card-title">Capaciteitsoverzicht — Grafieken</div>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.2rem; margin-bottom:1.2rem;">
+      
+      <!-- LEFT: Staafgrafiek capaciteit per regio -->
+      <div style="border:1px solid #e5e7eb; border-radius:8px; padding:1rem 1.1rem; background:#fafbfc;">
+        <div style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:1rem;">Capaciteit per regio</div>
+        
+        <div id="regioBarsChart" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; padding:18px 6px 6px; align-items:end; height:200px;">
+          <!-- bars live gegenereerd door renderCharts() -->
+        </div>
+        <div class="rc-legend">
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#16a34a;"></div><span>&ge;60% (norm)</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#d97706;"></div><span>45&ndash;59%</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#dc2626;"></div><span>&lt;45%</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#cbd5e1;"></div><span>geen invoer</span></div>
+        </div>
+      </div>
+      
+      <!-- RIGHT: Staafgrafiek capaciteit per datacenter -->
+      <div style="border:1px solid #e5e7eb; border-radius:8px; padding:1rem 1.1rem; background:#fafbfc;">
+        <div style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:1rem;">Capaciteit per datacenter</div>
+        
+        <div id="dcBarsChart" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:18px 6px 6px; align-items:end; height:200px;">
+          <!-- bars live gegenereerd door renderCharts() -->
+        </div>
+        <div class="rc-legend">
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#16a34a;"></div><span>&ge;60% (norm)</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#d97706;"></div><span>45&ndash;59%</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#dc2626;"></div><span>&lt;45%</span></div>
+          <div class="rc-legend-item"><div class="rc-legend-swatch" style="background:#cbd5e1;"></div><span>geen invoer</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- BOTTOM: Trend chart dekkingsgraad -->
+    <div style="border:1px solid #e5e7eb; border-radius:8px; padding:1rem 1.1rem; background:#fafbfc;">
+      <div style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:1rem;">Dekkingsgraad per week — laatste 8 weken <span style="font-weight:400;text-transform:none;color:#94a3b8">(norm 60%)</span></div>
+      <div style="position:relative; height:220px; padding:14px 0;">
+        <div id="trendYAxis" style="position:absolute; left:0; top:0; bottom:24px; width:30px;"></div>
+        <svg id="trendSvg" style="position:absolute; top:0; left:30px; right:0; bottom:24px; width:calc(100% - 30px); height:calc(100% - 24px);" viewBox="0 0 800 200" preserveAspectRatio="none"></svg>
+        <div id="trendXAxis" style="position:absolute; bottom:0; left:30px; right:0; height:20px; display:flex; justify-content:space-between;"></div>
+        <div id="trendEmpty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:12px;color:#94a3b8">Nog geen benodigde uren ingevuld — trend verschijnt zodra er data is.</div>
+      </div>
+    </div>
+  </div>
+
+    
+  </div>
+
+  <!-- 3-secties dashboard (optie B) -->
+  <div class="section-card sec-regio">
+    <div class="section-card-hdr">
+      <span class="section-badge">REGIO'S</span>
+      <span class="section-title-txt">5 regio's</span>
+      <span class="section-sub" id="regioSubMonteurs"></span>
+    </div>
+    <div class="section-grid section-grid-5" id="sectionRegio"></div>
+  </div>
+
+  <div class="section-card sec-zara">
+    <div class="section-card-hdr">
+      <span class="section-badge">ZARA DATACENTERS</span>
+      <span class="section-title-txt">4 locaties</span>
+      <span class="section-sub" id="zaraSubMonteurs"></span>
+    </div>
+    <div class="section-grid section-grid-4" id="sectionZara"></div>
+  </div>
+
+  <div class="section-card sec-techno">
+    <div class="section-card-hdr">
+      <span class="section-badge">TECHNOCENTER</span>
+      <span class="section-title-txt">1 locatie</span>
+      <span class="section-sub" id="technoSubMonteurs"></span>
+    </div>
+    <div class="section-grid section-grid-1" id="sectionTechno"></div>
+  </div>
+
+  <!-- Behouden: oude grid verborgen (voor backward compat als fallback) -->
+  <div class="regio-grid" id="regioGrid" style="display:none"></div>
+
+  <div class="card regio-compare-card">
+    <div class="card-title">Vergelijking regio's — Dekkingsgraad</div>
+    <div class="year-table-wrap">
+      <table class="year-table" id="regioCompareTable"></table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- =================== PAGE: JAAR =================== -->
+<div class="page" id="page-jaar">
+<div class="container">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">
+    <div class="year-nav">
+      <button onclick="changeYear(-1)">&#8249;</button>
+      <div class="year-label" id="yearLabel"></div>
+      <button onclick="changeYear(1)">&#8250;</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label style="font-size:13px;color:#6b7280">Team:</label>
+      <select id="yearTeamSel" onchange="renderYear()">
+        <option value="all">Alle teams (totaal)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label style="font-size:13px;color:#6b7280">Dienst:</label>
+      <select id="yearShiftSel" onchange="renderYear()">
+        <option value="vroeg">Dag vroeg</option>
+        <option value="dag" selected>Dag</option>
+        <option value="laat">Daglaat</option>
+      </select>
+    </div>
+    <div class="legend" style="margin-left:auto">
+      <div class="legend-item"><div class="legend-dot" style="background:#bbf7d0"></div>&ge;100%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef08a"></div>75–99%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fecaca"></div>&lt;75%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e2e8f0"></div>Waak</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Weekoverzicht <span id="yearTeamLbl" style="font-weight:400;text-transform:none;font-size:12px;color:#94a3b8"></span></h3>
+    <div class="year-table-wrap"><table class="year-table" id="yearTable"></table></div>
+  </div>
+  <div class="metrics" id="yearSummary"></div>
+</div>
+</div>
+
+<!-- =================== PAGE: ROOSTER =================== -->
+<div class="page" id="page-rooster">
+<div class="container">
+  <div class="rs-toolbar">
+    <div style="display:flex;align-items:center;gap:6px">
+      <button class="wk-nav-btn" onclick="rsChangeWeek(-1)">&#8249;</button>
+      <div style="font-size:14px;font-weight:600;color:#1e2a3a;min-width:95px;text-align:center" id="rsWeekLabel"></div>
+      <button class="wk-nav-btn" onclick="rsChangeWeek(1)">&#8250;</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:12px;color:#6b7280">Team:</label>
+      <select id="rsTeamFilter" class="rs-team-filter" onchange="renderRooster()"></select>
+    </div>
+    <div style="margin-left:auto;font-size:12px;color:#6b7280" id="rsHint">Klik op een cel om dienst/afwezigheid aan te passen.</div>
+  </div>
+  <div class="rs-legend">
+    <span class="rs-pill" style="background:#dbeafe;color:#1d4ed8">Dag vroeg</span>
+    <span class="rs-pill" style="background:#d1fae5;color:#065f46">Dag</span>
+    <span class="rs-pill" style="background:#fef3c7;color:#92400e">ZARA</span>
+    <span class="rs-pill" style="background:#cffafe;color:#0e7490">Techno</span>
+    <span class="rs-pill" style="background:#ede9fe;color:#5b21b6">Daglaat+Waak</span>
+    <span class="rs-pill" style="background:#dbeafe;color:#1d4ed8">Verlof</span>
+    <span class="rs-pill" style="background:#ede9fe;color:#6d28d9">Cursus</span>
+    <span class="rs-pill" style="background:#fee2e2;color:#b91c1c">Ziek</span>
+    <span class="rs-pill" style="background:#f3e8ff;color:#6b21a8">Comp.NK</span>
+    <span class="rs-pill" style="background:#fce7f3;color:#9f1239">Comp.WKD</span>
+    <span class="rs-pill" style="background:#e0e7ff;color:#3730a3">Comp.ATW</span>
+    <span class="rs-pill" style="background:#ecfccb;color:#3f6212">Comp.SW</span>
+  </div>
+  <div class="card">
+    <div class="rs-table-wrap"><table class="rs-tbl" id="rsTable"></table></div>
+  </div>
+</div>
+</div>
+
+<!-- =================== PAGE: TEAMS =================== -->
+<div class="page" id="page-teams">
+<div class="container">
+  <div class="card">
+    <div class="card-title">Teams &amp; Monteurs</div>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:1rem">Overzicht van alle teams, regio's en monteurs (demo-data met fictieve namen).</p>
+    <div id="teamsPageContent"></div>
+  </div>
+</div>
+</div>
+
+<!-- =================== MODAL =================== -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target.id==='modalBg')closeModal()">
+  <div class="modal" id="modalBox">
+    <h3 id="modalTitle">Dienst/afwezigheid instellen</h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- =================== SLIDE-IN PANEEL (Scenario C) =================== -->
+<div class="slide-backdrop" id="spBackdrop" onclick="closeSlidePanel()"></div>
+<aside class="slide-panel" id="slidePanel" aria-hidden="true">
+  <div class="sp-header">
+    <button class="sp-close" onclick="closeSlidePanel()">&#10006;</button>
+    <div class="sp-title" id="spTitle">—</div>
+    <div class="sp-sub" id="spSub">—</div>
+  </div>
+  <div class="sp-body" id="spBody"></div>
+</aside>
+
+<footer>
+  Capaciteitsplanning 24/7 &bull; v16 — 5 regios incl. Waddeneilanden en Zeeuwse eilanden (NW/NO/MI/ZW/ZO) &bull; Rol-gebaseerd
+</footer>
+
+<script>
+/* =================== CONSTANTS =================== */
+
+// Nieuwe regio-indeling (wens Manager R en Manager D)
+// Noorden = NO (+ MI midden hoort ook bij noord in sommige indelingen, hier houden we MI als Regio Midden maar bundelen we in "Regio Zuiden" per klant-wens niet; we volgen letterlijk de wens:
+// Oud: NO/NW/MI/ZW/ZO  →  Nieuw: Noorden / Randstad / Zuiden
+// Mapping:
+//   NO (Noordoost) + MI (Midden)  → Regio Noorden
+//   NW (Noordwest)                → Regio Randstad
+//   ZO (Zuidoost) + ZW (Zuidwest) → Regio Zuiden
+const TEAM_DEFS = [
+  // Regio-teams
+  { id:'NW', label:'Noordwest',   oldCodes:['NW'], min:2, type:'regio', color:'#fbbf24', textColor:'#92400e' },
+  { id:'NO', label:'Noordoost',   oldCodes:['NO'], min:2, type:'regio', color:'#60a5fa', textColor:'#1e40af' },
+  { id:'MI', label:'Midden',      oldCodes:['MI'], min:2, type:'regio', color:'#a78bfa', textColor:'#5b21b6' },
+  { id:'ZW', label:'Zuidwest',    oldCodes:['ZW'], min:2, type:'regio', color:'#34d399', textColor:'#065f46' },
+  { id:'ZO', label:'Zuidoost',    oldCodes:['ZO'], min:2, type:'regio', color:'#f87171', textColor:'#991b1b' },
+  // ZARA datacenter-teams
+  { id:'ZARA_AMS', label:'ZARA Amsterdam', oldCodes:['ZARA_AMS'], min:3, type:'zara', color:'#f472b6', textColor:'#9d174d' },
+  { id:'ZARA_ROT', label:'ZARA Rotterdam', oldCodes:['ZARA_ROT'], min:2, type:'zara', color:'#f472b6', textColor:'#9d174d' },
+  { id:'ZARA_ARN', label:'ZARA Arnhem',    oldCodes:['ZARA_ARN'], min:1, type:'zara', color:'#f472b6', textColor:'#9d174d' },
+  { id:'ZARA_ZWO', label:'ZARA Zwolle',    oldCodes:['ZARA_ZWO'], min:1, type:'zara', color:'#f472b6', textColor:'#9d174d' },
+  // Technocenter
+  { id:'TECHNO',   label:'Technocenter Utrecht', oldCodes:['TECHNO'], min:2, type:'techno', color:'#22d3ee', textColor:'#155e75' }
+];
+
+// Monteurs — fictieve namen (privacy-veilig, geen koppeling aan echte personen)
+// Aantallen per oud-regiocode zijn behouden: MI=5, NO=6, NW=6, ZO=7, ZW=5, ZARA=21, Techno=7, Logistiek=1
+const MONTEURS_RAW = [
+  // MI (Midden) — 5
+  { name:'Monteur M01', oud:'MI' },
+  { name:'Monteur M02', oud:'MI' },
+  { name:'Monteur M03', oud:'MI' },
+  { name:'Monteur M04', oud:'MI' },
+  { name:'Monteur M05', oud:'MI' },
+  // NO (Noordoost) — 6
+  { name:'Monteur N01', oud:'NO' },
+  { name:'Monteur N02', oud:'NO' },
+  { name:'Monteur N03', oud:'NO' },
+  { name:'Monteur N04', oud:'NO' },
+  { name:'Monteur N05', oud:'NO' },
+  { name:'Monteur N06', oud:'NO' },
+  // NW (Noordwest) — 6
+  { name:'Monteur W01', oud:'NW' },
+  { name:'Monteur W02', oud:'NW' },
+  { name:'Monteur W03', oud:'NW' },
+  { name:'Monteur W04', oud:'NW' },
+  { name:'Monteur W05', oud:'NW' },
+  { name:'Monteur W06', oud:'NW' },
+  // ZO (Zuidoost) — 7
+  { name:'Monteur O01', oud:'ZO' },
+  { name:'Monteur O02', oud:'ZO' },
+  { name:'Monteur O03', oud:'ZO' },
+  { name:'Monteur O04', oud:'ZO' },
+  { name:'Monteur O05', oud:'ZO' },
+  { name:'Monteur O06', oud:'ZO' },
+  { name:'Monteur O07', oud:'ZO' },
+  // ZW (Zuidwest) — 5
+  { name:'Monteur S01', oud:'ZW' },
+  { name:'Monteur S02', oud:'ZW' },
+  { name:'Monteur S03', oud:'ZW' },
+  { name:'Monteur S04', oud:'ZW' },
+  { name:'Monteur S05', oud:'ZW' },
+  // ZARA Amsterdam - 12 monteurs (eigen team)
+  { name:'ZARA Ams Z01', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z02', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z03', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z04', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z05', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z06', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z07', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z08', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z09', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z10', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z11', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  { name:'ZARA Ams Z12', oud:'ZARA_AMS', isZara:true, dc:'ams' },
+  // ZARA Rotterdam - 5 monteurs (eigen team)
+  { name:'ZARA Rot Z13', oud:'ZARA_ROT', isZara:true, dc:'rot' },
+  { name:'ZARA Rot Z14', oud:'ZARA_ROT', isZara:true, dc:'rot' },
+  { name:'ZARA Rot Z15', oud:'ZARA_ROT', isZara:true, dc:'rot' },
+  { name:'ZARA Rot Z16', oud:'ZARA_ROT', isZara:true, dc:'rot' },
+  { name:'ZARA Rot Z17', oud:'ZARA_ROT', isZara:true, dc:'rot' },
+  // ZARA Arnhem - 3 monteurs (eigen team)
+  { name:'ZARA Arn Z18', oud:'ZARA_ARN', isZara:true, dc:'arn' },
+  { name:'ZARA Arn Z19', oud:'ZARA_ARN', isZara:true, dc:'arn' },
+  { name:'ZARA Arn Z20', oud:'ZARA_ARN', isZara:true, dc:'arn' },
+  // ZARA Zwolle - 1 monteur (eigen team)
+  { name:'ZARA Zwo Z21', oud:'ZARA_ZWO', isZara:true, dc:'zwo' },
+  // Technocenter Utrecht - 7 monteurs (eigen team)
+  { name:'Techno monteur T01', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T02', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T03', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T04', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T05', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T06', oud:'TECHNO', dc:'utr' },
+  { name:'Techno monteur T07', oud:'TECHNO', dc:'utr' },
+  // Logistiek — 1 (valt onder MI regio)
+  { name:'Logistiek L01', oud:'MI' }
+];
+
+// Build monteurs dict per team-id
+const monteurs = {};
+TEAM_DEFS.forEach(t => monteurs[t.id] = []);
+MONTEURS_RAW.forEach(m => {
+  const team = TEAM_DEFS.find(t => t.oldCodes.includes(m.oud));
+  if (team) monteurs[team.id].push({ name:m.name, oudRegio:m.oud, isZara:!!m.isZara, dc:m.dc||null });
+});
+
+const SHIFTS = {
+  vroeg: { label:'Dag vroeg', time:'07:00–15:30', hours:8 },
+  dag:   { label:'Dag', time:'08:00–16:30', hours:8 },
+  zara:  { label:'ZARA-dienst', time:'', hours:8 },
+  techno:{ label:'Technocenter-dienst', time:'', hours:8 },
+  laat:  { label:'Daglaat + Waakdienst', time:'10:30–19:00 normaal, daarna waakdienst tot 07:00', hours:8 }
+};
+
+const DAYS_NL = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
+const DAYS_FULL = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+const IS_WKND = [false,false,false,false,false,true,true];
+const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+// Nederlandse feestdagen + vaste data
+function getHolidaySet(year){
+  const s = new Set();
+  const add = (m, d) => s.add(new Date(year, m-1, d).toDateString());
+  add(1, 1);   // Nieuwjaar
+  add(4, 27);  // Koningsdag
+  add(5, 5);   // Bevrijdingsdag
+  add(12, 25); add(12, 26); // Kerst
+  // Pasen berekenen (Meeus)
+  const a=year%19, b=Math.floor(year/100), c=year%100, d=Math.floor(b/4), e=b%4;
+  const f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+  const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+  const mnd=Math.floor((h+l-7*m+114)/31), dag=((h+l-7*m+114)%31)+1;
+  const pasen = new Date(year, mnd-1, dag);
+  const pasen2 = new Date(pasen); pasen2.setDate(pasen.getDate()+1);
+  const goedeVrij = new Date(pasen); goedeVrij.setDate(pasen.getDate()-2);
+  const hemelvaart = new Date(pasen); hemelvaart.setDate(pasen.getDate()+39);
+  const pinkster2 = new Date(pasen); pinkster2.setDate(pasen.getDate()+50);
+  [goedeVrij, pasen, pasen2, hemelvaart, pinkster2].forEach(dt => s.add(dt.toDateString()));
+  return s;
+}
+
+/* =================== STATE =================== */
+let currentRole = null;        // 'viewer' | 'teamleider' | 'teammgr' | 'planner' | 'manager' | 'grotemgr'
+let loginRoleSelected = null;
+let pinBuffer = '';
+
+// ROL CONFIG - bepaalt toegang
+// regioPage:true → rol ziet kaart als dashboard (hoofdpagina)
+// dcFilter → beperkt welke datacenters zichtbaar zijn op de kaart
+const ROLE_CONFIG = {
+  viewer:     { pin:'0000', label:'Uitvoering',         color:'#64748b', pages:['mijnrooster','teams'], canMutate:'self', teamFilter:null, regioPage:false, isUitvoering:true },
+  teamleider: { pin:'1111', label:'Teamleider Z (Zara)',color:'#ec4899', pages:['regio','dag','rooster','teams'],        canMutate:true,  teamFilter:['ZARA_AMS','ZARA_ROT','ZARA_ARN','ZARA_ZWO'], regioPage:true, dcFilter:['ams','rot','arn','zwo'] },
+  teammgr:    { pin:'2222', label:'Teammanager Buiten', color:'#14b8a6', pages:['regio','dag','rooster'],                canMutate:'light', teamFilter:null, regioPage:true, minAdmin:true },
+  planner:    { pin:'3333', label:'Planner',            color:'#3b82f6', pages:['regio','dag','rooster','jaar','teams'], canMutate:true,  teamFilter:null, regioPage:true, compensatieOnly:true },
+  manager:    { pin:'4444', label:'Manager R / D',      color:'#f59e0b', pages:['regio','dag','jaar','rooster','teams'], canMutate:true, teamFilter:null, regioPage:true },
+  grotemgr:   { pin:'5555', label:'Grote Manager',      color:'#a855f7', pages:['regio','jaar','dag'], canMutate:false, teamFilter:null, regioPage:true }
+};
+
+let currentDate = new Date();
+let selDay = 0;
+let shiftKey = 'dag';
+
+// Dienst/afwezigheid per monteur: rooster[dateStr][monteurName] = { type:'vroeg'|'dag'|'laat'|'waak'|'verlof'|'cursus'|'ziek', hrs: 8.5 }
+const rooster = {};
+
+// Benodigde uren per team per dag: benodigd[teamId][dateStr] = hrs
+const benodigd = {};
+TEAM_DEFS.forEach(t => benodigd[t.id] = {});
+
+let yearViewYear = new Date().getFullYear();
+let rsWeekDate = new Date();
+
+// Drill-down state voor kaart
+let selectedMapFilter = null;  // { type:'regio'|'dc', teamId:'NW', label:'Noordwest', dcId?:'ams' }
+
+// Regio zoom viewboxes - voor SVG animatie (niet meer actief gebruikt maar behouden voor compatibiliteit)
+const REGIO_ZOOM = {
+  NW: { viewBox:'140 100 200 220' },
+  NO: { viewBox:'240 20 260 280' },
+  MI: { viewBox:'170 240 180 160' },
+  ZW: { viewBox:'20 310 260 260' },
+  ZO: { viewBox:'200 370 300 200' },
+  // Per ZARA-locatie een specifieke zoom
+  ams: { viewBox:'80 110 160 160' },
+  rot: { viewBox:'55 240 160 160' },
+  arn: { viewBox:'230 190 160 160' },
+  zwo: { viewBox:'215 105 160 160' },
+  utr: { viewBox:'130 210 130 120' }
+};
+
+/* =================== UTILS =================== */
+function fmtDate(d){ return d.getDate()+' '+MONTHS_NL[d.getMonth()]+' '+d.getFullYear(); }
+function fmtShort(d){ return d.getDate()+'/'+(d.getMonth()+1); }
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function getWeekNum(d){
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay()+6)%7;
+  target.setDate(target.getDate()-dayNr+3);
+  const firstThursday = target.valueOf();
+  target.setMonth(0,1);
+  if (target.getDay()!==4) target.setMonth(0,1+((4-target.getDay())+7)%7);
+  return 1+Math.ceil((firstThursday-target)/604800000);
+}
+function startOfWeek(d){
+  const dt = new Date(d);
+  const day = (dt.getDay()+6)%7;
+  dt.setDate(dt.getDate()-day);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function addDays(d, n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function getDateForSelDay(){ return addDays(startOfWeek(currentDate), selDay); }
+
+function dekStatus(pct){
+  if (pct===null||pct===undefined) return 'neutral';
+  // Norm: 60% van Field Force-capaciteit
+  if (pct>=60) return 'ok';
+  if (pct>=45) return 'warn';
+  return 'danger';
+}
+
+function getRisk(aan, total, min){
+  if (aan < min) return 'danger';
+  if (total>0 && aan/total < 0.7) return 'warn';
+  return 'ok';
+}
+
+function countAbsentByType(teamId, date){
+  const ds = isoDate(date);
+  const out = { verlof:0, cursus:0, ziek:0, compensatie:0, compUren:0, aanwezig:0, ingepland:0, werkUren:0 };
+  const dayRooster = rooster[ds] || {};
+  const mts = visibleMonteurs(teamId);
+  mts.forEach(m => {
+    const e = dayRooster[m.name];
+    if (!e) return;  // Niet ingepland — niet meegerekend
+    out.ingepland++;
+    if (e.type === 'verlof' || e.type === 'cursus' || e.type === 'ziek'){
+      out[e.type]++;
+    } else if (['c-nk','c-wkd','c-atw','c-sw'].includes(e.type)){
+      out.compensatie++;
+      // Duur van de compensatie: 8u = hele dag weg, minder = rest van de dag inzetbaar
+      const compHrs = (typeof e.hrs === 'number' && e.hrs > 0) ? Math.min(e.hrs, 8) : 8;
+      out.compUren += compHrs;
+      const rest = 8 - compHrs;
+      if (rest > 0){
+        out.aanwezig++;       // deels inzetbaar
+        out.werkUren += rest; // resturen tellen mee in capaciteit
+      }
+    } else if (['vroeg','dag','zara','techno','laat'].includes(e.type)){
+      out.aanwezig++;
+      // Tel werkelijke uren (kan halve dag of vrij getal zijn)
+      const hrs = (typeof e.hrs === 'number' && e.hrs > 0) ? e.hrs : 8;
+      out.werkUren += hrs;
+    }
+  });
+  return out;
+}
+
+function countShifting(teamId, date, shift){
+  // Aantal monteurs die deze dag die specifieke dienst draaien
+  const ds = isoDate(date);
+  const dayRooster = rooster[ds] || {};
+  let c = 0;
+  monteurs[teamId].forEach(m => {
+    const e = dayRooster[m.name];
+    if (!e){
+      // default: all present on this shift (if productie-dag)
+      c++;
+    } else if (e.type === shift) {
+      c++;
+    } else if (['vroeg','dag','zara','techno','laat'].includes(e.type)) {
+      // ander dienst → niet in deze shift
+    }
+  });
+  return c;
+}
+
+/* =================== LOGIN =================== */
+function selectRole(r){
+  loginRoleSelected = r;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-role="${r}"]`).classList.add('selected');
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinLabel').textContent = `PIN voor rol: ${ROLE_CONFIG[r].label}`;
+  document.getElementById('loginBtn').disabled = false;
+}
+function pinKey(k){
+  if (pinBuffer.length < 4) pinBuffer += k;
+  updatePinDots();
+  if (pinBuffer.length === 4) setTimeout(doLogin, 150);
+}
+function pinDel(){ pinBuffer = pinBuffer.slice(0,-1); updatePinDots(); }
+function updatePinDots(){
+  const dots = document.querySelectorAll('.pin-dot');
+  dots.forEach((d,i) => d.classList.toggle('filled', i<pinBuffer.length));
+}
+function doLogin(){
+  if (!loginRoleSelected) return;
+  const cfg = ROLE_CONFIG[loginRoleSelected];
+  if (pinBuffer !== cfg.pin){
+    document.getElementById('pinError').textContent = 'Onjuiste PIN-code';
+    pinBuffer = '';
+    updatePinDots();
+    return;
+  }
+  currentRole = loginRoleSelected;
+  document.getElementById('loginScreen').classList.add('hidden');
+  applyRole();
+  initApp();
+}
+function logoutPrompt(){
+  if (confirm('Uitloggen en terug naar rolkeuze?')){
+    currentRole = null;
+    pinBuffer = '';
+    loginRoleSelected = null;
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('pinError').textContent = '';
+    document.getElementById('loginBtn').disabled = true;
+    updatePinDots();
+  }
+}
+
+function applyRole(){
+  const cfg = ROLE_CONFIG[currentRole];
+  document.getElementById('rolLabel').textContent = cfg.label;
+  document.getElementById('rolDot').style.background = cfg.color;
+
+  // Toon/verberg tabs op basis van rol
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    const p = tab.dataset.page;
+    tab.style.display = cfg.pages.includes(p) ? '' : 'none';
+  });
+
+  // Readonly banner voor viewer en grote mgr
+  const banner = document.getElementById('readOnlyBanner');
+  if (cfg.isUitvoering){
+    // Uitvoering heeft eigen interface, geen banner nodig
+    banner.style.display = 'none';
+  } else if (!cfg.canMutate){
+    banner.style.display = '';
+    document.getElementById('readOnlyText').textContent = `Alleen-lezen modus (rol: ${cfg.label}) — wijzigingen niet mogelijk.`;
+  } else if (cfg.canMutate === 'light'){
+    banner.style.display = '';
+    document.getElementById('readOnlyText').textContent = `Teammanager Buiten — je vult diensten, verlof en ziek in voor de monteurs.`;
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Uitvoering landt direct op Mijn Rooster pagina
+  if (cfg.isUitvoering){
+    document.body.setAttribute('data-role', 'viewer');
+    const myTab = document.querySelector('[data-page="mijnrooster"]');
+    if (myTab) setTimeout(() => showPage('mijnrooster', myTab), 50);
+    // NUCLEAR: forceful display:none op alle andere pages via inline style
+    setTimeout(() => {
+      ['regio','dag','jaar','rooster','teams'].forEach(pid => {
+        const el = document.getElementById('page-' + pid);
+        if (el) {
+          el.classList.remove('active');
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+        }
+      });
+      // Force reflow
+      document.body.offsetHeight;
+    }, 60);
+  }
+  // Andere rollen met regioPage:true landen op regio-overzicht
+  else if (cfg.regioPage){
+    document.body.removeAttribute('data-role');
+    // Reset display style die door Uitvoering kan zijn gezet
+    setTimeout(() => {
+      ['regio','dag','jaar','rooster','teams'].forEach(pid => {
+        const el = document.getElementById('page-' + pid);
+        if (el) {
+          el.style.display = '';
+          el.style.visibility = '';
+        }
+      });
+    }, 40);
+    const regioTab = document.querySelector('[data-page="regio"]');
+    if (regioTab) setTimeout(() => showPage('regio', regioTab), 50);
+  }
+
+  // DC-markers filteren op basis van rol (bv. Teamleider Z ziet alleen ZARA locaties)
+  document.querySelectorAll('.dc-marker').forEach(marker => {
+    const dcId = marker.dataset.dc;
+    if (cfg.dcFilter && !cfg.dcFilter.includes(dcId)){
+      marker.style.display = 'none';
+    } else {
+      marker.style.display = '';
+    }
+  });
+}
+
+function canEditTeam(teamId){
+  const cfg = ROLE_CONFIG[currentRole];
+  if (!cfg.canMutate) return false;
+  if (cfg.teamFilter){
+    // teamFilter kan array of string zijn
+    if (Array.isArray(cfg.teamFilter)){
+      if (!cfg.teamFilter.includes(teamId)) return false;
+    } else if (cfg.teamFilter !== teamId) return false;
+  }
+  return true;
+}
+function canEditBenodigd(){
+  // zowel planner, manager, teammgr (light) als teamleider kunnen benodigd uren invullen
+  const cfg = ROLE_CONFIG[currentRole];
+  return !!cfg.canMutate;
+}
+
+// Helper: filter TEAM_DEFS op basis van cfg.teamFilter (string of array)
+function teamsForRole(){
+  const cfg = ROLE_CONFIG[currentRole];
+  if (!cfg.teamFilter) return TEAM_DEFS;
+  if (Array.isArray(cfg.teamFilter)){
+    return TEAM_DEFS.filter(t => cfg.teamFilter.includes(t.id));
+  }
+  return TEAM_DEFS.filter(t => t.id === cfg.teamFilter);
+}
+
+// Helper: is teamId in de filter?
+function teamInFilter(teamId){
+  const cfg = ROLE_CONFIG[currentRole];
+  if (!cfg.teamFilter) return true;
+  if (Array.isArray(cfg.teamFilter)) return cfg.teamFilter.includes(teamId);
+  return cfg.teamFilter === teamId;
+}
+
+// Filter monteurs per rol: Teamleider Z ziet alleen ZARA monteurs,
+// andere rollen zien alle monteurs van het team
+function visibleMonteurs(teamId){
+  const cfg = ROLE_CONFIG[currentRole];
+  const all = monteurs[teamId] || [];
+  if (cfg && cfg.zaraOnly){
+    return all.filter(m => m.isZara);
+  }
+  return all;
+}
+
+/* =================== NAVIGATION =================== */
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = ''; // reset inline display, gebruik CSS
+  });
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById('page-'+id);
+  if (target) target.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'dag') renderDay();
+  if (id === 'regio') renderRegio();
+  if (id === 'jaar') renderYear();
+  if (id === 'rooster') renderRooster();
+  if (id === 'teams') renderTeamsPage();
+  if (id === 'mijnrooster') mrRender();
+}
+
+/* =================== MIJN ROOSTER (Uitvoering) =================== */
+let mrSelectedMonteur = null; // bv "ZARA_AMS::Z01"
+let mrWeekDate = new Date();
+let mrCalDate = new Date();
+
+function mrInitDropdown(){
+  const sel = document.getElementById('mrMonteurSel');
+  if (!sel) return;
+  let html = '<option value="">— Kies je naam —</option>';
+  TEAM_DEFS.forEach(t => {
+    html += `<optgroup label="${t.name}">`;
+    (monteurs[t.id] || []).forEach(m => {
+      html += `<option value="${t.id}::${m.name}">${m.name}</option>`;
+    });
+    html += '</optgroup>';
+  });
+  sel.innerHTML = html;
+  if (mrSelectedMonteur) sel.value = mrSelectedMonteur;
+}
+
+function mrSelectMonteur(){
+  const sel = document.getElementById('mrMonteurSel');
+  mrSelectedMonteur = sel.value || null;
+  mrRender();
+}
+
+function mrGetMonteur(){
+  if (!mrSelectedMonteur) return null;
+  const [teamId, name] = mrSelectedMonteur.split('::');
+  const team = TEAM_DEFS.find(t => t.id === teamId);
+  const m = (monteurs[teamId] || []).find(mm => mm.name === name);
+  return m ? { team, monteur: m, teamId, name } : null;
+}
+
+function mrRender(){
+  mrInitDropdown();
+  const data = mrGetMonteur();
+  const heroName = document.getElementById('mrName');
+  const heroTeam = document.getElementById('mrTeam');
+  const infoText = document.getElementById('mrInfoText');
+
+  // Update vandaag-pill in hero
+  const today = new Date();
+  const dayNamesNL = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+  const monthNamesNL = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  document.getElementById('mrTodayPill').textContent = dayNamesNL[today.getDay()];
+  document.getElementById('mrTodayDate').textContent = `${today.getDate()} ${monthNamesNL[today.getMonth()]} ${today.getFullYear()}`;
+
+  // Bepaal welke secties zichtbaar zijn
+  const sections = ['mrTodaySection','mrOverviewSection'];
+  if (!data){
+    heroName.textContent = '—';
+    heroTeam.textContent = 'Selecteer hieronder je naam om je rooster te bekijken';
+    infoText.textContent = 'Geen rooster zichtbaar zolang je niet bent geselecteerd';
+    sections.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    return;
+  }
+  heroName.textContent = data.name;
+  // Tel collega's in hetzelfde team (incl. zichzelf - 1)
+  const collegas = (monteurs[data.teamId] || []).length - 1;
+  heroTeam.textContent = `${data.team.name} · ${collegas} collega${collegas === 1 ? '' : 's'}`;
+  infoText.textContent = '';
+
+  sections.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+
+  mrRenderToday(data);
+  mrRenderOverview(data);
+}
+
+// VANDAAG-card render
+function mrRenderToday(data){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const ds = isoDate(today);
+  const e = (rooster[ds] || {})[data.name];
+  const isWk = IS_WKND[(today.getDay()+6)%7];
+  const isHol = getHolidaySet(today.getFullYear()).has(today.toDateString());
+
+  let icon = '☀️', shift = 'Vrije dag', time = '', hrs = '', cls = '';
+
+  if (e){
+    if (e.type === 'verlof'){ icon = '🏖️'; shift = 'Verlof'; time = 'Vandaag heb je vrij'; cls = 'verlof'; }
+    else if (e.type === 'cursus'){ icon = '📚'; shift = 'Cursus'; time = 'Volg je een cursus'; cls = 'cursus'; }
+    else if (e.type === 'ziek'){ icon = '🤒'; shift = 'Ziek'; time = 'Beterschap!'; cls = 'ziek'; }
+    else if (['vroeg','dag','zara','techno','laat'].includes(e.type)){
+      const sh = SHIFTS[e.type];
+      shift = sh?.label || e.type;
+      time = sh?.time || '';
+      hrs = (e.hrs || 8) + ' uur';
+      // Icon per dienst
+      if (e.type === 'vroeg') icon = '🌅';
+      else if (e.type === 'dag') icon = '☀️';
+      else if (e.type === 'zara') icon = '🏢';
+      else if (e.type === 'techno') icon = '🔧';
+      else if (e.type === 'laat') icon = '🌙';
+    } else if (e.type.startsWith('c-')){
+      icon = '✅'; shift = 'Compensatie'; time = 'Vrije dag'; cls = '';
+    }
+  } else if (isHol){
+    icon = '🎉'; shift = 'Feestdag'; time = 'Vandaag is een feestdag'; cls = 'weekend';
+  } else if (isWk){
+    icon = '😎'; shift = 'Weekend'; time = 'Geniet van je vrije dag'; cls = 'weekend';
+  } else {
+    icon = '📅'; shift = 'Niet ingeroosterd'; time = 'Nog geen dienst voor vandaag'; cls = '';
+  }
+
+  document.getElementById('mrTodayCard').className = 'mr2-today-card ' + cls;
+  document.getElementById('mrTodayCard').innerHTML = `
+    <div class="mr2-today-icon">${icon}</div>
+    <div class="mr2-today-info">
+      <div class="mr2-today-shift">${shift}</div>
+      <div class="mr2-today-time">${time}</div>
+      ${hrs ? `<div class="mr2-today-hrs">${hrs}</div>` : ''}
+    </div>
+  `;
+}
+
+// MIJN JAAR stats render
+function mrRenderStats(data){
+  const yr = new Date().getFullYear();
+  let verlofGebruikt = 0, cursusDg = 0, ziekDg = 0, werkDg = 0;
+  Object.keys(rooster).forEach(ds => {
+    const dt = new Date(ds);
+    if (dt.getFullYear() !== yr) return;
+    const e = rooster[ds][data.name];
+    if (!e) return;
+    if (e.type === 'verlof') verlofGebruikt++;
+    else if (e.type === 'cursus') cursusDg++;
+    else if (e.type === 'ziek') ziekDg++;
+    else if (['vroeg','dag','zara','techno','laat'].includes(e.type)) werkDg++;
+  });
+  const verlofTotaal = 25; // standaard NL
+  const verlofOver = verlofTotaal - verlofGebruikt;
+
+  document.getElementById('mrStatsGrid').innerHTML = `
+    <div class="mr2-stat-card verlof">
+      <div class="mr2-stat-icon">🏖️</div>
+      <div class="mr2-stat-val">${verlofGebruikt}</div>
+      <div class="mr2-stat-lbl">Verlof gebruikt</div>
+      <div class="mr2-stat-sub">${verlofOver} dagen over</div>
+    </div>
+    <div class="mr2-stat-card cursus">
+      <div class="mr2-stat-icon">📚</div>
+      <div class="mr2-stat-val">${cursusDg}</div>
+      <div class="mr2-stat-lbl">Cursus dagen</div>
+      <div class="mr2-stat-sub">dit jaar</div>
+    </div>
+    <div class="mr2-stat-card ziek">
+      <div class="mr2-stat-icon">🤒</div>
+      <div class="mr2-stat-val">${ziekDg}</div>
+      <div class="mr2-stat-lbl">Ziek dagen</div>
+      <div class="mr2-stat-sub">dit jaar</div>
+    </div>
+    <div class="mr2-stat-card werk">
+      <div class="mr2-stat-icon">✅</div>
+      <div class="mr2-stat-val">${werkDg}</div>
+      <div class="mr2-stat-lbl">Werk dagen</div>
+      <div class="mr2-stat-sub">dit jaar</div>
+    </div>
+  `;
+}
+
+// MIJN ROOSTER overview met mode switcher
+let mrOverviewMode = 'week'; // 'week' | 'month' | 'quarter'
+let mrOverviewDate = new Date(); // wordt aangepast met pijltjes
+
+function mrSwitchMode(){
+  mrOverviewMode = document.getElementById('mrOverviewMode').value;
+  // Reset datum naar vandaag bij mode-switch
+  mrOverviewDate = new Date();
+  const data = mrGetMonteur();
+  if (data) mrRenderOverview(data);
+}
+
+function mrOverviewShift(delta){
+  const newD = new Date(mrOverviewDate);
+  if (mrOverviewMode === 'week'){
+    newD.setDate(newD.getDate() + delta * 7);
+  } else if (mrOverviewMode === 'month'){
+    newD.setMonth(newD.getMonth() + delta);
+  } else { // quarter
+    newD.setMonth(newD.getMonth() + delta * 3);
+  }
+  mrOverviewDate = newD;
+  const data = mrGetMonteur();
+  if (data) mrRenderOverview(data);
+}
+
+function mrRenderOverview(data){
+  // Toon de juiste view, verberg andere
+  document.getElementById('mrViewWeek').style.display = mrOverviewMode === 'week' ? '' : 'none';
+  document.getElementById('mrViewMonth').style.display = mrOverviewMode === 'month' ? '' : 'none';
+  document.getElementById('mrViewQuarter').style.display = mrOverviewMode === 'quarter' ? '' : 'none';
+
+  if (mrOverviewMode === 'week'){
+    mrRenderWeekView(data);
+  } else if (mrOverviewMode === 'month'){
+    mrRenderMonthView(data);
+  } else {
+    mrRenderQuarterView(data);
+  }
+}
+
+// === WEEK VIEW ===
+function mrRenderWeekView(data){
+  const ws = startOfWeek(mrOverviewDate);
+  const we = addDays(ws, 6);
+  const monthNamesShort = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  document.getElementById('mrOverviewLabel').textContent = `Week ${getWeekNum(ws)} — ${ws.getDate()} ${monthNamesShort[ws.getMonth()]} t/m ${we.getDate()} ${monthNamesShort[we.getMonth()]}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dayNames = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+  let html = '';
+  let werkUren = 0, verlofDg = 0, ziekDg = 0, cursusDg = 0;
+  for (let i=0;i<7;i++){
+    const dt = addDays(ws, i);
+    const ds = isoDate(dt);
+    const isToday = dt.getTime() === today.getTime();
+    const isWk = IS_WKND[i];
+    const isHol = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    const e = (rooster[ds] || {})[data.name];
+
+    let icon = '', label = '', time = '', cls = 'geen';
+
+    if (e){
+      if (e.type === 'verlof'){ icon = '🏖️'; label = 'Verlof'; cls = 'afw-verlof'; verlofDg++; }
+      else if (e.type === 'cursus'){ icon = '📚'; label = 'Cursus'; cls = 'afw-cursus'; cursusDg++; }
+      else if (e.type === 'ziek'){ icon = '🤒'; label = 'Ziek'; cls = 'afw-ziek'; ziekDg++; }
+      else if (['vroeg','dag','zara','techno','laat'].includes(e.type)){
+        const sh = SHIFTS[e.type];
+        label = sh?.label || e.type;
+        time = sh?.time || '';
+        const hrs = e.hrs || 8;
+        werkUren += hrs;
+        cls = 'werk-' + e.type;
+        if (e.type === 'vroeg') icon = '🌅';
+        else if (e.type === 'dag') icon = '☀️';
+        else if (e.type === 'zara') icon = '🏢';
+        else if (e.type === 'techno') icon = '🔧';
+        else if (e.type === 'laat') icon = '🌙';
+        if (hrs !== 8) label = `${hrs}u ${label}`;
+      } else if (e.type.startsWith('c-')){
+        icon = '✅'; label = 'Compensatie'; cls = 'geen';
+      }
+    } else if (isHol){
+      icon = '🎉'; label = 'Feestdag'; cls = 'geen';
+    } else if (isWk){
+      icon = ''; label = 'Vrij'; cls = 'geen';
+    } else {
+      icon = ''; label = 'Niet ingeroosterd'; cls = 'geen';
+    }
+
+    html += `<div class="mr2-week-row ${isToday?'today':''} ${isWk?'weekend':''}">
+      <div class="mr2-week-day-info">
+        <span class="mr2-week-day-name">${dayNames[i]}</span>
+        <span class="mr2-week-day-num">${dt.getDate()}/${dt.getMonth()+1}</span>
+      </div>
+      <div class="mr2-week-shift-badge ${cls}">
+        ${icon ? `<span class="mr2-shift-icon">${icon}</span>` : ''}
+        <span class="mr2-shift-name">${label}</span>
+        ${time ? `<span class="mr2-shift-time">${time}</span>` : ''}
+      </div>
+      ${isToday ? `<span class="mr2-today-tag">vandaag</span>` : ''}
+    </div>`;
+  }
+  document.getElementById('mrWeekList').innerHTML = html;
+
+  // Foot met totalen
+  const parts = [];
+  if (werkUren > 0) parts.push(`${werkUren.toFixed(0)}u werk`);
+  if (verlofDg > 0) parts.push(`${verlofDg} dag${verlofDg===1?'':'en'} verlof`);
+  if (cursusDg > 0) parts.push(`${cursusDg} dag${cursusDg===1?'':'en'} cursus`);
+  if (ziekDg > 0) parts.push(`${ziekDg} dag${ziekDg===1?'':'en'} ziek`);
+  document.getElementById('mrWeekFoot').textContent = parts.length ? `Totaal deze week: ${parts.join(' · ')}` : '';
+}
+
+// === MAAND VIEW ===
+function mrRenderMonthView(data){
+  const yr = mrOverviewDate.getFullYear();
+  const mo = mrOverviewDate.getMonth();
+  const monthNames = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+  document.getElementById('mrOverviewLabel').textContent = `${monthNames[mo]} ${yr}`;
+
+  const dayHdr = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
+  document.getElementById('mrCalHeader').innerHTML = dayHdr.map(d => `<div class="mr2-cal-hdr">${d}</div>`).join('');
+
+  const first = new Date(yr, mo, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let html = '';
+  for (let i=0;i<startDow;i++) html += '<div class="mr2-cal-day empty"></div>';
+  for (let day=1; day<=daysInMonth; day++){
+    const dt = new Date(yr, mo, day);
+    const dow = (dt.getDay() + 6) % 7;
+    const isWk = dow >= 5;
+    const isHol = getHolidaySet(yr).has(dt.toDateString());
+    const isToday = dt.getTime() === today.getTime();
+    const ds = isoDate(dt);
+    const e = (rooster[ds] || {})[data.name];
+    let cls = 'mr2-cal-day';
+    if (isHol) cls += ' holiday';
+    else if (isWk) cls += ' weekend';
+    else if (e?.type === 'verlof') cls += ' has-verlof';
+    else if (e?.type === 'cursus') cls += ' has-cursus';
+    else if (e?.type === 'ziek') cls += ' has-ziek';
+    else if (e && ['vroeg','dag','zara','techno','laat'].includes(e.type)) cls += ' shift-' + e.type;
+    if (isToday && !isHol && !isWk) cls += ' today';
+
+    html += `<div class="${cls}">
+      <span>${day}</span>
+    </div>`;
+  }
+  document.getElementById('mrCalGrid').innerHTML = html;
+}
+
+// === KWARTAAL VIEW ===
+function mrRenderQuarterView(data){
+  const yr = mrOverviewDate.getFullYear();
+  const mo = mrOverviewDate.getMonth();
+  const qIdx = Math.floor(mo / 3); // 0..3
+  const qStartMo = qIdx * 3;
+  const monthNames = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+  document.getElementById('mrOverviewLabel').textContent = `Q${qIdx+1} ${yr} (${monthNames[qStartMo]} – ${monthNames[qStartMo+2]})`;
+
+  // 3 mini-maand-kalenders
+  const today = new Date(); today.setHours(0,0,0,0);
+  const monthsHtml = [0,1,2].map(m => {
+    const curMo = qStartMo + m;
+    const first = new Date(yr, curMo, 1);
+    const startDow = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(yr, curMo+1, 0).getDate();
+
+    // Header met dagnamen
+    const headerHtml = ['M','D','W','D','V','Z','Z'].map(d => `<div class="mr2-mini-day" style="background:transparent;color:#94a3b8;font-size:9px">${d}</div>`).join('');
+
+    let cells = '';
+    for (let i=0;i<startDow;i++) cells += '<div class="mr2-mini-day empty"></div>';
+    for (let day=1; day<=daysInMonth; day++){
+      const dt = new Date(yr, curMo, day);
+      const dow = (dt.getDay() + 6) % 7;
+      const isWk = dow >= 5;
+      const isHol = getHolidaySet(yr).has(dt.toDateString());
+      const ds = isoDate(dt);
+      const e = (rooster[ds] || {})[data.name];
+
+      let cls = 'mr2-mini-day';
+      if (isHol) cls += ' holiday';
+      else if (isWk) cls += ' weekend';
+      else if (e && ['vroeg','dag','zara','techno','laat','verlof','cursus','ziek'].includes(e.type)){
+        cls += ' dag-' + e.type;
+      }
+      cells += `<div class="${cls}" title="${day} ${monthNames[curMo]}${e ? ' — ' + (SHIFTS[e.type]?.label || e.type) : ''}">${day}</div>`;
+    }
+
+    return `<div class="mr2-quarter-month">
+      <div class="mr2-quarter-month-title">${monthNames[curMo]}</div>
+      <div class="mr2-quarter-mini-cal">${headerHtml}${cells}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('mrQuarterMonths').innerHTML = monthsHtml;
+}
+
+// === MIJN DIENSTEN render (alle 5) ===
+function mrRenderShifts(data){
+  const shifts = [
+    { key:'vroeg',  name:'Dag vroeg',     time:'07:00 – 15:30', hours:8, icon:'🌅' },
+    { key:'dag',    name:'Dag',           time:'08:00 – 16:30', hours:8, icon:'☀️' },
+    { key:'zara',   name:'ZARA-dienst',   time:'08:00 – 16:30', hours:8, icon:'🏢' },
+    { key:'techno', name:'Technocenter',  time:'08:00 – 16:30', hours:8, icon:'🔧' },
+    { key:'laat',   name:'Daglaat + Waak',time:'10:30 – 19:00', hours:8, icon:'🌙' }
+  ];
+  const html = shifts.map(s => `<div class="mr2-shift-card ${s.key}">
+    <div class="mr2-shift-card-icon">${s.icon}</div>
+    <div class="mr2-shift-card-name">${s.name}</div>
+    <div class="mr2-shift-card-time">${s.time}</div>
+    <div class="mr2-shift-card-hrs">${s.hours} uur</div>
+  </div>`).join('');
+  document.getElementById('mrShiftsGrid').innerHTML = html;
+}
+
+/* =================== DAG PLANNING =================== */
+function changeWeek(delta){
+  currentDate = addDays(currentDate, delta*7);
+  renderDay();
+}
+
+function renderDay(){
+  const dateObj = getDateForSelDay();
+  const wknd = IS_WKND[selDay];
+  const hol = getHolidaySet(dateObj.getFullYear()).has(dateObj.toDateString());
+  const isNonProd = wknd || hol;
+
+  document.getElementById('weekNumLabel').textContent = 'Week '+getWeekNum(dateObj);
+  document.getElementById('dagDateLabel').textContent = DAYS_FULL[selDay]+' '+fmtDate(dateObj);
+  document.getElementById('waakBanner').style.display = isNonProd ? '' : 'none';
+
+  // Day selector
+  const ds = document.getElementById('daySelector');
+  ds.innerHTML = '';
+  const wkStart = startOfWeek(currentDate);
+  DAYS_NL.forEach((d, i) => {
+    const dt = addDays(wkStart, i);
+    const isH = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    const b = document.createElement('button');
+    b.className = 'day-btn'+(IS_WKND[i]?' weekend':'')+(isH?' holiday':'')+(i===selDay?' active':'');
+    b.innerHTML = `${d}<br><span style="font-size:10px;font-weight:400">${fmtShort(dt)}</span>`;
+    b.onclick = () => { selDay = i; renderDay(); };
+    ds.appendChild(b);
+  });
+
+  // Shift grid verwijderd — dagplanning toont totalen over alle diensten per regio/datacenter
+
+  // Filter teams for teamleider Z
+  const cfg = ROLE_CONFIG[currentRole];
+  const teams = teamsForRole();
+
+  // Build team rows
+  let tMt = 0, tAan = 0, tCap = 0, tBen = 0, tBenSet = false;
+  const alerts = [];
+  let rowsHtml = '';
+
+  teams.forEach(t => {
+    const mts = visibleMonteurs(t.id);
+    if (mts.length === 0) return;  // Skip teams zonder zichtbare monteurs
+    const total = mts.length;
+    const afwTypes = countAbsentByType(t.id, dateObj);
+    const afwTotal = afwTypes.verlof + afwTypes.cursus + afwTypes.ziek + afwTypes.compensatie;
+    const aan = afwTypes.aanwezig;  // Alleen mensen met een dienst-entry tellen als aanwezig
+    const nietIngepland = total - afwTypes.ingepland;
+    const cap = isNonProd ? 0 : afwTypes.werkUren;
+    const ds2 = isoDate(dateObj);
+    const benRaw = benodigd[t.id][ds2];
+    const ben = (benRaw !== undefined && benRaw !== null && benRaw !== '' && !isNaN(benRaw)) ? parseFloat(benRaw) : null;
+    const gap = (ben !== null && !isNonProd) ? cap - ben : null;
+    const pct = (ben !== null && ben > 0) ? Math.round(cap/ben*100) : null;
+    const dSt = isNonProd ? 'neutral' : dekStatus(pct);
+    const risk = getRisk(aan, total, t.min);
+    const bezPct = total > 0 ? Math.round(aan/total*100) : 0;
+
+    tMt += total; tAan += aan; tCap += cap;
+    if (ben !== null) { tBen += ben; tBenSet = true; }
+
+    if (risk === 'danger') alerts.push({label:t.label, msg:`Bezetting kritiek — ${aan}/${total} aanwezig, min. ${t.min}`, level:'danger'});
+    else if (risk === 'warn') alerts.push({label:t.label, msg:`Bezetting laag — ${bezPct}% (${aan}/${total})`, level:'warn'});
+    if (!isNonProd && gap !== null && gap < 0) alerts.push({label:t.label, msg:`Capaciteitstekort ${Math.abs(gap).toFixed(1)}u (${cap.toFixed(1)} beschikbaar / ${ben.toFixed(1)} benodigd)`, level:'danger'});
+
+    const fc = risk==='danger'?'#dc2626':risk==='warn'?'#d97706':'#16a34a';
+    const gc = gap===null?'#94a3b8':gap<0?'#dc2626':gap===0?'#d97706':'#16a34a';
+    const afwDisp = (afwTotal > 0 || nietIngepland > 0)
+      ? `<span style="color:#6b7280">${afwTotal>0 ? `v:${afwTypes.verlof} c:${afwTypes.cursus} z:${afwTypes.ziek}${afwTypes.compensatie>0?' k:'+afwTypes.compensatie+' ('+afwTypes.compUren.toFixed(afwTypes.compUren%1===0?0:1)+'u)':''}` : ''}${nietIngepland>0 ? (afwTotal>0?' | ':'')+'open:'+nietIngepland : ''}</span>`
+      : '—';
+
+    const canEditB = canEditBenodigd() && teamInFilter(t.id);
+    const benInputHtml = canEditB
+      ? `<input type="number" step="0.5" min="0" value="${ben===null?'':ben}" onchange="setBenodigd('${t.id}','${ds2}',this.value)" ${isNonProd?'disabled':''}>`
+      : `<span style="color:#6b7280">${ben===null?'—':ben}</span>`;
+
+    const statBadge = isNonProd ? '<span class="badge b-neutral">WAAK</span>'
+      : dSt==='ok' ? '<span class="badge b-ok">OK</span>'
+      : dSt==='warn' ? '<span class="badge b-warn">LET OP</span>'
+      : dSt==='danger' ? '<span class="badge b-danger">RISICO</span>'
+      : '<span class="badge b-neutral">—</span>';
+
+    rowsHtml += `<tr>
+      <td><strong>${t.label}</strong><br><span style="font-size:10px;color:#94a3b8">min. ${t.min}</span></td>
+      <td class="r">${total}</td>
+      <td>${afwDisp}</td>
+      <td class="r" style="color:${fc};font-weight:600">${aan}</td>
+      <td class="r">${isNonProd?'—':cap.toFixed(1)}</td>
+      <td class="c gap-cell">${benInputHtml}</td>
+      <td class="r" style="color:${gc};font-weight:600">${gap===null?'—':(gap>=0?'+':'')+gap.toFixed(1)}</td>
+      <td class="c">${pct===null?'—':pct+'%'}</td>
+      <td>${statBadge}</td>
+    </tr>`;
+  });
+
+  document.getElementById('teamBody').innerHTML = rowsHtml;
+
+  // Footer
+  const totGap = tBenSet && !isNonProd ? tCap - tBen : null;
+  const totPct = tBenSet && tBen>0 ? Math.round(tCap/tBen*100) : null;
+  document.getElementById('teamFoot').innerHTML = `<tr>
+    <td>TOTAAL</td>
+    <td class="r">${tMt}</td>
+    <td>—</td>
+    <td class="r">${tAan}</td>
+    <td class="r">${isNonProd?'—':tCap.toFixed(1)}</td>
+    <td class="c">${tBenSet?tBen.toFixed(1):'—'}</td>
+    <td class="r">${totGap===null?'—':(totGap>=0?'+':'')+totGap.toFixed(1)}</td>
+    <td class="c">${totPct===null?'—':totPct+'%'}</td>
+    <td></td>
+  </tr>`;
+
+  // Metrics
+  document.getElementById('metricsBar').innerHTML = `
+    <div class="metric"><div class="metric-label">Monteurs totaal</div><div class="metric-value">${tMt}</div><div class="metric-sub">in ${teams.length} team(s)</div></div>
+    <div class="metric"><div class="metric-label">Aanwezig</div><div class="metric-value">${tAan}</div><div class="metric-sub">${tMt>0?Math.round(tAan/tMt*100):0}% bezetting</div></div>
+    <div class="metric"><div class="metric-label">Beschikbaar</div><div class="metric-value">${isNonProd?'0':tCap.toFixed(0)}<span style="font-size:13px;font-weight:500;color:#6b7280"> u</span></div><div class="metric-sub">alle diensten</div></div>
+    <div class="metric"><div class="metric-label">Benodigd</div><div class="metric-value">${tBenSet?tBen.toFixed(0):'—'}<span style="font-size:13px;font-weight:500;color:#6b7280"> u</span></div></div>
+    <div class="metric"><div class="metric-label">Dekkingsgraad</div><div class="metric-value ${totPct===null?'':totPct>=60?'c-ok':totPct>=45?'c-warn':'c-danger'}">${totPct===null?'—':totPct+'%'}</div></div>
+  `;
+
+  // Alerts
+  const al = document.getElementById('alertList');
+  if (alerts.length === 0){
+    al.innerHTML = '<li style="color:#16a34a"><span class="badge b-ok">OK</span> Geen risicosignalen voor deze dag.</li>';
+  } else {
+    al.innerHTML = alerts.map(a => `<li><span class="badge b-${a.level}">${a.level==='danger'?'!':'?'}</span><div><span class="alert-label">${a.label}</span><br><span style="color:#6b7280">${a.msg}</span></div></li>`).join('');
+  }
+}
+
+function setBenodigd(teamId, dateStr, val){
+  if (val === '' || val === null){
+    delete benodigd[teamId][dateStr];
+  } else {
+    benodigd[teamId][dateStr] = parseFloat(val);
+  }
+  renderDay();
+}
+
+/* =================== REGIO OVERVIEW (Grote Manager) =================== */
+/* ===== LIVE GRAFIEKEN (bars per regio/DC + 8-weken trend) — norm 60% ===== */
+function chartStatsForTeams(teamIds, dates){
+  // Som cap/ben over de gegeven dagen voor de gegeven teams (alle diensten)
+  let cap=0, ben=0, benSet=false;
+  dates.forEach(dt => {
+    const wknd = IS_WKND[(dt.getDay()+6)%7];
+    const hol = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    if (wknd || hol) return;
+    const ds = isoDate(dt);
+    teamIds.forEach(tid => {
+      cap += countAbsentByType(tid, dt).werkUren;
+      const b = benodigd[tid][ds];
+      if (b !== undefined && b !== null && b !== '' && !isNaN(b)){ ben += parseFloat(b); benSet = true; }
+    });
+  });
+  return { cap, ben: benSet ? ben : null };
+}
+function chartBarHtml(label, cap, ben){
+  const pct = (ben !== null && ben > 0) ? Math.round(cap/ben*100) : null;
+  const st = dekStatus(pct);
+  const col = st==='ok' ? '#16a34a' : st==='warn' ? '#d97706' : st==='danger' ? '#dc2626' : '#cbd5e1';
+  const fill = pct === null ? 12 : Math.max(8, Math.min(pct, 100));
+  const num = pct === null
+    ? `<div class="rc-bar-num" style="color:#94a3b8">—</div>`
+    : `<div class="rc-bar-num">${cap.toFixed(0)}<small>/${ben.toFixed(0)}u</small></div>`;
+  return `<div class="rc-bar-group">
+    <div class="rc-bar-stack" style="height:100%;">
+      <div class="rc-bar-vrij" style="height:${100-fill}%;"></div>
+      <div class="rc-bar-bezet" style="height:${fill}%;background:${col};"><div class="rc-bar-pct">${pct===null?'—':pct+'%'}</div></div>
+      ${num}
+    </div>
+    <div class="rc-bar-label">${label}</div>
+  </div>`;
+}
+function renderCharts(dates){
+  // Regio-bars (5 regio's) — altijd over volledige teams, ongeacht drill-down
+  const regioEl = document.getElementById('regioBarsChart');
+  if (regioEl){
+    regioEl.innerHTML = TEAM_DEFS.filter(t => t.type === 'regio').map(t => {
+      const s = chartStatsForTeams([t.id], dates);
+      return chartBarHtml(t.id, s.cap, s.ben);
+    }).join('');
+  }
+  // DC-bars (4 ZARA's)
+  const dcEl = document.getElementById('dcBarsChart');
+  if (dcEl){
+    dcEl.innerHTML = TEAM_DEFS.filter(t => t.type === 'zara').map(t => {
+      const s = chartStatsForTeams([t.id], dates);
+      return chartBarHtml(t.label.replace('ZARA ','').slice(0,3).toUpperCase(), s.cap, s.ben);
+    }).join('');
+  }
+  renderTrendChart();
+}
+function renderTrendChart(){
+  const svg = document.getElementById('trendSvg');
+  if (!svg) return;
+  const allIds = TEAM_DEFS.map(t => t.id);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const curWs = startOfWeek(today);
+  const pts = [];
+  for (let o = -7; o <= 0; o++){
+    const ws = addDays(curWs, o*7);
+    const dates = []; for (let i=0;i<7;i++) dates.push(addDays(ws,i));
+    const s = chartStatsForTeams(allIds, dates);
+    const pct = (s.ben !== null && s.ben > 0) ? Math.round(s.cap/s.ben*100) : null;
+    pts.push({ wk: getWeekNum(ws), pct, now: o===0 });
+  }
+  const hasData = pts.some(p => p.pct !== null);
+  document.getElementById('trendEmpty').style.display = hasData ? 'none' : 'flex';
+  document.getElementById('trendYAxis').innerHTML = [100,75,50,25,0].map((v,i) =>
+    `<div style="position:absolute; right:6px; top:${i*25}%; transform:translateY(-50%); font-size:9px; color:#94a3b8;">${v}%</div>`).join('');
+  document.getElementById('trendXAxis').innerHTML = pts.map(p =>
+    `<span style="font-size:10px; color:${p.now?'#d97706':'#64748b'}; font-weight:${p.now?'800':'600'};">w${p.wk}${p.now?' (nu)':''}</span>`).join('');
+
+  if (!hasData){ svg.innerHTML = ''; return; }
+  const X = i => 50 + i*(750/(pts.length-1));
+  const Y = pct => 200 - Math.min(100, Math.max(0, pct)) * 2;  // 0–100% → 200–0
+  let out = '';
+  // gridlijnen + normlijn 60%
+  [25,50,75].forEach(v => { out += `<line x1="0" y1="${Y(v)}" x2="800" y2="${Y(v)}" stroke="#f1f5f9" stroke-width="1"/>`; });
+  out += `<line x1="0" y1="${Y(60)}" x2="800" y2="${Y(60)}" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+  out += `<text x="790" y="${Y(60)-5}" font-size="9" fill="#16a34a" text-anchor="end">Norm 60%</text>`;
+  const valid = pts.map((p,i)=>({...p,i})).filter(p => p.pct !== null);
+  if (valid.length > 1){
+    const line = valid.map(p => `${X(p.i)},${Y(p.pct)}`).join(' ');
+    out += `<polyline points="${line} ${X(valid[valid.length-1].i)},200 ${X(valid[0].i)},200" fill="rgba(6,90,130,0.08)" stroke="none"/>`;
+    out += `<polyline points="${line}" fill="none" stroke="#065a82" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  valid.forEach(p => {
+    const col = p.pct >= 60 ? '#16a34a' : p.pct >= 45 ? '#d97706' : '#dc2626';
+    out += `<circle cx="${X(p.i)}" cy="${Y(p.pct)}" r="${p.now?5:4}" fill="${p.now?'#d97706':col}" ${p.now?'stroke="white" stroke-width="2"':''}/>`;
+    out += `<text x="${X(p.i)}" y="${Math.max(12, Y(p.pct)-8)}" font-size="10" fill="#064e6a" font-weight="700" text-anchor="middle">${p.pct}%</text>`;
+  });
+  svg.innerHTML = out;
+}
+
+function renderRegio(){
+  const periode = document.getElementById('regioPeriode').value;
+  // Dienst-filter vervallen — overzicht gaat altijd over alle diensten (hele regio's/datacenters)
+  const shkRaw = 'alledag';
+  const shk = 'dag';
+  const sh = SHIFTS[shk] || SHIFTS['dag'];
+
+  // Bepaal periode (array van dates die we meenemen)
+  let dates = [];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (periode === 'vandaag'){
+    dates = [today];
+  } else if (periode === 'deze_week'){
+    const ws = startOfWeek(today);
+    for (let i=0;i<7;i++) dates.push(addDays(ws,i));
+  } else if (periode === 'deze_maand'){
+    // Hele maand
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth()+1, 0);
+    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate()+1)){
+      dates.push(new Date(d));
+    }
+  } else if (periode === 'heel_jaar'){
+    // Hele jaar vanaf vandaag
+    const firstDay = new Date(today.getFullYear(), 0, 1);
+    const lastDay = new Date(today.getFullYear(), 11, 31);
+    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate()+1)){
+      dates.push(new Date(d));
+    }
+  } else {
+    // komende_4w (Kwartaal-achtig: 13 weken)
+    const ws = startOfWeek(today);
+    for (let i=0;i<91;i++) dates.push(addDays(ws,i));
+  }
+
+  // Bepaal welke teams getoond worden - filter op drill-down indien actief
+  const regioTeams = TEAM_DEFS.filter(t => t.type === 'regio');
+  let alleTeams = TEAM_DEFS;
+  if (selectedMapFilter){
+    alleTeams = TEAM_DEFS.filter(t => t.id === selectedMapFilter.teamId);
+  }
+
+  // Per regio/team: totaal cap, totaal benodigd, prod-dagen, monteurs
+  const stats = {};
+  alleTeams.forEach(t => {
+    const mts = monteurs[t.id] || [];
+    let totCap = 0, totBen = 0, prodDagen = 0, totAan = 0, totAfw = 0, benSet = false;
+    dates.forEach(dt => {
+      const wknd = IS_WKND[(dt.getDay()+6)%7];
+      const hol = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+      if (wknd || hol) return;
+      prodDagen++;
+      const afw = countAbsentByType(t.id, dt);
+      const afwTot = afw.verlof + afw.cursus + afw.ziek + afw.compensatie;
+      const aan = afw.aanwezig;
+      totAan += aan;
+      totAfw += afwTot;
+      totCap += afw.werkUren;
+      const ds = isoDate(dt);
+      if (benodigd[t.id][ds] !== undefined){
+        totBen += parseFloat(benodigd[t.id][ds]);
+        benSet = true;
+      }
+    });
+    stats[t.id] = { totCap, totBen, prodDagen, totAan, totAfw, benSet, team:t, monteurs:mts.length };
+  });
+
+  // Global KPI's - bij drill-down alleen voor geselecteerde teams
+  // Teamleider Z ziet alleen ZARA-teams in de KPI-totalen
+  const isTeamleiderZdash = currentRole === 'teamleider';
+  const zaraIdsForKpi = ['ZARA_AMS','ZARA_ROT','ZARA_ARN','ZARA_ZWO'];
+  let gCap=0, gBen=0, gAan=0, gMt=0, gDagen=0, gBenSet=false;
+  let kpiTeams;
+  if (selectedMapFilter){
+    kpiTeams = alleTeams;
+  } else if (isTeamleiderZdash){
+    kpiTeams = TEAM_DEFS.filter(t => zaraIdsForKpi.includes(t.id));
+  } else {
+    kpiTeams = TEAM_DEFS;
+  }
+  kpiTeams.forEach(t => {
+    const s = stats[t.id] || { totCap:0, totBen:0, totAan:0, prodDagen:0, monteurs:(monteurs[t.id]||[]).length, benSet:false };
+    gCap += s.totCap;
+    gBen += s.totBen;
+    gAan += s.totAan;
+    gMt += s.monteurs;
+    gDagen += s.prodDagen;
+    if (s.benSet) gBenSet = true;
+  });
+  const gPct = gBenSet && gBen > 0 ? Math.round(gCap/gBen*100) : null;
+
+  const scopeLabel = selectedMapFilter
+    ? `&#128269; ${selectedMapFilter.label}`
+    : isTeamleiderZdash ? 'Alle ZARA-locaties' : 'Alle regio\'s';
+
+  document.getElementById('regioKpis').innerHTML = `
+    <div class="metric"><div class="metric-label">Scope</div><div class="metric-value" style="font-size:16px;line-height:1.3">${scopeLabel}</div><div class="metric-sub">${selectedMapFilter?'drill-down actief':'totaalweergave'}</div></div>
+    <div class="metric"><div class="metric-label">Monteurs</div><div class="metric-value">${gMt}</div><div class="metric-sub">in ${kpiTeams.length} team(s)</div></div>
+    <div class="metric"><div class="metric-label">Beschikbaar</div><div class="metric-value">${gCap.toFixed(0)}<span style="font-size:13px;font-weight:500;color:#6b7280"> u</span></div><div class="metric-sub">alle diensten</div></div>
+    <div class="metric"><div class="metric-label">Benodigd</div><div class="metric-value">${gBenSet?gBen.toFixed(0):'—'}<span style="font-size:13px;font-weight:500;color:#6b7280"> u</span></div></div>
+    <div class="metric"><div class="metric-label">Dekkingsgraad</div><div class="metric-value ${gPct===null?'':gPct>=60?'c-ok':gPct>=45?'c-warn':'c-danger'}">${gPct===null?'—':gPct+'%'}</div><div class="metric-sub">capaciteit vs. behoefte</div></div>
+  `;
+
+  // Regio kaarten - toon alle teams (regio's + ZARA + Technocenter)
+  const gridTeams = selectedMapFilter ? alleTeams : TEAM_DEFS;
+  document.getElementById('regioGrid').innerHTML = gridTeams.map(t => {
+    const s = stats[t.id];
+    if (!s) return '';
+    const pct = s.benSet && s.totBen > 0 ? Math.round(s.totCap/s.totBen*100) : null;
+    const st = pct===null?'neutral':pct>=60?'ok':pct>=45?'warn':'danger';
+    const bar = Math.min(pct||0, 150);
+    return `<div class="regio-card" style="border-top:3px solid ${t.color}">
+      <div class="regio-card-title">
+        <span>${t.label}</span>
+        <span style="font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">${s.monteurs} mont.</span>
+      </div>
+      <div class="regio-card-sub">${s.prodDagen} productie-dag(en) in periode</div>
+      <div class="regio-stats">
+        <div class="regio-stat"><div class="regio-stat-lbl">Beschikbaar</div><div class="regio-stat-val">${s.totCap.toFixed(0)} u</div></div>
+        <div class="regio-stat"><div class="regio-stat-lbl">Benodigd</div><div class="regio-stat-val">${s.benSet?s.totBen.toFixed(0)+' u':'—'}</div></div>
+      </div>
+      <div class="regio-dekking">
+        <div class="regio-pct-row">
+          <span style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600">Dekkingsgraad</span>
+          <span class="regio-pct ${st==='ok'?'c-ok':st==='warn'?'c-warn':st==='danger'?'c-danger':''}">${pct===null?'—':pct+'%'}</span>
+        </div>
+        ${pct!==null?`<div class="dekking-bar"><div class="dekking-fill ${st}" style="width:${Math.min(bar,100)}%"></div></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // ============ NIEUWE 3-SECTIES DASHBOARD (Optie B) ============
+  const tileHTML = (t, s) => {
+    const pct = s.benSet && s.totBen > 0 ? Math.round(s.totCap/s.totBen*100) : null;
+    const st = pct===null?'neutral':pct>=60?'ok':pct>=45?'warn':'danger';
+    const stLbl = pct===null?'—':pct>=60?'OK':pct>=45?'LET OP':'RISICO';
+    const statusDot = pct===null?'s-neutral':pct>=60?'s-ok':pct>=45?'s-warn':'s-danger';
+    const pctClass = pct===null?'':pct>=60?'c-ok':pct>=45?'c-warn':'c-danger';
+    return `<div class="dash-tile" style="border-left-color:${t.color}" onclick="drillIntoTeam('${t.id}')">
+      <div class="dash-tile-name">
+        <span>${t.label}</span>
+        <span class="tile-dot ${statusDot}"></span>
+      </div>
+      <div class="dash-tile-sub">${s.monteurs} monteurs • ${s.prodDagen} prod.dag(en)</div>
+      <div class="dash-tile-data">
+        <div class="dash-tile-row"><span class="dash-tile-row-lbl">Beschikbaar</span><span class="dash-tile-row-val">${s.totCap.toFixed(0)} u</span></div>
+        <div class="dash-tile-row"><span class="dash-tile-row-lbl">Benodigd</span><span class="dash-tile-row-val">${s.benSet?s.totBen.toFixed(0)+' u':'—'}</span></div>
+        <div class="dash-tile-row" style="margin-top:6px"><span class="dash-tile-row-lbl">Dekking</span><span class="dash-tile-pct ${pctClass}">${pct===null?'—':pct+'%'}</span></div>
+      </div>
+      <span class="dash-tile-status st-${st}">${stLbl}</span>
+    </div>`;
+  };
+
+  // Groepering: regio / zara / techno
+  const regioIds = ['NW','NO','MI','ZW','ZO'];
+  const zaraIds = ['ZARA_AMS','ZARA_ROT','ZARA_ARN','ZARA_ZWO'];
+  const technoIds = ['TECHNO'];
+
+  // Teamleider Z ziet alleen ZARA-sectie op dashboard
+  const isTeamleiderZ = currentRole === 'teamleider';
+  const showRegio = !isTeamleiderZ;
+  const showTechno = !isTeamleiderZ;
+
+  // Verberg/toon secties op basis van rol
+  const regioCard = document.querySelector('.section-card.sec-regio');
+  const technoCard = document.querySelector('.section-card.sec-techno');
+  if (regioCard) regioCard.style.display = showRegio ? '' : 'none';
+  if (technoCard) technoCard.style.display = showTechno ? '' : 'none';
+
+  const renderSection = (elId, ids, subElId) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    let totalMont = 0;
+    const tiles = ids.map(id => {
+      const t = TEAM_DEFS.find(x => x.id === id);
+      if (!t) return '';
+      const s = stats[t.id];
+      if (!s) return '';
+      totalMont += s.monteurs;
+      return tileHTML(t, s);
+    }).filter(Boolean).join('');
+    el.innerHTML = tiles;
+    const subEl = document.getElementById(subElId);
+    if (subEl) subEl.textContent = totalMont + ' monteurs totaal';
+  };
+
+  if (showRegio) renderSection('sectionRegio', regioIds, 'regioSubMonteurs');
+  renderSection('sectionZara', zaraIds, 'zaraSubMonteurs');
+  if (showTechno) renderSection('sectionTechno', technoIds, 'technoSubMonteurs');
+
+  // ============ JAAR-KPI's BOVENAAN (Weken OK / Let op / Risico / Jaargap) ============
+  renderJaarKpis();
+
+  // Vergelijkingstabel - alle teams (bij drill-down gedimd via CSS)
+  let tblHtml = `<thead><tr>
+    <th class="l">Team / Regio</th>
+    <th>Monteurs</th>
+    <th>Aanwezig (tot)</th>
+    <th>Beschikbaar (u)</th>
+    <th>Benodigd (u)</th>
+    <th>Gap</th>
+    <th>Dekking</th>
+    <th>Status</th>
+  </tr></thead><tbody>`;
+
+  // Altijd alle teams in vergelijking (ook bij drill-down) voor context
+  // Maar voor Teamleider Z: alleen ZARA-teams tonen
+  const compareTeams = isTeamleiderZ
+    ? TEAM_DEFS.filter(t => zaraIds.includes(t.id))
+    : TEAM_DEFS;
+  compareTeams.forEach(t => {
+    // Re-calculate stats voor alle teams (niet alleen drill-down selectie)
+    const mts = monteurs[t.id] || [];
+    let tCap=0, tBen=0, tPd=0, tAan=0, tBenSet=false;
+    dates.forEach(dt => {
+      const wk = IS_WKND[(dt.getDay()+6)%7];
+      const hl = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+      if (wk||hl) return;
+      tPd++;
+      const afw = countAbsentByType(t.id, dt);
+      const afwT = afw.verlof+afw.cursus+afw.ziek+afw.compensatie;
+      const aan = afw.aanwezig;
+      tAan += aan;
+      tCap += afw.werkUren;
+      const ds = isoDate(dt);
+      if (benodigd[t.id][ds]!==undefined){ tBen += parseFloat(benodigd[t.id][ds]); tBenSet=true; }
+    });
+    const pct = tBenSet && tBen>0 ? Math.round(tCap/tBen*100) : null;
+    const gap = tBenSet ? tCap - tBen : null;
+    const st = pct===null?'neutral':pct>=60?'ok':pct>=45?'warn':'danger';
+    const stLbl = {ok:'OK',warn:'LET OP',danger:'RISICO',neutral:'—'}[st];
+    const cls = st==='ok'?'cell-ok':st==='warn'?'cell-warn':st==='danger'?'cell-danger':'cell-waak';
+    const highlight = selectedMapFilter && selectedMapFilter.teamId === t.id ? 'background:#eff6ff;font-weight:700' : '';
+    tblHtml += `<tr style="${highlight}">
+      <td class="l"><strong>${t.label}</strong>${selectedMapFilter && selectedMapFilter.teamId === t.id ? ' &#128269;':''}</td>
+      <td>${mts.length}</td>
+      <td>${tAan}</td>
+      <td>${tCap.toFixed(0)}</td>
+      <td>${tBenSet?tBen.toFixed(0):'—'}</td>
+      <td style="color:${gap===null?'#94a3b8':gap<0?'#dc2626':'#16a34a'};font-weight:600">${gap===null?'—':(gap>=0?'+':'')+gap.toFixed(0)}</td>
+      <td><span class="${cls}">${pct===null?'—':pct+'%'}</span></td>
+      <td><span class="badge b-${st==='neutral'?'neutral':st}">${stLbl}</span></td>
+    </tr>`;
+  });
+  tblHtml += '</tbody>';
+  document.getElementById('regioCompareTable').innerHTML = tblHtml;
+
+  // Live grafieken (bars + trend) verversen met dezelfde periode
+  renderCharts(dates);
+}
+
+/* =================== NL MAP INTERACTIE =================== */
+
+// Datacenter-locaties — info die in tooltip getoond wordt
+const DC_INFO = {
+  ams: { name:'ZARA Amsterdam',       stad:'Amsterdam', regio:'Noordwest', regioCode:'NW', teamId:'ZARA_AMS', monteurs:12, rol:'Hoofdlocatie ZARA' },
+  rot: { name:'ZARA Rotterdam',       stad:'Rotterdam', regio:'Zuidwest',  regioCode:'ZW', teamId:'ZARA_ROT', monteurs:5,  rol:'Secundair datacenter' },
+  arn: { name:'ZARA Arnhem',          stad:'Arnhem',    regio:'Noordoost', regioCode:'NO', teamId:'ZARA_ARN', monteurs:3,  rol:'Oost-Nederland' },
+  zwo: { name:'ZARA Zwolle',          stad:'Zwolle',    regio:'Noordoost', regioCode:'NO', teamId:'ZARA_ZWO', monteurs:1,  rol:'Noord-Nederland' },
+  utr: { name:'Technocenter Utrecht', stad:'Utrecht',   regio:'Midden',    regioCode:'MI', teamId:'TECHNO',   monteurs:7,  rol:'Centrale hub / Technocenter' }
+};
+
+function showDcTooltip(evt, dcId){
+  const tt = document.getElementById('mapTooltip');
+  const info = DC_INFO[dcId];
+  if (!info) return;
+
+  // Haal live capaciteitsdata op basis van huidige regio-view instellingen
+  const shkRaw = 'alledag';
+  const sh = SHIFTS[shkRaw === 'alledag' ? 'dag' : shkRaw];
+  const today = new Date();
+  const wknd = IS_WKND[(today.getDay()+6)%7];
+  const hol = getHolidaySet(today.getFullYear()).has(today.toDateString());
+  const prod = !wknd && !hol;
+  const teamMts = monteurs[info.teamId]?.length || 0;
+  const afw = countAbsentByType(info.teamId, today);
+  const afwTot = afw.verlof + afw.cursus + afw.ziek + afw.compensatie;
+  const totAan = Math.max(0, teamMts - afwTot);
+  // Verdeel aanwezigheid naar deze locatie naar rato
+  const locAan = teamMts > 0 ? Math.round(totAan * (info.monteurs / teamMts)) : 0;
+
+  // Icoon: technocenter heeft ander symbool
+  const icon = info.regioCode === 'MI' && info.name.includes('Techno') ? '&#127981;' : '&#127970;';
+
+  tt.innerHTML = `
+    <div class="map-tooltip-title">${icon} ${info.name}</div>
+    <div class="map-tooltip-row"><span>Stad:</span><strong>${info.stad}</strong></div>
+    <div class="map-tooltip-row"><span>Regio:</span><strong>${info.regio}</strong></div>
+    <div class="map-tooltip-row"><span>Monteurs (locatie):</span><strong>${info.monteurs}</strong></div>
+    <div class="map-tooltip-row"><span>Aanwezig nu:</span><strong>${prod ? locAan : '—'}</strong></div>
+    <div class="map-tooltip-row"><span>Type:</span><strong>${info.rol}</strong></div>`;
+
+  // Positie
+  const wrap = document.getElementById('mapWrap');
+  const rect = wrap.getBoundingClientRect();
+  tt.style.left = (evt.clientX - rect.left + 12) + 'px';
+  tt.style.top = (evt.clientY - rect.top - 10) + 'px';
+  tt.classList.add('show');
+}
+function hideDcTooltip(){
+  const tt = document.getElementById('mapTooltip');
+  if (tt) tt.classList.remove('show');
+}
+
+function initMapInteraction(){
+  // Regio-groups hebben al onclick/onmousemove in de SVG zelf, dus niks extra's nodig
+  // (Deze functie is een placeholder voor mogelijke uitbreidingen)
+}
+
+function showRegionTooltip(e, regioCode){
+  const info = REGIO_MAP[regioCode];
+  if (!info) return;
+  const team = TEAM_DEFS.find(t => t.id === info.teamId);
+  if (!team) return;
+  const tt = document.getElementById('mapTooltip');
+
+  // Toon data voor het achterliggende team (een regio-vlak kan onderdeel zijn van een groter team)
+  const mts = monteurs[team.id]?.length || 0;
+  const today = new Date();
+  const shkR = 'alledag';
+  const sh = SHIFTS[shkR === 'alledag' ? 'dag' : shkR];
+  const wknd = IS_WKND[(today.getDay()+6)%7];
+  const hol = getHolidaySet(today.getFullYear()).has(today.toDateString());
+  const prod = !wknd && !hol;
+  const afw = countAbsentByType(team.id, today);
+  const afwTot = afw.verlof + afw.cursus + afw.ziek + afw.compensatie;
+  const aan = Math.max(0, mts - afwTot);
+  const cap = prod ? afw.werkUren : 0;
+  const benRaw = benodigd[team.id][isoDate(today)];
+  const ben = (benRaw!==undefined && benRaw!==null && benRaw!=='' && !isNaN(benRaw)) ? parseFloat(benRaw) : null;
+  const pct = (ben && ben>0) ? Math.round(cap/ben*100) : null;
+
+  tt.innerHTML = `
+    <div class="map-tooltip-title">Regio ${info.label} (${regioCode})</div>
+    <div class="map-tooltip-row"><span>Monteurs:</span><strong>${mts}</strong></div>
+    <div class="map-tooltip-row"><span>Aanwezig:</span><strong>${prod?aan:'—'}</strong></div>
+    <div class="map-tooltip-row"><span>Beschikbaar:</span><strong>${prod?cap.toFixed(1)+' u':'waak'}</strong></div>
+    <div class="map-tooltip-row"><span>Dekking:</span><strong>${pct===null?'—':pct+'%'}</strong></div>
+    <div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.15);font-size:10px;color:#94a3b8">Klik voor meer details</div>`;
+  const wrap = document.getElementById('mapWrap');
+  const rect = wrap.getBoundingClientRect();
+  tt.style.left = (e.clientX - rect.left + 12) + 'px';
+  tt.style.top = (e.clientY - rect.top - 10) + 'px';
+  tt.classList.add('show');
+}
+
+/* =================== REGIO DRILL-DOWN =================== */
+
+function canDrillDown(){
+  // Alleen Grote Manager en Manager R/D mogen drill-down
+  return currentRole === 'manager' || currentRole === 'grotemgr';
+}
+
+// Mapping: visuele regio-code naar team id + label + kleur
+const REGIO_MAP = {
+  NW: { teamId:'NW', label:'Noordwest', color:'#fbbf24', textColor:'#92400e' },
+  NO: { teamId:'NO', label:'Noordoost', color:'#60a5fa', textColor:'#1e40af' },
+  MI: { teamId:'MI', label:'Midden',    color:'#a78bfa', textColor:'#5b21b6' },
+  ZW: { teamId:'ZW', label:'Zuidwest',  color:'#34d399', textColor:'#065f46' },
+  ZO: { teamId:'ZO', label:'Zuidoost',  color:'#f87171', textColor:'#991b1b' }
+};
+
+function onRegionClick(regioCode){
+  if (!canDrillDown()) return;
+  const info = REGIO_MAP[regioCode];
+  if (!info) return;
+  selectedMapFilter = {
+    type:'regio',
+    teamId: info.teamId,
+    regioCode: regioCode,
+    label: 'Regio ' + info.label
+  };
+  applyMapZoom();
+  openSlidePanel();
+  hideDcTooltip();
+}
+
+function onDcClick(dcId){
+  if (!canDrillDown()) return;
+  const info = DC_INFO[dcId];
+  if (!info) return;
+  selectedMapFilter = { type:'dc', teamId:info.teamId, label:info.name, dcId };
+  applyMapZoom();
+  openSlidePanel();
+  hideDcTooltip();
+}
+
+function openSlidePanel(){
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('spBackdrop').classList.add('show');
+  renderSlidePanel();
+}
+
+function closeSlidePanel(){
+  document.getElementById('slidePanel').classList.remove('open');
+  document.getElementById('spBackdrop').classList.remove('show');
+  selectedMapFilter = null;
+  applyMapZoom();
+}
+
+// Click op dashboard-tegel → drill-down naar slide-panel
+function drillIntoTeam(teamId){
+  const team = TEAM_DEFS.find(t => t.id === teamId);
+  if (!team) return;
+  selectedMapFilter = {
+    type:'regio',
+    teamId: team.id,
+    label: team.label,
+    regioCode: team.type === 'regio' ? team.id : null
+  };
+  renderSlidePanel();
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('spBackdrop').classList.add('show');
+  applyMapZoom();
+}
+
+// KPI's: dynamisch op basis van gekozen periode
+// - Vandaag: 1 dag bekeken (OK/Let op/Risico = of die dag wel/niet 100% gedekt is)
+// - Week: 1 week bekeken (idem, 1 telt OK of niet)
+// - Maand: alle weken in de huidige maand
+// - Kwartaal: alle weken in komende 13 weken
+// - Jaar: alle 52 weken van het jaar
+function renderJaarKpis(){
+  const el = document.getElementById('jaarKpis');
+  if (!el) return;
+  const shkRaw = 'alledag';
+  const shk = (shkRaw === 'alledag') ? 'dag' : shkRaw;
+  const sh = SHIFTS[shk] || SHIFTS['dag'];
+  const periode = document.getElementById('regioPeriode')?.value || 'heel_jaar';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const yr = today.getFullYear();
+
+  // Teamleider Z ziet alleen ZARA-teams in de KPI's
+  const isTeamleiderZ = currentRole === 'teamleider';
+  const zaraIdsKpi = ['ZARA_AMS','ZARA_ROT','ZARA_ARN','ZARA_ZWO'];
+  const kpiTeams = isTeamleiderZ
+    ? TEAM_DEFS.filter(t => zaraIdsKpi.includes(t.id))
+    : TEAM_DEFS;
+
+  // Bepaal welke periodes we meten en welk label te tonen
+  let periodeUnits = []; // array van {days:[Date], label?:string}
+  let unitNaam = '';     // 'dag', 'week', 'maand'
+  let scopeLabel = '';   // 'vandaag', 'deze week', 'deze maand', 'kwartaal', 'jaar'
+  let prefixOK, prefixWarn, prefixRisk, gapLabel, gapSub;
+
+  if (periode === 'vandaag'){
+    if (!IS_WKND[(today.getDay()+6)%7] && !getHolidaySet(yr).has(today.toDateString())){
+      periodeUnits.push({ days:[today] });
+    }
+    unitNaam = 'dag';
+    scopeLabel = 'vandaag';
+    prefixOK = 'VANDAAG OK';
+    prefixWarn = 'VANDAAG LET OP';
+    prefixRisk = 'VANDAAG RISICO';
+    gapLabel = 'Daggap Cap. vs Norm';
+    gapSub = 'vandaag';
+  } else if (periode === 'deze_week'){
+    const ws = startOfWeek(today);
+    const days = [];
+    for (let i=0;i<7;i++){
+      const dt = addDays(ws,i);
+      if (!IS_WKND[i] && !getHolidaySet(yr).has(dt.toDateString())) days.push(dt);
+    }
+    if (days.length) periodeUnits.push({ days });
+    unitNaam = 'week';
+    scopeLabel = 'deze week';
+    prefixOK = 'WEEK OK';
+    prefixWarn = 'WEEK LET OP';
+    prefixRisk = 'WEEK RISICO';
+    gapLabel = 'Weekgap Cap. vs Norm';
+    gapSub = 'deze week';
+  } else if (periode === 'deze_maand'){
+    // Alle weken in huidige maand
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth()+1, 0);
+    let monIter = startOfWeek(firstDay);
+    while (monIter <= lastDay){
+      const days = [];
+      for (let i=0;i<7;i++){
+        const dt = addDays(monIter,i);
+        if (dt >= firstDay && dt <= lastDay && !IS_WKND[i]
+            && !getHolidaySet(yr).has(dt.toDateString())){
+          days.push(dt);
+        }
+      }
+      if (days.length) periodeUnits.push({ days });
+      monIter = addDays(monIter, 7);
+    }
+    unitNaam = 'week';
+    scopeLabel = 'deze maand';
+    prefixOK = 'MAAND OK';
+    prefixWarn = 'MAAND LET OP';
+    prefixRisk = 'MAAND RISICO';
+    gapLabel = 'Maandgap Cap. vs Norm';
+    gapSub = 'deze maand';
+  } else if (periode === 'komende_4w'){
+    // Kwartaal = 13 weken vooruit
+    const ws = startOfWeek(today);
+    for (let w = 0; w < 13; w++){
+      const wsW = addDays(ws, w*7);
+      const days = [];
+      for (let i=0;i<7;i++){
+        const dt = addDays(wsW,i);
+        if (!IS_WKND[i] && !getHolidaySet(yr).has(dt.toDateString())) days.push(dt);
+      }
+      if (days.length) periodeUnits.push({ days });
+    }
+    unitNaam = 'week';
+    scopeLabel = 'komende 13 weken';
+    prefixOK = 'KWARTAAL OK';
+    prefixWarn = 'KWARTAAL LET OP';
+    prefixRisk = 'KWARTAAL RISICO';
+    gapLabel = 'Kwartaalgap Cap. vs Norm';
+    gapSub = 'kwartaal';
+  } else {
+    // heel_jaar - alle 52 weken
+    const firstMon = startOfWeek(new Date(yr, 0, 1));
+    for (let w = 0; w < 52; w++){
+      const wsW = addDays(firstMon, w*7);
+      if (wsW.getFullYear() > yr) break;
+      const days = [];
+      for (let i=0;i<7;i++){
+        const dt = addDays(wsW,i);
+        if (dt.getFullYear() === yr && !IS_WKND[i]
+            && !getHolidaySet(yr).has(dt.toDateString())){
+          days.push(dt);
+        }
+      }
+      if (days.length) periodeUnits.push({ days });
+    }
+    unitNaam = 'week';
+    scopeLabel = 'jaar';
+    prefixOK = 'JAAR OK';
+    prefixWarn = 'JAAR LET OP';
+    prefixRisk = 'JAAR RISICO';
+    gapLabel = 'Jaargap Cap. vs Norm';
+    gapSub = 'totaal jaar';
+  }
+
+  // Bereken per unit (dag of week) of OK/Let op/Risico/n.v.t.
+  const results = periodeUnits.map(u => {
+    let cap = 0, ben = 0, benSet = false;
+    kpiTeams.forEach(t => {
+      u.days.forEach(dt => {
+        const afw = countAbsentByType(t.id, dt);
+        cap += afw.werkUren;
+        const ds = isoDate(dt);
+        if (benodigd[t.id][ds] !== undefined){
+          ben += parseFloat(benodigd[t.id][ds]);
+          benSet = true;
+        }
+      });
+    });
+    const pct = benSet && ben > 0 ? Math.round(cap/ben*100) : null;
+    return { cap, ben, pct, benSet };
+  });
+
+  const okCount = results.filter(r => r.pct !== null && r.pct >= 60).length;
+  const warnCount = results.filter(r => r.pct !== null && r.pct >= 45 && r.pct < 60).length;
+  const dangerCount = results.filter(r => r.pct !== null && r.pct < 75).length;
+
+  // Jaargap blijft ALTIJD het hele jaar — onafhankelijk van gekozen periode
+  // Dit helpt voor langetermijnplanning
+  let jaarCap = 0, jaarBen = 0, jaarBenSet = false;
+  const jaarFirstMon = startOfWeek(new Date(yr, 0, 1));
+  for (let w = 0; w < 52; w++){
+    const wsW = addDays(jaarFirstMon, w*7);
+    if (wsW.getFullYear() > yr) break;
+    for (let i=0;i<7;i++){
+      const dt = addDays(wsW,i);
+      if (dt.getFullYear() === yr && !IS_WKND[i]
+          && !getHolidaySet(yr).has(dt.toDateString())){
+        kpiTeams.forEach(t => {
+          const afw = countAbsentByType(t.id, dt);
+          jaarCap += afw.werkUren;
+          const ds = isoDate(dt);
+          if (benodigd[t.id][ds] !== undefined){
+            jaarBen += parseFloat(benodigd[t.id][ds]);
+            jaarBenSet = true;
+          }
+        });
+      }
+    }
+  }
+  const jaargap = jaarBenSet ? jaarCap - jaarBen : null;
+  const gapStr = jaargap === null ? '—' : (jaargap >= 0 ? '+' : '') + jaargap.toFixed(0) + ' u';
+  const gapClass = jaargap === null ? '' : jaargap >= 0 ? 'c-ok' : 'c-danger';
+
+  // Sub-tekst voor de OK/Warn/Risk metrics
+  const totalUnits = results.length;
+  const subOk = totalUnits > 0 ? `van ${totalUnits} ${unitNaam}${totalUnits!==1?'en':''} gemeten` : `(geen ${unitNaam}en in scope)`;
+  const subWarn = 'bezetting suboptimaal';
+  const subRisk = 'onderbezetting';
+
+  el.innerHTML = `
+    <div class="metric"><div class="metric-label">${prefixOK} (≥100%)</div><div class="metric-value c-ok">${okCount}</div><div class="metric-sub">${subOk}</div></div>
+    <div class="metric"><div class="metric-label">${prefixWarn} (75-99%)</div><div class="metric-value c-warn">${warnCount}</div><div class="metric-sub">${subWarn}</div></div>
+    <div class="metric"><div class="metric-label">${prefixRisk} (&lt;75%)</div><div class="metric-value c-danger">${dangerCount}</div><div class="metric-sub">${subRisk}</div></div>
+    <div class="metric"><div class="metric-label">Jaargap Cap. vs Norm</div><div class="metric-value ${gapClass}">${gapStr}</div><div class="metric-sub">altijd hele jaar</div></div>
+  `;
+}
+
+function renderSlidePanel(){
+  if (!selectedMapFilter) return;
+  const team = TEAM_DEFS.find(t => t.id === selectedMapFilter.teamId);
+  if (!team) return;
+  let mts = visibleMonteurs(team.id);
+  // Voor DC-klik: filter op de monteurs die op deze specifieke DC werken
+  if (selectedMapFilter.type === 'dc' && selectedMapFilter.dcId){
+    mts = mts.filter(m => m.dc === selectedMapFilter.dcId);
+  }
+  const sh = SHIFTS['dag'];
+  const today = new Date();
+
+  // Titel en subtitel afhankelijk van of het een DC of regio is
+  let title = '';
+  let sub = '';
+  if (selectedMapFilter.type === 'dc'){
+    const dcInfo = DC_INFO[selectedMapFilter.dcId];
+    const icon = selectedMapFilter.dcId === 'utr' ? '&#127981;' : '&#127970;';
+    title = `${icon} ${selectedMapFilter.label}`;
+    sub = `Datacenter in ${dcInfo.stad} (${dcInfo.regio}) — team: ${team.label}`;
+  } else if (selectedMapFilter.regioCode){
+    const regioInfo = REGIO_MAP[selectedMapFilter.regioCode];
+    title = `Regio ${regioInfo.label} (${selectedMapFilter.regioCode})`;
+    sub = `${mts.length} monteurs • min. bezetting ${team.min}`;
+  }
+
+  document.getElementById('spTitle').innerHTML = title;
+  document.getElementById('spSub').textContent = sub;
+
+  // Week stats
+  const ws = startOfWeek(today);
+  let weekCap=0, weekBen=0, prodDagen=0, benSet=false;
+  const rows = [];
+  for (let i=0;i<7;i++){
+    const dt = addDays(ws,i);
+    const wk = IS_WKND[i];
+    const hl = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    const prod = !wk && !hl;
+    const afw = countAbsentByType(team.id, dt);
+    const afwT = afw.verlof + afw.cursus + afw.ziek + afw.compensatie;
+    const aan = afw.aanwezig;
+    const cap = prod ? afw.werkUren : 0;
+    if (prod) { prodDagen++; weekCap += cap; }
+    const ben = benodigd[team.id][isoDate(dt)];
+    const benNum = (ben!==undefined && ben!=='' && !isNaN(ben)) ? parseFloat(ben) : null;
+    if (benNum!==null && prod) { weekBen += benNum; benSet = true; }
+    const pct = benNum && benNum>0 && prod ? Math.round(cap/benNum*100) : null;
+    rows.push({dt, prod, aan, afwT, cap, benNum, pct});
+  }
+  const weekPct = benSet && weekBen>0 ? Math.round(weekCap/weekBen*100) : null;
+  const st = weekPct===null?'neutral':weekPct>=60?'ok':weekPct>=45?'warn':'danger';
+  const stCol = st==='ok'?'#16a34a':st==='warn'?'#d97706':st==='danger'?'#dc2626':'#6b7280';
+
+  // Monteur lijst met status van vandaag
+  const todayAfw = rooster[isoDate(today)] || {};
+  const montItems = mts.map(m => {
+    const e = todayAfw[m.name];
+    const status = e ? typeLabel(e.type) : 'Aanwezig';
+    const col = e ? (e.type==='ziek'?'#fee2e2;color:#b91c1c':['verlof','cursus'].includes(e.type)?'#dbeafe;color:#1d4ed8':'#f3e8ff;color:#6b21a8') : '#d1fae5;color:#065f46';
+    return `<div class="sp-mont-item"><strong>${m.name}</strong><span class="sp-mont-status" style="background:${col}">${status}</span></div>`;
+  }).join('');
+
+  // Eventueel: note als de regio maar een deel van het team is
+  let contextNote = '';
+  if (selectedMapFilter.regioCode && selectedMapFilter.type === 'regio'){
+    const regio = REGIO_MAP[selectedMapFilter.regioCode];
+    const siblings = Object.entries(REGIO_MAP)
+      .filter(([c, i]) => i.teamId === regio.teamId && c !== selectedMapFilter.regioCode)
+      .map(([c, i]) => i.label)
+      .join(' & ');
+    if (siblings){
+      contextNote = `<div style="margin-top:.6rem;padding:.6rem .75rem;background:#fef9c3;border:1px solid #fde68a;border-radius:7px;font-size:11px;color:#78350f"><strong>Let op:</strong> data is gedeeld met <strong>${siblings}</strong>.</div>`;
+    }
+  }
+
+  document.getElementById('spBody').innerHTML = `
+    <div class="sp-section">
+      <h4>Dekkingsgraad deze week</h4>
+      <div class="sp-pct-big" style="color:${stCol}">${weekPct===null?'—':weekPct+'%'}</div>
+      ${weekPct!==null?`<div class="sp-bar"><div class="sp-bar-fill" style="width:${Math.min(weekPct,100)}%;background:${stCol}"></div></div>`:''}
+      ${contextNote}
+    </div>
+
+    <div class="sp-section">
+      <h4>Week-overzicht</h4>
+      <div class="sp-stat-row">
+        <div class="sp-stat"><div class="sp-stat-lbl">Monteurs</div><div class="sp-stat-val">${mts.length}</div></div>
+        <div class="sp-stat"><div class="sp-stat-lbl">Prod.dagen</div><div class="sp-stat-val">${prodDagen}</div></div>
+        <div class="sp-stat"><div class="sp-stat-lbl">Cap. (u)</div><div class="sp-stat-val">${weekCap.toFixed(0)}</div></div>
+        <div class="sp-stat"><div class="sp-stat-lbl">Benodigd</div><div class="sp-stat-val">${benSet?weekBen.toFixed(0):'—'}</div></div>
+      </div>
+    </div>
+
+    <div class="sp-section">
+      <h4>Dagen deze week</h4>
+      <table class="sp-week-table">
+        <thead><tr><th class="l">Dag</th><th>Aan</th><th>Afw</th><th>Cap</th><th>Dekk.</th></tr></thead>
+        <tbody>
+        ${rows.map((r,i) => {
+          const cls = !r.prod ? 'cell-waak' : r.pct===null?'cell-waak':r.pct>=60?'cell-ok':r.pct>=45?'cell-warn':'cell-danger';
+          return `<tr><td class="l"><strong>${DAYS_NL[i]}</strong> ${fmtShort(r.dt)}</td><td>${r.prod?r.aan:'—'}</td><td>${r.afwT||'—'}</td><td>${r.prod?r.cap.toFixed(0):'—'}</td><td><span class="${cls}">${!r.prod?'W':r.pct===null?'—':r.pct+'%'}</span></td></tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sp-section">
+      <h4>Monteurs (status vandaag)</h4>
+      <div class="sp-mont-list">${montItems}</div>
+    </div>
+  `;
+}
+
+function applyMapZoom(){
+  const svg = document.getElementById('nlMap');
+  const pageRegio = document.getElementById('page-regio');
+  if (!svg) return;
+
+  // Reset visuele selectie
+  svg.querySelectorAll('.regio-group').forEach(g => g.classList.remove('selected'));
+  svg.querySelectorAll('.dc-marker').forEach(m => m.classList.remove('active'));
+
+  if (!selectedMapFilter){
+    pageRegio.classList.remove('drill-active');
+    return;
+  }
+
+  // Markeer regio-group op data-regio
+  svg.querySelectorAll('.regio-group').forEach(g => {
+    let match = false;
+    if (selectedMapFilter.regioCode){
+      match = g.dataset.regio === selectedMapFilter.regioCode;
+    } else if (selectedMapFilter.dcId){
+      const info = DC_INFO[selectedMapFilter.dcId];
+      match = info && g.dataset.regio === info.regioCode;
+    }
+    g.classList.toggle('selected', match);
+  });
+
+  // Datacenters markeren
+  svg.querySelectorAll('.dc-marker').forEach(m => {
+    const dc = m.dataset.dc;
+    const info = DC_INFO[dc];
+    let active = false;
+    if (selectedMapFilter.dcId){
+      active = dc === selectedMapFilter.dcId;
+    } else if (selectedMapFilter.regioCode && info){
+      active = info.regioCode === selectedMapFilter.regioCode;
+    }
+    m.classList.toggle('active', active);
+  });
+  pageRegio.classList.add('drill-active');
+}
+
+function resetMapZoom(){
+  selectedMapFilter = null;
+  applyMapZoom();
+  renderRegio();
+}
+function changeYear(d){ yearViewYear += d; renderYear(); }
+
+function populateYearTeamSel(){
+  const sel = document.getElementById('yearTeamSel');
+  sel.innerHTML = '<option value="all">Alle teams (totaal)</option>';
+  const cfg = ROLE_CONFIG[currentRole];
+  const teams = teamsForRole();
+  teams.forEach(t => {
+    sel.innerHTML += `<option value="${t.id}">${t.label}</option>`;
+  });
+}
+
+function renderYear(){
+  document.getElementById('yearLabel').textContent = yearViewYear;
+  const shk = document.getElementById('yearShiftSel').value;
+  const sh = SHIFTS[shk];
+  const teamSel = document.getElementById('yearTeamSel').value;
+  const cfg = ROLE_CONFIG[currentRole];
+
+  let targetTeams;
+  if (teamSel === 'all'){
+    targetTeams = teamsForRole();
+  } else {
+    targetTeams = TEAM_DEFS.filter(t => t.id === teamSel);
+  }
+  const teamLbl = teamSel==='all' ? '(alle teams totaal)' : `(${TEAM_DEFS.find(t=>t.id===teamSel)?.label})`;
+  document.getElementById('yearTeamLbl').textContent = teamLbl;
+
+  const hols = getHolidaySet(yearViewYear);
+
+  // Build week data
+  const weeks = [];
+  let d = new Date(yearViewYear, 0, 1);
+  // Naar eerste maandag
+  while (d.getDay() !== 1) d.setDate(d.getDate()-1);
+  // 53 weken max
+  for (let w=0; w<53; w++){
+    const wkStart = new Date(d);
+    const days = [];
+    let prod = 0;
+    for (let i=0; i<7; i++){
+      const dt = addDays(wkStart, i);
+      const isW = i>=5;
+      const isH = hols.has(dt.toDateString());
+      days.push({ dt, weekend:isW, holiday:isH });
+      if (!isW && !isH && dt.getFullYear() === yearViewYear) prod++;
+    }
+    const weekNum = getWeekNum(wkStart);
+    // Stop als we voorbij jaar gaan
+    if (wkStart.getFullYear() > yearViewYear) break;
+    weeks.push({ wkStart, weekNum, days, prod });
+    d = addDays(d, 7);
+    if (weeks.length > 54) break;
+  }
+
+  // Header
+  let html = `<thead><tr>
+    <th class="l">Week</th>
+    <th class="l">Periode</th>
+    <th>Prod.d</th>
+    <th>Afw.</th>
+    <th>Cap (u)</th>
+    <th>Norm (u)</th>
+    <th>Gap</th>
+    <th>Dekking</th>
+    <th>Status</th>
+  </tr></thead><tbody>`;
+
+  let ok=0, warn=0, danger=0, totCap=0, totNorm=0, normSet=false;
+  let currMonth = -1;
+
+  weeks.forEach(w => {
+    const mo = w.wkStart.getMonth();
+    if (mo !== currMonth){
+      currMonth = mo;
+      html += `<tr class="mh"><td colspan="9">${['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'][mo]}</td></tr>`;
+    }
+
+    let cap = 0, norm = 0, afw = 0, afwDays = 0;
+    targetTeams.forEach(t => {
+      const mts = monteurs[t.id] || [];
+      w.days.forEach(day => {
+        if (day.weekend || day.holiday) return;
+        if (day.dt.getFullYear() !== yearViewYear) return;
+        const afwT = countAbsentByType(t.id, day.dt);
+        const afwTot = afwT.verlof + afwT.cursus + afwT.ziek;
+        const aan = afwT.aanwezig;
+        cap += afwT.werkUren;
+        afw += afwTot;
+        const ds = isoDate(day.dt);
+        if (benodigd[t.id][ds] !== undefined){
+          norm += parseFloat(benodigd[t.id][ds]);
+          normSet = true;
+        }
+      });
+      afwDays += 0;
+    });
+
+    const pct = norm > 0 ? Math.round(cap/norm*100) : null;
+    const gap = cap - norm;
+    const st = w.prod === 0 ? 'waak' : (pct===null ? 'neutral' : pct>=60?'ok':pct>=45?'warn':'danger');
+    if (st==='ok') ok++; else if (st==='warn') warn++; else if (st==='danger') danger++;
+    totCap += cap;
+    totNorm += norm;
+
+    const gc = gap>=0?'#16a34a':'#dc2626';
+    const cellCls = st==='ok'?'cell-ok':st==='warn'?'cell-warn':st==='danger'?'cell-danger':'cell-waak';
+    const pctDisp = w.prod===0?'WAAK':(pct===null?'—':pct+'%');
+
+    html += `<tr>
+      <td class="l"><strong>W${w.weekNum}</strong></td>
+      <td class="l">${fmtShort(w.wkStart)}–${fmtShort(addDays(w.wkStart,6))}</td>
+      <td>${w.prod}</td>
+      <td style="color:${afw>0?'#d97706':'#9ca3af'}">${afw||'—'}</td>
+      <td style="font-weight:500">${w.prod===0?'—':Math.round(cap)}</td>
+      <td style="color:#6b7280">${w.prod===0?'—':Math.round(norm)}</td>
+      <td style="font-weight:600;color:${w.prod===0?'#94a3b8':gc}">${w.prod===0?'—':(gap>=0?'+':'')+Math.round(gap)}</td>
+      <td><span class="${cellCls}">${pctDisp}</span></td>
+      <td><span class="badge b-${st==='waak'||st==='neutral'?'neutral':st}">${{waak:'WAAK',neutral:'—',ok:'OK',warn:'LET OP',danger:'RISICO'}[st]}</span></td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('yearTable').innerHTML = html;
+
+  const totGap = totCap - totNorm;
+  document.getElementById('yearSummary').innerHTML = `
+    <div class="metric"><div class="metric-label">Weken OK (&ge;100%)</div><div class="metric-value c-ok">${ok}</div></div>
+    <div class="metric"><div class="metric-label">Weken let op</div><div class="metric-value c-warn">${warn}</div></div>
+    <div class="metric"><div class="metric-label">Weken risico</div><div class="metric-value ${danger>0?'c-danger':'c-ok'}">${danger}</div></div>
+    <div class="metric"><div class="metric-label">Jaargap cap. vs norm</div><div class="metric-value ${totGap>=0?'c-ok':'c-danger'}">${normSet?(totGap>=0?'+':'')+Math.round(totGap):'—'}</div></div>
+  `;
+}
+
+/* =================== ROOSTER =================== */
+function rsChangeWeek(d){
+  rsWeekDate = addDays(rsWeekDate, d*7);
+  renderRooster();
+}
+
+function populateRosterTeamFilter(){
+  const sel = document.getElementById('rsTeamFilter');
+  sel.innerHTML = '';
+  const cfg = ROLE_CONFIG[currentRole];
+  if (!cfg.teamFilter){
+    // Geen beperking — toon "Alle teams"
+    sel.innerHTML += '<option value="all">Alle teams</option>';
+  } else if (Array.isArray(cfg.teamFilter) && cfg.teamFilter.length > 1){
+    // Beperkte set (bv. Teamleider Z) — toon "Alle ZARA-teams" als optie om ze allemaal tegelijk te zien
+    sel.innerHTML += '<option value="all">Alle beschikbare teams</option>';
+  }
+  const teams = teamsForRole();
+  teams.forEach(t => {
+    sel.innerHTML += `<option value="${t.id}">${t.label}</option>`;
+  });
+}
+
+function renderRooster(){
+  const cfg = ROLE_CONFIG[currentRole];
+  const wkStart = startOfWeek(rsWeekDate);
+  const wkNum = getWeekNum(wkStart);
+  document.getElementById('rsWeekLabel').textContent = 'W'+wkNum+' '+wkStart.getFullYear();
+
+  const filter = document.getElementById('rsTeamFilter').value;
+  let teams;
+  if (cfg.teamFilter){
+    // Rol heeft beperkte teams (bv. Teamleider Z = 4 ZARA teams)
+    teams = teamsForRole();
+    // Als gebruiker specifiek team kiest uit dropdown, filter nog verder
+    if (filter && filter !== 'all'){
+      teams = teams.filter(t => t.id === filter);
+    }
+  } else if (filter === 'all' || !filter){
+    teams = TEAM_DEFS;
+  } else {
+    teams = TEAM_DEFS.filter(t => t.id === filter);
+  }
+
+  // Header
+  let html = '<thead><tr><th class="name-col">Monteur</th>';
+  for (let i=0; i<7; i++){
+    const dt = addDays(wkStart, i);
+    const isH = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    html += `<th>${DAYS_NL[i]}<br><span style="font-size:10px;font-weight:400;color:#94a3b8">${fmtShort(dt)}</span>${isH?'<br><span style="font-size:9px;color:#92400e">Feest</span>':''}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  teams.forEach(t => {
+    const mtsVisible = visibleMonteurs(t.id);
+    if (mtsVisible.length === 0) return;  // Skip teams zonder zichtbare monteurs
+    html += `<tr class="team-hdr"><td colspan="8">${t.label} — ${mtsVisible.length} monteurs</td></tr>`;
+    mtsVisible.forEach(m => {
+      html += `<tr><td class="rs-name"><span class="rs-team-tag">${t.label.split(' ').pop().slice(0,3).toUpperCase()}</span>${m.name}</td>`;
+      for (let i=0; i<7; i++){
+        const dt = addDays(wkStart, i);
+        const ds = isoDate(dt);
+        const wknd = IS_WKND[i];
+        const isH = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+        const entry = (rooster[ds] && rooster[ds][m.name]) || null;
+
+        if (wknd){
+          html += `<td><div class="rs-cell weekend">—</div></td>`;
+        } else if (isH){
+          html += `<td><div class="rs-cell holiday">Feest</div></td>`;
+        } else {
+          const type = entry?.type || '';
+          let label = typeLabel(type);
+          // Compensatie: toon de duur erbij (bv. Comp.NK 4u)
+          if (['c-nk','c-wkd','c-atw','c-sw'].includes(type)){
+            const ch = (typeof entry.hrs === 'number' && entry.hrs > 0) ? Math.min(entry.hrs, 8) : 8;
+            label += ' ' + (ch % 1 === 0 ? ch : ch.toFixed(1)) + 'u';
+          }
+          const clsType = type || 'empty';
+          const clickable = canEditTeam(t.id) ? `onclick="openShiftModal('${m.name}','${ds}','${t.id}')"` : '';
+          html += `<td><div class="rs-cell ${clsType}" ${clickable} title="${m.name} — ${dt.toLocaleDateString('nl-NL')}">${type?label:'—'}</div></td>`;
+        }
+      }
+      html += '</tr>';
+    });
+  });
+  html += '</tbody>';
+  document.getElementById('rsTable').innerHTML = html;
+}
+
+function typeLabel(t){
+  const L = {
+    vroeg:'Vroeg', dag:'Dag', zara:'ZARA', techno:'Techno', laat:'Laat+Waak', waak:'Waak',
+    verlof:'Verlof', cursus:'Cursus', ziek:'Ziek',
+    'c-nk':'Comp.NK', 'c-wkd':'Comp.WKD', 'c-atw':'Comp.ATW', 'c-sw':'Comp.SW'
+  };
+  return L[t] || '—';
+}
+
+function openShiftModal(name, dateStr, teamId){
+  if (!canEditTeam(teamId)) return;
+  document.getElementById('modalTitle').textContent = `${name} — ${new Date(dateStr).toLocaleDateString('nl-NL',{weekday:'long', day:'numeric', month:'long'})}`;
+  const current = (rooster[dateStr] && rooster[dateStr][name]) ? rooster[dateStr][name].type : '';
+
+  // Basis opties voor iedereen die mag muteren
+  const basisOpts = [
+    ['vroeg','Dag vroeg (07:00–15:30)', 'Dienst'],
+    ['dag','Dag (08:00–16:30)', 'Dienst'],
+    ['zara','ZARA-dienst', 'Dienst'],
+    ['techno','Technocenter-dienst', 'Dienst'],
+    ['laat','Daglaat + Waakdienst (10:30–19:00, daarna waak tot 07:00)', 'Dienst'],
+    ['verlof','Verlof', 'Afwezig'],
+    ['cursus','Cursus / opleiding', 'Afwezig'],
+    ['ziek','Ziek', 'Afwezig']
+  ];
+
+  // Compensatie-opties (alleen voor planner)
+  const compensatieOpts = [
+    ['c-nk','Comp. nachtdienst', 'Compensatie'],
+    ['c-wkd','Comp. waakdienst', 'Compensatie'],
+    ['c-atw','Comp. ATW', 'Compensatie'],
+    ['c-sw','Comp. schaduwwaak', 'Compensatie']
+  ];
+
+  // Rollen die compensaties mogen invullen
+  const compensatieRollen = ['planner', 'manager', 'teammgr', 'teamleider'];
+  const kanCompensaties = compensatieRollen.includes(currentRole);
+
+  // Opties bepalen per rol
+  let opts;
+  if (currentRole === 'planner'){
+    // Planner ziet ALLEEN compensaties (geen diensten/verlof/ziek)
+    opts = compensatieOpts;
+  } else if (kanCompensaties){
+    // Manager R/D, Teammgr Buiten, Teamleider Z: basisopties + compensaties
+    opts = basisOpts.concat(compensatieOpts);
+  } else {
+    // Viewer, grotemgr: alleen basisopties (en kunnen toch niet muteren)
+    opts = basisOpts;
+  }
+
+  // Groepeer naar categorie
+  const groups = {};
+  opts.forEach(([k,lbl,cat]) => {
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push([k,lbl]);
+  });
+
+  let html = '';
+  Object.entries(groups).forEach(([cat, items]) => {
+    html += `<div class="modal-row"><label>${cat}</label><div class="opt-grid">`;
+    items.forEach(([k,lbl]) => {
+      html += `<button class="opt-btn ${current===k?'sel':''}" onclick="setShift('${name}','${dateStr}','${k}')">${lbl}</button>`;
+    });
+    html += '</div></div>';
+  });
+
+  if (currentRole === 'planner'){
+    html = '<div style="font-size:11px;color:#475569;margin-bottom:10px;padding:8px 10px;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:4px">&#128161; <strong>Planner-rol:</strong> je legt hier compensatie-uren vast. Diensten en verlof/ziek worden door de Teammanager Buiten ingevuld.</div>' + html;
+  } else if (currentRole === 'teammgr'){
+    html = '<div style="font-size:11px;color:#475569;margin-bottom:10px;padding:8px 10px;background:#f0fdfa;border-left:3px solid #14b8a6;border-radius:4px">&#128161; <strong>Teammanager Buiten:</strong> je vult diensten, verlof, cursus en ziek in. Compensaties (onderaan) kan je ook aanpassen als correctie.</div>' + html;
+  } else if (currentRole === 'teamleider'){
+    html = '<div style="font-size:11px;color:#475569;margin-bottom:10px;padding:8px 10px;background:#fdf4ff;border-left:3px solid #ec4899;border-radius:4px">&#128161; <strong>Teamleider Z:</strong> je beheert het ZARA-team. Diensten, verlof/ziek en compensaties zijn aan te passen.</div>' + html;
+  } else if (currentRole === 'manager'){
+    html = '<div style="font-size:11px;color:#475569;margin-bottom:10px;padding:8px 10px;background:#fff7ed;border-left:3px solid #f59e0b;border-radius:4px">&#128161; <strong>Manager R / D:</strong> je kan alle velden aanpassen, inclusief compensaties.</div>' + html;
+  }
+
+  // Bestaande uren ophalen (voor pre-fill bij open van modal)
+  const currentHrs = (rooster[dateStr] && rooster[dateStr][name]) ? rooster[dateStr][name].hrs : null;
+
+  // Uren-input voor variabele werktijd én compensatieduur
+  const dienstTypesArr = ['vroeg','dag','zara','techno','laat'];
+  const compTypesArr = ['c-nk','c-wkd','c-atw','c-sw'];
+  const isDienst = dienstTypesArr.includes(current);
+  const isComp = compTypesArr.includes(current);
+  const defaultUren = currentHrs !== null && currentHrs > 0 ? currentHrs : (current ? (SHIFTS[current]?.hours || 8) : 8);
+
+  html += `<div class="modal-row" id="urenRow" style="${(isDienst || isComp) ? '' : 'display:none'}">
+    <label id="urenLabel">${isComp ? 'Duur compensatie (uren)' : 'Uren werken (halve dagen mogelijk)'}</label>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="number" id="urenInput" min="0.5" max="12" step="0.5" value="${defaultUren}"
+             style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;width:90px;font-size:14px"
+             onchange="updateShiftHours('${name}','${dateStr}', this.value)">
+      <span style="font-size:11px;color:#64748b" id="urenHint">${isComp ? 'u — 8u = hele dag vrij, 4u = halve dag (rest inzetbaar)' : 'u (standaard 8u, halve dag = 4u, etc.)'}</span>
+    </div>
+  </div>`;
+
+  html += `<div class="modal-actions">
+    <button class="btn btn-danger" onclick="clearShift('${name}','${dateStr}')">Wissen</button>
+    <button class="btn btn-ghost" onclick="closeModal()">Sluiten</button>
+  </div>`;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function setShift(name, dateStr, type){
+  if (!rooster[dateStr]) rooster[dateStr] = {};
+  // Compensatie-uren zijn afwezigheid (dus 0 productieve uren)
+  const compTypes = ['c-nk','c-wkd','c-atw','c-sw'];
+
+  // Speciale regel: Technocenter-monteurs krijgen op feestdagen automatisch waakdienst (laat)
+  // in plaats van een gewone dag-dienst
+  const dienstTypes = ['vroeg','dag','zara','techno'];
+  if (dienstTypes.includes(type)){
+    const dt = new Date(dateStr);
+    const isFeestdag = getHolidaySet(dt.getFullYear()).has(dt.toDateString());
+    const isTechno = name.toLowerCase().includes('techno');
+    if (isFeestdag && isTechno){
+      type = 'laat';  // Automatisch waakdienst op feestdagen
+      setTimeout(() => {
+        alert(`${name} werkt op Technocenter — op feestdagen geldt automatisch waakdienst (10:30–07:00).`);
+      }, 100);
+    }
+  }
+
+  // Lees uren uit de input — geldt voor diensten én compensaties (duur van de compensatie)
+  const dienstAlle = ['vroeg','dag','zara','techno','laat'];
+  let hrs = SHIFTS[type]?.hours || 0;
+  const urenInput = document.getElementById('urenInput');
+  if (compTypes.includes(type)){
+    hrs = 8;  // standaard hele dag compensatie
+    if (urenInput && urenInput.value){
+      const v = parseFloat(urenInput.value);
+      if (!isNaN(v) && v > 0) hrs = Math.min(v, 12);
+    }
+  } else if (dienstAlle.includes(type) && urenInput && urenInput.value){
+    const v = parseFloat(urenInput.value);
+    if (!isNaN(v) && v > 0) hrs = v;
+  }
+  rooster[dateStr][name] = { type, hrs };
+
+  // Toon/verberg de uren-input op basis van het type (dienst of compensatie)
+  const urenRow = document.getElementById('urenRow');
+  if (urenRow){
+    const showUren = dienstAlle.includes(type) || compTypes.includes(type);
+    urenRow.style.display = showUren ? '' : 'none';
+    const urenLabel = document.getElementById('urenLabel');
+    const urenHint = document.getElementById('urenHint');
+    if (urenLabel) urenLabel.textContent = compTypes.includes(type) ? 'Duur compensatie (uren)' : 'Uren werken (halve dagen mogelijk)';
+    if (urenHint) urenHint.textContent = compTypes.includes(type) ? 'u — 8u = hele dag vrij, 4u = halve dag (rest inzetbaar)' : 'u (standaard 8u, halve dag = 4u, etc.)';
+    if (urenInput && showUren){
+      urenInput.value = hrs;
+    }
+  }
+
+  // Highlight gekozen knop
+  document.querySelectorAll('#modalBody .opt-btn').forEach(b => b.classList.remove('sel'));
+  const chosenBtn = document.querySelector(`#modalBody .opt-btn[onclick*="'${type}'"]`);
+  if (chosenBtn) chosenBtn.classList.add('sel');
+
+  renderRooster();
+  renderDay();
+  renderRegio();  // ook regio-overzicht (KPI's, comparatie-tabel) verversen
+}
+
+// Update alleen de uren — zonder de modal te sluiten
+function updateShiftHours(name, dateStr, val){
+  if (!rooster[dateStr] || !rooster[dateStr][name]) return;
+  const v = parseFloat(val);
+  if (isNaN(v) || v <= 0) return;
+  rooster[dateStr][name].hrs = v;
+  renderRooster();
+  renderDay();
+  renderRegio();
+}
+function clearShift(name, dateStr){
+  if (rooster[dateStr]) { delete rooster[dateStr][name]; }
+  closeModal();
+  renderRooster();
+  renderDay();
+  renderRegio();  // ook regio-overzicht verversen
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+/* =================== TEAMS PAGE =================== */
+function renderTeamsPage(){
+  const cfg = ROLE_CONFIG[currentRole];
+  const teams = teamsForRole();
+  let html = '';
+  teams.forEach(t => {
+    const mts = monteurs[t.id] || [];
+    html += `<div style="margin-bottom:1.5rem">
+      <h4 style="font-size:14px;font-weight:700;color:#1e2a3a;margin-bottom:.4rem">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:${t.color};margin-right:8px;vertical-align:middle"></span>
+        ${t.label}
+      </h4>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:.6rem">Type: ${t.type} &bull; Min. bezetting: ${t.min} &bull; ${mts.length} monteurs &bull; Oude codes: ${t.oldCodes.join(', ')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">
+        ${mts.map(m => `<div style="padding:7px 10px;background:#f8fafc;border-radius:6px;font-size:12px;border:1px solid #e5e7eb"><strong>${m.name}</strong><br><span style="font-size:10px;color:#94a3b8">oud: ${m.oudRegio}</span></div>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('teamsPageContent').innerHTML = html;
+}
+
+/* =================== CLOCK =================== */
+function updateClock(){
+  const el = document.getElementById('clockDisplay');
+  if (!el) return;
+  const d = new Date();
+  el.textContent = d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* =================== INIT =================== */
+function initApp(){
+  populateYearTeamSel();
+  populateRosterTeamFilter();
+  initMapInteraction();
+  renderDay();
+  updateClock();
+  setInterval(updateClock, 30000);
+}
+
+// Keyboard support for PIN
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('loginScreen').classList.contains('hidden') && loginRoleSelected){
+    if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+    if (e.key === 'Backspace') pinDel();
+    if (e.key === 'Enter') doLogin();
+    if (e.key === 'Escape') closeModal();
+  }
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
