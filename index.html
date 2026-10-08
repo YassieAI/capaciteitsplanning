@@ -2785,21 +2785,57 @@ function wireTrendDrag(){
 }
 
 /* ---------- schuifbord (Manager R/D) ---------- */
-/* Vooruitblik boven het schuifbord: dekking per kolom voor de komende dagen. Klik op een cel om die dag te openen.
-   De tool heeft roosterdata tot en met de laatste dag van het 14-daagse venster (idx 13). */
+/* Vooruitblik boven het schuifbord, op drie niveaus: dag / week / kwartaal.
+   Dag = het live schuifbord-rooster (14-daags venster, idx 13 is de laatste dag). Week en kwartaal lezen de
+   gedeelde roosterdata via ensureRange, dezelfde bron als Grafiek > Week/Kwartaal/Jaar. */
+var outlookMode='dag';
+function olWorkdays(van,tot){var out=[];for(var d=new Date(van);d<=tot;d.setDate(d.getDate()+1)){var wd=d.getDay();if(wd>=1&&wd<=5)out.push(new Date(d));}return out;}
 function boardOutlook(cols){
-  var van=curDay, tot=Math.min(13,curDay+6);
-  if(tot<=van)return '';
-  var days='',d;
-  for(d=van;d<=tot;d++){days+='<td class="hm-day'+(d===curDay?' hm-now':'')+'">'+dShort(d)+'</td>';}
+  var modes=[['dag','Dag'],['week','Week'],['kwartaal','Kwartaal']];
+  var tog='<div class="ctrl" style="margin:0">'+modes.map(function(m){return '<button class="'+(outlookMode===m[0]?'active':'')+'" onclick="outlookMode=\''+m[0]+'\';render()">'+m[1]+'</button>';}).join('')+'</div>';
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div style="font-size:14px;font-weight:600">Vooruitblik</div>'+tog+'</div>';
+  var heads=[],cellsFor,note='',klik=false;
+  if(outlookMode==='dag'){
+    var van=curDay, tot=Math.min(13,curDay+6);
+    if(tot<=van)return '<div class="hm" style="margin-bottom:14px">'+head+'<p class="sub" style="margin:2px 0 0">Geen dagen meer vooruit in het rooster. Kies Week of Kwartaal.</p></div>';
+    for(var d=van;d<=tot;d++)heads.push({lab:dShort(d),now:d===TODAY,sel:d===curDay,id:d});
+    cellsFor=function(c,h){return colDekking(c,h.id);};
+    klik=true;
+    note='Dekking per dag, live uit het schuifbord (inclusief concept). Klik een cel om die dag te openen. De tool heeft roosters t/m '+dLabel(13)+'.';
+  } else {
+    var perioden=[],laden=false,agg;
+    if(outlookMode==='week'){
+      var m0=mondayOf(new Date());
+      for(var w=0;w<8;w++){var a=new Date(m0);a.setDate(m0.getDate()+w*7);var e=new Date(a);e.setDate(a.getDate()+6);perioden.push({van:a,tot:e,lab:'wk '+isoWeek(a)+'<br><span style="font-size:9px;opacity:.7">'+a.getDate()+'/'+(a.getMonth()+1)+'</span>',now:w===0});}
+      note='Gemiddelde dekking per week (werkdagen), komende 8 weken. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
+    } else {
+      var nu=new Date(),qi=Math.floor(nu.getMonth()/3);
+      for(var k=0;k<4;k++){var idx=qi+k,yr=nu.getFullYear()+Math.floor(idx/4),q=idx%4;var a2=new Date(yr,q*3,1),e2=new Date(yr,q*3+3,0);perioden.push({van:a2,tot:e2,lab:'Q'+(q+1)+'<br><span style="font-size:9px;opacity:.7">'+yr+'</span>',now:k===0});}
+      note='Gemiddelde dekking per kwartaal (werkdagen), dit en de drie volgende kwartalen. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
+    }
+    var van2=perioden[0].van,tot2=perioden[perioden.length-1].tot;
+    agg=ensureRange('ov_'+outlookMode+'_'+fmtIsoD(van2)+'_'+fmtIsoD(tot2),fmtIsoD(van2),fmtIsoD(tot2));
+    laden=!agg||!agg.loaded;
+    perioden.forEach(function(pd,i){
+      var alle=olWorkdays(pd.van,pd.tot);
+      // alleen werkdagen waarvoor al een rooster is ingevoerd tellen mee, anders lijkt een half ingevuld kwartaal onterecht rood
+      pd.dagen=laden?[]:alle.filter(function(dd){var iso=fmtIsoD(dd);return Object.keys(agg.byLocDay).some(function(l){return agg.byLocDay[l][iso]!==undefined;});});
+      pd.deel=alle.length?pd.dagen.length/alle.length:0;pd.nAlle=alle.length;
+      heads.push({lab:pd.lab,now:pd.now,sel:false,id:i});});
+    cellsFor=function(c,h){var pd=perioden[h.id];return (laden||!pd.dagen.length)?null:aggRangeAvg(agg,c,pd.dagen);};
+    if(laden)note='Laden…';
+  }
+  var hrow='';heads.forEach(function(h){hrow+='<td class="hm-day'+(h.now?' hm-now':'')+'">'+h.lab+'</td>';});
   var rows='';
   cols.forEach(function(c){var tds='';
-    for(d=van;d<=tot;d++){var dek=colDekking(c,d),t=tone(dek);
-      tds+='<td><button class="hm-cell hm-cell-click'+(d===curDay?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+dLabel(d)+' · '+dek+'% — klik om deze dag te openen" onclick="curDay='+d+';pick=null;render()">'+dek+'</button></td>';}
+    heads.forEach(function(h){var v=cellsFor(c,h);
+      if(v===null){tds+='<td><div class="hm-cell" style="background:var(--surface-1);color:var(--muted)" title="'+c.naam+' · geen rooster ingevoerd">&#8211;</div></td>';return;}
+      var t=tone(v);
+      if(klik)tds+='<td><button class="hm-cell hm-cell-click'+(h.sel?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+dLabel(h.id)+' · '+v+'% — klik om deze dag te openen" onclick="curDay='+h.id+';pick=null;render()">'+v+'</button></td>';
+      else{var pd2=perioden[h.id];var deel=pd2&&pd2.deel<0.999;tds+='<td><div class="hm-cell" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+v+'%'+(deel?' · rooster ingevoerd voor '+pd2.dagen.length+' van '+pd2.nAlle+' werkdagen':'')+'">'+v+(deel?'*':'')+'</div></td>';}});
     rows+='<tr><td class="hm-lab">'+c.naam+'</td>'+tds+'</tr>';});
-  return '<div class="hm" style="margin-bottom:14px"><div style="font-size:13px;font-weight:500;margin-bottom:4px">Vooruitblik · dekking komende dagen</div>'+
-    '<table class="hm-t"><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table>'+
-    '<p class="sub" style="margin:4px 0 0">Klik een cel om die dag in het schuifbord te openen. Verschuiven blijft per dag. De tool heeft roosters t/m '+dLabel(13)+'.</p></div>';
+  var legenda='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bg);border:1px solid var(--risk-bar);vertical-align:-1px"></i> onder 45%</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bg);border:1px solid var(--warn-bar);vertical-align:-1px"></i> 45&#8211;59%</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bg);border:1px solid var(--ok-bar);vertical-align:-1px"></i> 60&#8211;99% (norm gehaald)</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ruim-bg);border:1px solid var(--ruim-bar);vertical-align:-1px"></i> 100% of meer</span></div>';
+  return '<div class="hm" style="margin-bottom:14px">'+head+'<table class="hm-t"><tr><td class="hm-lab"></td>'+hrow+'</tr>'+rows+'</table>'+legenda+'<p class="sub" style="margin:6px 0 0">'+note+'</p></div>';
 }
 function viewBoard(){
   var cols=columns();
