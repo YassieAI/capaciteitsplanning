@@ -2408,46 +2408,70 @@ var trendSelIdx=null; // dag-index waarvan het label is opgeroepen (klik op een 
 function trendSvg(pts, opts){
   opts=opts||{};
   var n=pts.length;
-  var W=opts.w||640, H=opts.h||120, step=n>1?W/(n-1):W;
+  var W=opts.w||640, H=opts.h||150;
+  var pl=34, pr=10, pt=24, pb=24;                 // marges: links y-as, onder x-as
+  var plotW=W-pl-pr, plotH=H-pt-pb, step=n>1?plotW/(n-1):plotW;
   var labels=opts.labels||null;
   var dayIsos=opts.dayIsos||null;
   var todIdx=(opts.todIdx!==undefined)?opts.todIdx:TODAY;
-  var poly=pts.map(function(p,i){var y=H-(p/100*H);return (i*step).toFixed(0)+','+y.toFixed(0);}).join(' ');
-  var normY=H-(60/100*H);
+  var top=100; pts.forEach(function(p){if(p>top)top=Math.ceil(p/50)*50;});   // schaal groeit mee, niets wordt afgekapt
+  function X(i){return pl+i*step;}
+  function Y(v){return pt+plotH*(1-Math.min(v,top)/top);}
+  var normY=Y(60), baseY=Y(0);
   var hasTod=todIdx>=0&&todIdx<n;
-  var todX=hasTod?(todIdx*step).toFixed(0):'-10';
+  var todX=hasTod?X(todIdx).toFixed(1):'-10';
+  // achtergrond: rustig vlak onder de norm (zelfde taal als het jaaroverzicht) + lichte hulplijnen
+  var grid='';
+  for(var gv=0;gv<=top;gv+=50){
+    grid+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>'+
+          '<text x="'+(pl-6)+'" y="'+(Y(gv)+3.5).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+gv+'%</text>';
+  }
+  var zone='<rect x="'+pl+'" y="'+normY.toFixed(1)+'" width="'+plotW+'" height="'+(baseY-normY).toFixed(1)+'" fill="var(--risk-bar)" opacity="0.08"/>';
+  var normLijn='<line x1="'+pl+'" y1="'+normY.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+normY.toFixed(1)+'" stroke="var(--border-strong)" stroke-width="1.2" stroke-dasharray="5 4"/>'+
+    '<text x="'+(W-pr-2)+'" y="'+(normY-4).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">norm 60%</text>';
+  var poly=pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p).toFixed(1);}).join(' ');
+  var area='<polygon points="'+X(0).toFixed(1)+','+baseY.toFixed(1)+' '+poly+' '+X(n-1).toFixed(1)+','+baseY.toFixed(1)+'" fill="#185fa5" opacity="0.05"/>';
+  // x-as: niet elk label als de lijn te vol wordt
+  var every=n>24?4:(n>14?2:1);
+  var xas=pts.map(function(p,i){
+    if(i%every!==0&&i!==todIdx)return '';
+    var chip=labels?labels[i]:dChip(i);
+    var isT=hasTod&&i===todIdx;
+    return '<text x="'+X(i).toFixed(1)+'" y="'+(H-7)+'" text-anchor="middle" font-size="9.5" '+(isT?'font-weight="700" fill="var(--risk)"':'fill="var(--muted)"')+'>'+chip+'</text>';
+  }).join('');
   var dots=pts.map(function(p,i){
-    var x=(i*step).toFixed(0), y=(H-(p/100*H)).toFixed(0);
-    var isTod=hasTod&&i===todIdx, isSel=i===trendSelIdx&&!isTod;
+    var x=X(i).toFixed(1), y=Y(p).toFixed(1);
+    var isTod=hasTod&&i===todIdx, isSel=i===trendSelIdx&&!isTod, onder=p<60;
     var showLbl=isTod||isSel;
     var chip=labels?labels[i]:dChip(i);
     var lbl=isTod?(chip+' · '+p+'% · vandaag'):(chip+' · '+p+'%');
-    var dotR=isTod?5:(isSel?5:4), dotFill=isTod?'var(--risk-bar)':'#185fa5';
-    // Labelplaatsing: het gemarkeerde punt krijgt zijn tekst bovenaan náást de verticale lijn, zodat die
-    // nooit over de trendlijn zelf valt. Rechterhelft → tekst links van de lijn, anders rechts ervan.
+    var dotR=(isTod||isSel)?4.5:(onder?3.2:2.4);
+    var dotFill=isTod?'var(--risk-bar)':(onder?'var(--risk-bar)':'#185fa5');
     var rechts=(i>n/2);
     var lx=isTod?(rechts?(+x-7):(+x+7)):x;
-    var ly=isTod?11:((i%2===0)?(+y-11):(+y+18));
-    ly=Math.max(10, Math.min(ly, H-4));
+    var ly=isTod?(pt-11):((i%2===0)?(+y-10):(+y+17));
+    ly=Math.max(isTod?10:pt+6, Math.min(ly, baseY-4));
     var anchor=isTod?(rechts?'end':'start'):'middle';
     return '<g class="trendg">'+
-      // grotere zichtbare stip met witte rand — duidelijk als aanwijsbaar element herkenbaar
-      '<circle cx="'+x+'" cy="'+y+'" r="'+dotR+'" fill="'+dotFill+'" stroke="#fff" stroke-width="1.5"/>'+
-      // label: standaard verborgen, verschijnt bij slepen over de lijn; vandaag/aangetikt altijd zichtbaar
-      '<text class="trendlbl'+(showLbl?' always':'')+'" data-i="'+i+'" x="'+lx+'" y="'+ly+'" text-anchor="'+anchor+'" font-size="9.5" font-weight="'+(isTod?'700':'600')+'" fill="'+(isTod?'var(--risk)':'#185fa5')+'">'+lbl+'</text>'+
+      '<circle cx="'+x+'" cy="'+y+'" r="'+dotR+'" fill="'+dotFill+'" stroke="var(--bg)" stroke-width="'+((isTod||isSel)?1.8:1)+'"/>'+
+      '<text class="trendlbl'+(showLbl?' always':'')+'" data-i="'+i+'" x="'+lx+'" y="'+ly+'" text-anchor="'+anchor+'" font-size="10" font-weight="'+(isTod?'700':'600')+'" fill="'+(isTod?'var(--risk)':'#185fa5')+'">'+lbl+'</text>'+
     '</g>';
   }).join('');
   var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible" role="img" aria-label="trendlijn dekking — sleep de lijn of tik een punt voor detail">'+
-   '<line x1="0" y1="'+normY+'" x2="'+W+'" y2="'+normY+'" stroke="var(--border-strong)" stroke-width="1.5" stroke-dasharray="5 4"/>'+
-   '<text x="'+(W-4)+'" y="'+(normY-5)+'" text-anchor="end" font-size="11" fill="var(--muted)">norm 60%</text>'+
-   '<line class="trendline-now" x1="'+todX+'" y1="0" x2="'+todX+'" y2="'+H+'" stroke="var(--risk-bar)" stroke-width="1.5"'+(hasTod?'':' style="display:none"')+'/>'+
-   '<polyline points="'+poly+'" fill="none" stroke="#185fa5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
-   dots+
-   // topmost, onzichtbaar vlak dat de hele grafiek dekt — vangt hover én sleep, ongeacht hoe dicht bij een punt
-   '<rect class="trendhit" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"/>'+
+   zone+grid+normLijn+area+
+   '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+baseY.toFixed(1)+'" y2="'+baseY.toFixed(1)+'" stroke="var(--border-strong)" stroke-width="1"/>'+
+   '<line class="trendline-now" x1="'+todX+'" y1="'+pt+'" x2="'+todX+'" y2="'+baseY.toFixed(1)+'" stroke="var(--risk-bar)" stroke-width="1.5"'+(hasTod?'':' style="display:none"')+'/>'+
+   '<polyline points="'+poly+'" fill="none" stroke="#185fa5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+   xas+dots+
+   // topmost, onzichtbaar vlak dat de hele plot dekt — vangt hover én sleep, ongeacht hoe dicht bij een punt
+   '<rect class="trendhit" x="'+pl+'" y="0" width="'+plotW+'" height="'+(H-pb+8)+'" fill="transparent"/>'+
    '</svg>';
-  return '<div class="trendwrap" data-n="'+n+'" data-w="'+W+'" data-h="'+H+'"'+(dayIsos?' data-isos="'+dayIsos.join(',')+'"':'')+'>'+svg+
-   '<p class="sub" style="margin-top:2px;font-style:italic">&#128070; sleep de rode lijn (of tik op een punt) voor de datum en het percentage</p></div>';
+  var legenda='<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 0;font-size:12px;color:var(--muted);align-items:center">'+
+    '<span><span style="display:inline-block;width:16px;height:2px;background:#185fa5;vertical-align:3px"></span> dekking</span>'+
+    '<span><span style="display:inline-block;width:12px;height:9px;background:var(--risk-bar);opacity:.13;vertical-align:-1px;border-radius:2px"></span> onder norm</span>'+
+    '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--risk-bar);vertical-align:-1px"></span> punt onder norm</span>'+
+    '<span style="font-style:italic">&#128070; sleep de rode lijn of tik een punt voor datum en percentage</span></div>';
+  return '<div class="trendwrap" data-n="'+n+'" data-w="'+W+'" data-h="'+H+'" data-pl="'+pl+'" data-step="'+step.toFixed(4)+'"'+(dayIsos?' data-isos="'+dayIsos.join(',')+'"':'')+'>'+svg+legenda+'</div>';
 }
 // Elke rol onthoudt zijn eigen periode-keuze in Grafiek — RD's "Grafiek"-tab en G's "Dagdashboard"-tab
 // delen dezelfde weergavefunctie maar mogen niet elkaars stand overnemen (RD start op Week, G op Dag).
@@ -2584,7 +2608,7 @@ function viewGrafiekDag(regs){
         '<div class="metric"><div class="l">Vandaag</div><div class="v">'+selDek+'%</div></div>'+
         '<div class="metric"><div class="l">Beschikbaar</div><div class="v" style="font-size:16px">'+colBeschikbaar(selCol,curDay)+' / '+selCol.benodigd+'</div></div>'+
         '<div class="metric"><div class="l">Gem. 2 weken</div><div class="v">'+Math.round(selPts.reduce(function(a,b){return a+b;},0)/selPts.length)+'%</div></div></div>'+
-        trendSvg(selPts,{h:100,todIdx:curDay,dayIsos:dayIsos14})+
+        trendSvg(selPts,{h:130,todIdx:curDay,dayIsos:dayIsos14})+
       '</div>';
     }
   }
@@ -2632,7 +2656,7 @@ function viewGrafiekWeek(regs){
         '<div class="metrics" style="grid-template-columns:repeat(2,1fr);margin-top:8px">'+
         '<div class="metric"><div class="l">Weekgemiddelde</div><div class="v">'+(selGem===null?'–':selGem+'%')+'</div></div>'+
         '<div class="metric"><div class="l">Benodigd per dag</div><div class="v" style="font-size:16px">'+selCol.benodigd+'</div></div></div>'+
-        trendSvg(selDayPts,{h:100,labels:dayLabels,todIdx:todIdx,dayIsos:dayIsosWk})+
+        trendSvg(selDayPts,{h:130,labels:dayLabels,todIdx:todIdx,dayIsos:dayIsosWk})+
       '</div>';
     }
   }
@@ -2688,7 +2712,7 @@ function viewGrafiekKwartaal(regs){
         '<div class="metrics" style="grid-template-columns:repeat(2,1fr);margin-top:8px">'+
         '<div class="metric"><div class="l">Kwartaalgemiddelde</div><div class="v">'+(selGem===null?'–':selGem+'%')+'</div></div>'+
         '<div class="metric"><div class="l">Benodigd per dag</div><div class="v" style="font-size:16px">'+selCol.benodigd+'</div></div></div>'+
-        trendSvg(selWeekPts,{h:100,labels:weekLabels,todIdx:todIdx})+
+        trendSvg(selWeekPts,{h:130,labels:weekLabels,todIdx:todIdx})+
       '</div>';
     }
   }
@@ -2732,16 +2756,16 @@ function wireTrendDrag(){
   document.querySelectorAll('.trendwrap').forEach(function(wrap){
     var svg=wrap.querySelector('svg'), rect=wrap.querySelector('.trendhit'), line=wrap.querySelector('.trendline-now');
     if(!svg||!rect)return;
-    var n=+wrap.dataset.n, W=+wrap.dataset.w, step=n>1?W/(n-1):W;
+    var n=+wrap.dataset.n, W=+wrap.dataset.w, pl=+(wrap.dataset.pl||0), step=+(wrap.dataset.step)||(n>1?W/(n-1):W);
     var isos=wrap.dataset.isos?wrap.dataset.isos.split(','):null;
     var dragging=false;
     function idxFromX(clientX){
       var r=svg.getBoundingClientRect();
-      var x=(clientX-r.left)*(r.width?W/r.width:1);
+      var x=(clientX-r.left)*(r.width?W/r.width:1)-pl;
       return Math.max(0,Math.min(n-1,Math.round(x/step)));
     }
     function preview(i){
-      if(line){var x=(i*step).toFixed(0);line.setAttribute('x1',x);line.setAttribute('x2',x);line.style.display='';}
+      if(line){var x=(pl+i*step).toFixed(1);line.setAttribute('x1',x);line.setAttribute('x2',x);line.style.display='';}
       svg.querySelectorAll('.trendlbl').forEach(function(t){t.classList.remove('preview');});
       var t=svg.querySelector('.trendlbl[data-i="'+i+'"]');
       if(t)t.classList.add('preview');
