@@ -1129,7 +1129,7 @@ var curDay=TODAY;
 var role=null;
 var boardView='bord';
 var pick=null; // {mid, day}
-var weekStart=7, weekLoc='ZO', editCell=null; // weekrooster state
+var weekStart=7, weekLoc='ZO', weekSel=[], editCell=null; // weekrooster state
 var editCells=[];  // alle cellen van de huidige (sleep)selectie; editCell = de ankercel
 var wkDrag={bezig:false,anker:null,verplaatst:false,gekoppeld:false}; // sleepstatus weekrooster
 var gView='dag'; // manager G: dag / week / kwartaal
@@ -2501,6 +2501,7 @@ function grafiekBarsBlock(vals, laden, klikOmschrijving){
 function viewManagerG(){
   /* Manager G kijkt altijd naar de oude regio-indeling (5 regio's), los van de RD-groepering */
   var regs=LOC.filter(function(l){return l.type==='regio';}).map(function(l){return colFor(l.id);});
+  if(role==='RD'&&groupMode==='cluster3')regs=columns().filter(function(c){return c.type==='cluster';}); // RD: volg de keuze '3 clusters'
   var periode=grafiekPeriode();
   var toggle='<div class="ctrl" style="margin-bottom:10px">'+
     '<button class="'+(periode==='dag'?'active':'')+'" onclick="grafiekSetPeriode(\'dag\')">Dag</button>'+
@@ -2760,12 +2761,29 @@ function wireTrendDrag(){
 }
 
 /* ---------- schuifbord (Manager R/D) ---------- */
+/* Vooruitblik boven het schuifbord: dekking per kolom voor de komende dagen. Klik op een cel om die dag te openen.
+   De tool heeft roosterdata tot en met de laatste dag van het 14-daagse venster (idx 13). */
+function boardOutlook(cols){
+  var van=curDay, tot=Math.min(13,curDay+6);
+  if(tot<=van)return '';
+  var days='',d;
+  for(d=van;d<=tot;d++){days+='<td class="hm-day'+(d===curDay?' hm-now':'')+'">'+dShort(d)+'</td>';}
+  var rows='';
+  cols.forEach(function(c){var tds='';
+    for(d=van;d<=tot;d++){var dek=colDekking(c,d),t=tone(dek);
+      tds+='<td><button class="hm-cell hm-cell-click'+(d===curDay?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+dLabel(d)+' · '+dek+'% — klik om deze dag te openen" onclick="curDay='+d+';pick=null;render()">'+dek+'</button></td>';}
+    rows+='<tr><td class="hm-lab">'+c.naam+'</td>'+tds+'</tr>';});
+  return '<div class="hm" style="margin-bottom:14px"><div style="font-size:13px;font-weight:500;margin-bottom:4px">Vooruitblik · dekking komende dagen</div>'+
+    '<table class="hm-t"><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table>'+
+    '<p class="sub" style="margin:4px 0 0">Klik een cel om die dag in het schuifbord te openen. Verschuiven blijft per dag. De tool heeft roosters t/m '+dLabel(13)+'.</p></div>';
+}
 function viewBoard(){
   var cols=columns();
   var decide=canDecide();
   var html='<h2>Schuifbord</h2>';
   html+='<p class="sub">'+dLabel(curDay)+' · &#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Jouw verschuiving komt als bespreekpunt in het overleg.')+' Kleur = dekking t.o.v. norm 60%.</p>';
   if(decide) html+=conceptBalk();
+  html+=boardOutlook(cols);
   var cset=conceptSet();
   html+='<div class="board">';
   cols.forEach(function(c){
@@ -3270,21 +3288,31 @@ function dienstStyle(st){
   return map[st]||['var(--surface-1)','var(--muted)'];
 }
 function miniWeekChart(locId){
-  var c=colFor(locId);var days=[];for(var d=weekStart;d<weekStart+7;d++)days.push(d);
+  var c=(typeof locId==='string')?colFor(locId):locId;var days=[];for(var d=weekStart;d<weekStart+7;d++)days.push(d);
   var bars=days.map(function(d){var dek=fDekking(c,d);var t=tone(dek);return '<div class="barc"><span class="barv" style="color:'+t.tx+'">'+dek+'</span><div class="bar" style="height:'+Math.max(2,Math.min(100,dek))+'%;background:'+t.bar+'"></div></div>';}).join('');
   var labs=days.map(function(d){return '<span'+(d===TODAY?' style="color:var(--text);font-weight:500"':'')+'>'+dChip(d)+'</span>';}).join('');
   return '<div class="chart" style="height:150px;margin-top:4px"><div class="norm" style="bottom:60%"><span>norm 60%</span></div><div class="bars">'+bars+'</div></div><div class="blab">'+labs+'</div>';
 }
+/* gebieden waaruit het weekrooster kiest: volgt de groepering bovenin (5 regio's / 3 clusters) */
+function weekCols(){return columns().filter(function(c){return c.members.some(inScopeId);});}
 function viewWeek(){
-  if(!inScopeId(weekLoc))weekLoc=scopeIds()[0];
-  var monteurs=M.filter(function(m){return m.base===weekLoc;});
+  var wcols=weekCols();
+  weekSel=weekSel.filter(function(k){return wcols.some(function(c){return c.key===k;});});
+  if(!weekSel.length)weekSel=[wcols[0].key];
+  var selCols=wcols.filter(function(c){return weekSel.indexOf(c.key)>=0;});
+  var memberIds=[],benTot=0;
+  selCols.forEach(function(c){benTot+=c.benodigd;c.members.forEach(function(id){if(memberIds.indexOf(id)<0)memberIds.push(id);});});
+  var multi=selCols.length>1, alles=selCols.length===wcols.length&&multi;
+  var selNaam=alles?'alle gebieden':selCols.map(function(c){return c.naam;}).join(' + ');
+  var combo={key:'wk',naam:selNaam,members:memberIds,benodigd:benTot};
+  var monteurs=M.filter(function(m){return memberIds.indexOf(m.base)>=0;});
   var wkLabel='week van '+dLabel(weekStart);
   var html='<h2>Weekrooster</h2><p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:160px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
-  html+='<select id="wkLoc" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;font-size:13px;background:var(--surface)">';
-  LOC.filter(function(l){return inScopeId(l.id);}).forEach(function(l){html+='<option value="'+l.id+'"'+(l.id===weekLoc?' selected':'')+'>'+l.naam+'</option>';});
-  html+='</select></div>';
+  html+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
+  wcols.forEach(function(c){html+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
+  html+='</div></div><p class="sub" style="margin:-4px 0 10px">Klik meerdere gebieden aan om ze samen te zien, of &#8220;Alles&#8221; voor het hele land. De keuze volgt de groepering bovenin (5 regio\'s of 3 clusters).</p>';
   if(editCell){
     var meerdere=editCells.length>1;
     var em=M.filter(function(m){return m.id===editCell.mid;})[0];
@@ -3315,13 +3343,13 @@ function viewWeek(){
       html+=' <button class="linkbtn" id="wkCancel">annuleer</button></div></div>';
     }
   }
-  html+='<h2 style="font-size:16px">Dekking deze week · '+LOCMAP[weekLoc].naam+'</h2>'+miniWeekChart(weekLoc);
+  html+='<h2 style="font-size:16px">Dekking deze week · '+selNaam+'</h2>'+miniWeekChart(combo);
   html+='<h2 style="font-size:16px">Rooster</h2>';
   html+='<div class="hm"><table class="hm-t" style="font-size:12px"><tr><td class="hm-lab"></td>';
   for(var d=weekStart;d<weekStart+7;d++){html+='<td class="hm-day'+(d===TODAY?' hm-now':'')+'">'+dShort(d)+(d===TODAY?'<br><span style="font-size:9px">nu</span>':'')+'</td>';}
   html+='</tr>';
   monteurs.forEach(function(m){
-    html+='<tr><td class="hm-lab" style="color:var(--text)">'+m.ini+'</td>';
+    html+='<tr><td class="hm-lab" style="color:var(--text)">'+m.ini+(multi?' <span style="color:var(--muted);font-weight:400;font-size:10px">'+m.base+'</span>':'')+'</td>';
     for(var d2=weekStart;d2<weekStart+7;d2++){
       var st=m.roster[d2];var cs=dienstStyle(st);
       var sel=editCells.some(function(c){return c.mid===m.id&&c.day===d2;});
@@ -3348,7 +3376,11 @@ function wireWeek(){
   function leeg(){editCell=null;editCells=[];}
   var p=document.getElementById('wkPrev');if(p)p.onclick=function(){weekStart=0;leeg();render();};
   var n=document.getElementById('wkNext');if(n)n.onclick=function(){weekStart=7;leeg();render();};
-  var s=document.getElementById('wkLoc');if(s)s.onchange=function(){weekLoc=s.value;leeg();render();};
+  document.querySelectorAll('[data-wkc]').forEach(function(b){b.onclick=function(){
+    var k=b.dataset.wkc,wc=weekCols();
+    if(k==='*'){weekSel=wc.map(function(c){return c.key;});}
+    else{var i=weekSel.indexOf(k);if(i>=0){if(weekSel.length>1)weekSel.splice(i,1);}else weekSel.push(k);}
+    leeg();render();};});
 
   /* ---- slepen over meerdere cellen: rechthoek tussen ankercel en cel onder de muis ---- */
   var cellen=[].slice.call(document.querySelectorAll('.wkcell'));
@@ -4179,6 +4211,8 @@ function viewWaak(){
   var h='<h2>Waakdienst 2027</h2><p class="sub">Vr 1 januari 2027 t/m do 6 januari 2028 · 53 weken · elke week waakdienst per gebied plus één landelijke schaduwdienst · fictieve namen.</p>'+wdDatabron();
   h+='<div class="wd-bar"><span class="wd-lbl">Opzet</span><div class="ctrl wd-opz">'+WD_KEYS.map(function(k){return '<button data-wdk="'+k+'" class="'+(wdKey===k?'active':'')+'">'+WD_OPZET[k].naam+'</button>';}).join('')+'</div></div>';
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'</div>';
+  var WD_TOELICHTING={vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
+  if(WD_TOELICHTING[wdSub])h+='<p class="sub" style="margin:6px 0 10px">'+WD_TOELICHTING[wdSub]+'</p>';
   if(wdSub==='vergelijk')h+=wdViewVergelijk();
   else if(wdSub==='kaart')h+=wdViewKaart();
   else if(wdSub==='voorspel')h+=wdViewVoorspel();
@@ -4622,7 +4656,8 @@ function wpGrafiek(){
   var R=WP_FC.R,hist=WP_G==='ALL'?R.tot:null,fc=WP_FC.wk;
   if(WP_G!=='ALL'){var pg=wdPc2Gebied(wdKey);hist=R.tot.map(function(){return 0;});Object.keys(R.pc).forEach(function(p){if(pg[p]===WP_G)R.pc[p].forEach(function(v,i){hist[i]+=v;});});
     var aandG=0;Object.keys(WP_FC.aand).forEach(function(p){if(pg[p]===WP_G)aandG+=WP_FC.aand[p];});fc=fc.map(function(w){return {f:w.f*aandG,lo:w.lo*aandG,hi:w.hi*aandG};});}
-  var nH=hist.length,N=nH+fc.length,W=900,H=230,pL=34,pR=8,pT=10,pB=24;
+  var offH=Math.max(0,hist.length-52);hist=hist.slice(offH); /* alleen het laatste jaar historie, anders wordt 2027 te smal */
+  var nH=hist.length,N=nH+fc.length,W=900,H=250,pL=34,pR=8,pT=10,pB=34;
   var mx=Math.max(Math.max.apply(null,hist),Math.max.apply(null,fc.map(function(w){return w.hi;})))*1.08||1;
   function X(i){return pL+i/(N-1)*(W-pL-pR);}function Y(v){return pT+(1-v/mx)*(H-pT-pB);}
   var s='';for(var t=0;t<=4;t++){var v=mx*t/4;s+='<line x1="'+pL+'" x2="'+(W-pR)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--border)"/><text x="'+(pL-5)+'" y="'+(Y(v)+3.5).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+Math.round(v)+'</text>';}
@@ -4631,9 +4666,14 @@ function wpGrafiek(){
   s+='<path d="'+band+'" fill="var(--accent)" opacity=".14"/>';
   s+='<polyline points="'+hist.map(function(v,i){return X(i).toFixed(1)+','+Y(v).toFixed(1);}).join(' ')+'" fill="none" stroke="var(--muted)" stroke-width="1.6"/>';
   s+='<polyline points="'+fc.map(function(w,k){return X(nH+k).toFixed(1)+','+Y(w.f).toFixed(1);}).join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2.2"/>';
-  var jaren={};R.weken.forEach(function(w,i){if(!jaren[w.getFullYear()]){jaren[w.getFullYear()]=1;s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" font-size="10" fill="var(--muted)">'+w.getFullYear()+'</text>';}});
-  s+='<text x="'+X(nH).toFixed(1)+'" y="'+(H-6)+'" font-size="10" fill="var(--accent)" font-weight="600">2027 (voorspelling)</text>';
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block" role="img" aria-label="Storingen in waakdiensttijd per week: historie en voorspelling 2027">'+s+'</svg>';
+  var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  var lastM=-1;R.weken.slice(offH).forEach(function(w,i){var m=w.getMonth();if(m!==lastM){lastM=m;if(m%2===0)s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-18)+'" font-size="9" fill="var(--muted)">'+MND[m]+(m===0?' '+w.getFullYear():'')+'</text>';}});
+  lastM=-1;fc.forEach(function(w,k){var d=wdWeekStart(k),m=d.getMonth();if(m!==lastM){lastM=m;s+='<text x="'+X(nH+k).toFixed(1)+'" y="'+(H-18)+'" font-size="9" fill="var(--accent)">'+MND[m]+(k===0?' 2027':'')+'</text>';}});
+  var topK=fc.map(function(w,k){return {k:k,f:w.f};}).sort(function(a,b){return b.f-a.f;}).slice(0,3);
+  topK.forEach(function(t,ti){s+='<circle cx="'+X(nH+t.k).toFixed(1)+'" cy="'+Y(t.f).toFixed(1)+'" r="3.5" fill="var(--accent)"/><text x="'+(X(nH+t.k)-6).toFixed(1)+'" y="'+(Y(t.f)-7-ti*12).toFixed(1)+'" font-size="10" text-anchor="end" fill="var(--accent)" font-weight="600">wk '+(t.k+1)+'</text>';});
+  s+='<text x="'+(pL-5)+'" y="'+(pT-1)+'" font-size="9" text-anchor="end" fill="var(--muted)"></text>';
+  var legenda='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0 2px"><span><i style="display:inline-block;width:16px;height:2px;background:var(--muted);vertical-align:middle;margin-right:5px"></i>werkelijk (laatste 12 maanden)</span><span><i style="display:inline-block;width:16px;height:2px;background:var(--accent);vertical-align:middle;margin-right:5px"></i>voorspelling 2027</span><span><i style="display:inline-block;width:16px;height:9px;background:var(--accent);opacity:.18;vertical-align:middle;margin-right:5px"></i>80%-bandbreedte</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);vertical-align:middle;margin-right:5px"></i>3 drukste weken</span><span>verticale as: storingen per week</span></div>';
+  return legenda+'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block" role="img" aria-label="Storingen in waakdiensttijd per week: historie en voorspelling 2027">'+s+'</svg>';
 }
 function wpHeat(){
   var c=wdC(),pg=wpPerGebied(wdKey),slots=c.prep.gIds,mx=0;
@@ -4666,16 +4706,20 @@ function wdViewVoorspel(){
     '<div class="wd-card"><span>Drukste weken</span><b>'+top.map(function(t){return 'wk '+(t.k+1);}).join(', ')+'</b><small>'+top.map(function(t){return wdWeekLabel(t.k);}).join(' · ')+'</small></div>'+
     '<div class="wd-card"><span>Betrouwbaarheid</span><b>'+(F.bt?Math.round(F.bt.model*100)+'% fout':'–')+'</b><small>'+(F.bt?'gem. per week op laatste '+F.bt.weken+' wk · simpel gemiddelde: '+Math.round(F.bt.naief*100)+'%':'minder dan een jaar data')+'</small></div></div>';
   var c=wdC();
-  h+='<div class="wd-card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="wd-ct" style="margin:0">Drukte per week · historie en 2027</div><div class="ctrl" style="flex-wrap:wrap"><button data-wpg="ALL" class="'+(WP_G==='ALL'?'active':'')+'">Totaal</button>'+c.prep.gIds.map(function(g){return '<button data-wpg="'+g+'" class="'+(WP_G===g?'active':'')+'">'+wdGNaam(c,g)+'</button>';}).join('')+'</div></div>'+wpGrafiek()+
+  h+='<p class="sub" style="margin:10px 0 0"><b>In het kort:</b> in 2027 verwacht ik ongeveer '+Math.round(tot/WD_N)+' storingen per week in waakdiensttijd ('+Math.round(tot)+' in totaal). De drukste weken zijn '+top.map(function(t){return 'week '+(t.k+1);}).join(', ')+'. Hieronder zie je eerst het verloop per week, daarna welk gebied het zwaarst belast wordt en tot slot welke indeling het beste past.</p>';
+  h+='<h3 style="margin:16px 0 4px;font-size:15px">1. Verloop per week</h3>';
+  h+='<div class="wd-card" style="margin-top:6px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="wd-ct" style="margin:0">Drukte per week · laatste jaar en 2027</div><div class="ctrl" style="flex-wrap:wrap"><button data-wpg="ALL" class="'+(WP_G==='ALL'?'active':'')+'">Totaal</button>'+c.prep.gIds.map(function(g){return '<button data-wpg="'+g+'" class="'+(WP_G===g?'active':'')+'">'+wdGNaam(c,g)+'</button>';}).join('')+'</div></div>'+wpGrafiek()+
     '<p class="wd-uitleg">Grijs = werkelijk aantal per waakweek (vr–do). Blauw = voorspelling 2027 met 80%-bandbreedte. Gebieden volgens opzet: '+WD_OPZET[wdKey].naam+'.</p></div>';
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Verwachte storingen per waakdienst per week · '+WD_OPZET[wdKey].naam+'</div>'+wpHeat()+'<p class="wd-uitleg">Donkerder = zwaardere dienst. Oranje weeknummers zijn feestdagweken. Gebruik dit om in drukke weken een schaduwdienst dichtbij in te plannen.</p></div>';
+  h+='<h3 style="margin:18px 0 4px;font-size:15px">2. Zwaarte per gebied en week</h3>';
+  h+='<div class="wd-card" style="margin-top:6px"><div class="wd-ct">Verwachte storingen per waakdienst per week · '+WD_OPZET[wdKey].naam+'</div>'+wpHeat()+'<p class="wd-uitleg">Donkerder = zwaardere dienst. Oranje weeknummers zijn feestdagweken. Gebruik dit om in drukke weken een schaduwdienst dichtbij in te plannen.</p></div>';
   // beste indeling
   var S=WD_KEYS.map(wpScore);
   function norm(arr,f){var v=arr.map(f),mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);return v.map(function(x){return mx>mn?(x-mn)/(mx-mn):0;});}
   var n1=norm(S,function(x){return x.aanrij;}),n2=norm(S,function(x){return x.boven;}),n3=norm(S,function(x){return x.bel90;}),n4=norm(S,function(x){return x.dpm;});
   S.forEach(function(x,i){x.score=Math.round(100-(0.4*n1[i]+0.25*n2[i]+0.2*n3[i]+0.15*n4[i])*100);});
   var rank=S.slice().sort(function(a,b){return b.score-a.score;});
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Beste indeling bij de verwachte storingen</div><div class="wd-scroll" style="max-height:none;border:none"><table class="wd-tbl"><thead><tr><th>Opzet</th><th>Score</th><th>Gem. aanrijtijd</th><th>Storingen &gt; 60 min</th><th>Storingen per dienst (gem. / drukke week)</th><th>Diensten per monteur</th></tr></thead><tbody>';
+  h+='<h3 style="margin:18px 0 4px;font-size:15px">3. Welke indeling past het best</h3>';
+  h+='<div class="wd-card" style="margin-top:6px"><div class="wd-ct">Beste indeling bij de verwachte storingen</div><div class="wd-scroll" style="max-height:none;border:none"><table class="wd-tbl"><thead><tr><th>Opzet</th><th>Score</th><th>Gem. aanrijtijd</th><th>Storingen &gt; 60 min</th><th>Storingen per dienst (gem. / drukke week)</th><th>Diensten per monteur</th></tr></thead><tbody>';
   rank.forEach(function(x,i){h+='<tr'+(i===0?' class="wp-best"':'')+'><td><b>'+WD_OPZET[x.key].naam+'</b>'+(i===0?' <span class="badge b-ok">advies</span>':'')+'</td><td><b>'+x.score+'</b></td><td>'+Math.round(x.aanrij)+' min</td><td>'+Math.round(x.boven*100)+'%</td><td>'+nl1(x.bel)+' / '+nl1(x.bel90)+'</td><td>'+nl1(x.dpm)+'</td></tr>';});
   h+='</tbody></table></div><p class="wd-uitleg">Score 0–100, hoger is beter. Weging: aanrijtijd 40%, aandeel storingen boven 60 min 25%, zwaarte van een drukke dienst 20%, aantal diensten per monteur 15%. Aanrijtijd = rijtijd van de waakdienst van die week naar het midden van de postcode van de storing (schatting). '+
     'Advies: <b>'+WD_OPZET[rank[0].key].naam+'</b> — '+wpWaarom(rank)+'</p></div>';
@@ -4722,7 +4766,7 @@ function doLogin(){
   if(!selRole){err.textContent='Kies eerst een rol.';return;}
   var r=ROLES.find(function(x){return x.id===selRole;});
   if(document.getElementById('pin').value!==r.pin){err.textContent='Onjuiste pincode.';return;}
-  role=selRole;boardView='bord';curDay=TODAY;pick=null;weekStart=7;weekLoc='ZO';editCell=null;editCells=[];gView='dag';tlMode='dag';uvView='bord';
+  role=selRole;boardView='bord';curDay=TODAY;pick=null;weekStart=7;weekLoc='ZO';weekSel=[];editCell=null;editCells=[];gView='dag';tlMode='dag';uvView='bord';
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   render();
@@ -4736,7 +4780,7 @@ document.getElementById('logout').onclick=function(){role=null;selRole=null;docu
 document.getElementById('prevDay').onclick=function(){if(curDay>0){curDay--;pick=null;render();}};
 document.getElementById('nextDay').onclick=function(){if(curDay<13){curDay++;pick=null;render();}};
 document.getElementById('todayBtn').onclick=function(){curDay=TODAY;pick=null;render();};
-document.getElementById('groupToggle').querySelectorAll('button').forEach(function(b){b.onclick=function(){groupMode=b.dataset.g;pick=null;render();};});
+document.getElementById('groupToggle').querySelectorAll('button').forEach(function(b){b.onclick=function(){groupMode=b.dataset.g;pick=null;grafiekSel=null;trendSelIdx=null;editCell=null;editCells=[];render();};});
 
 /* ============================================================
    SUPABASE — gedeelde data (zelfde database als beheer.html)
