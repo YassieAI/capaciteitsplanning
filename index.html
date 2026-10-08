@@ -1253,7 +1253,7 @@ function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && !(boardView==='grafiek' && grafiekPeriode()!=='dag') && !(boardView==='balans' && balansPeriode==='week');
-  var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && (tlMode==='dag'||tlMode==='schuif');
+  var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && tlMode==='dag';
   var uvDayNav = role==='UV' && uvView==='bord';
   show('dayNav', rdBoardNav || tlDayNav || uvDayNav || role==='PL');
   show('groupToggle', role==='RD' && boardView!=='prognose' && boardView!=='waak');
@@ -1277,7 +1277,6 @@ function setCtrls(){
   } else if(role==='TZ'||role==='TN'||role==='TS'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-tl="dag" class="'+(tlMode==='dag'?'active':'')+'">Dag</button>'+
     '<button data-tl="week" class="'+(tlMode==='week'?'active':'')+'">Week</button>'+
-    '<button data-tl="schuif" class="'+(tlMode==='schuif'?'active':'')+'">Schuifbord</button>'+
     '<button data-tl="waak" class="'+(tlMode==='waak'?'active':'')+'">Waakdienst</button>';
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){tlMode=b.dataset.tl;if(tlMode==='week'){weekStart=curDay>=7?7:0;}setCtrls();render();};});
   } else if(role==='UV'){vt.classList.remove('hidden');vt.innerHTML=
@@ -2070,9 +2069,9 @@ function render(){
     else if(boardView==='waak') v.innerHTML=viewWaak();
     else v.innerHTML=viewBoard();
   }
-  else if(role==='TZ') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewTeam());
-  else if(role==='TN') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewBuitenTeam('Noord'));
-  else if(role==='TS') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewBuitenTeam('Zuid'));
+  else if(role==='TZ') v.innerHTML=(tlMode==='waak'?viewWaak():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewTeam());
+  else if(role==='TN') v.innerHTML=(tlMode==='waak'?viewWaak():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewBuitenTeam('Noord'));
+  else if(role==='TS') v.innerHTML=(tlMode==='waak'?viewWaak():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewBuitenTeam('Zuid'));
   else if(role==='PL') v.innerHTML=viewHeatmap('Planner · alleen-lezen');
   else if(role==='UV') v.innerHTML=(uvView==='bord'?viewMonteurBord():viewUitvoering());
   if(role==='RD'&&boardView==='bord') wireBoard();
@@ -2086,7 +2085,7 @@ function render(){
   if(role==='G'&&(gView==='kwartaal'||gView==='jaar')) wireKwartaal();
   if(role==='G'&&gView!=='prognose') gKpiWire();
   if(role==='PL') wireHeatmap();
-  if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else{wireTeam();wireWdBanner();if(tlMode==='week')wireWeekStrip();}}
+  if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else{wireTeam();wireWdBanner();if(tlMode==='week')wireWeekStrip();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
   document.getElementById('foot').innerHTML='Gedeelde data via Supabase (EU) · fictieve monteurnamen (privacy) · waakdienst: demowoonplaatsen (echte alleen lokaal in te laden) · ruilvoorstellen nog niet in de database · pincodes zijn demo.';
 }
@@ -3331,7 +3330,7 @@ function viewWeek(){
     html+='</tr>';
   });
   html+='</table></div>';
-  html+='<p class="sub" style="margin-top:10px">Diensten schuiven verandert wie welke dienst draait, niet de headcount. Voor méér mensen in een regio gebruik je het schuifbord.</p>';
+  html+='<p class="sub" style="margin-top:10px">Diensten schuiven verandert wie welke dienst draait, niet de headcount. Voor méér mensen in een regio stuur je een voorstel naar Manager R / D; er wordt niets automatisch gewijzigd.</p>';
   return html;
 }
 // Zet een dienst op elke cel van de selectie en schrijft ze allemaal weg.
