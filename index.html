@@ -1107,12 +1107,16 @@ var M=RAW.map(function(r,i){
 });
 var _now0=new Date();var _wd=_now0.getDay();var TODAY=7+(_wd===0?6:_wd-1); // dag 0-6 vorige week, 7-13 deze week (ma-zo)
 var LOADDAG=_now0.toDateString();
+/* Het 14-daagse werkvenster (idx 0-13) kan weken opschuiven: winShift=1 betekent dat idx 7 de maandag van NÁÉST deze week is.
+   TODAY schuift mee, zodat dateFor/isoOf/alle weergaven vanzelf kloppen; 'vandaag' valt dan buiten het venster. */
+var winShift=0;
+function realToday(){var wd=new Date().getDay();return 7+(wd===0?6:wd-1);}
 /* TODAY, curDay en de geladen roosters horen bij de dag waarop de pagina laadde. Staat de tab 's nachts open,
    dan klopt 'vandaag' de volgende ochtend niet meer en lijken alle diensten een dag opgeschoven. */
 function dagCheck(){
   var nu=new Date(); if(nu.toDateString()===LOADDAG)return;
   LOADDAG=nu.toDateString();
-  var oud=TODAY, wd=nu.getDay(); TODAY=7+(wd===0?6:wd-1);
+  var oud=TODAY, wd=nu.getDay(); TODAY=7+(wd===0?6:wd-1)-7*winShift;
   if(curDay===oud)curDay=TODAY;
   if(typeof sbAgg!=='undefined')sbAgg={};
   if(role&&typeof sbLoad==='function')sbLoad();
@@ -1243,6 +1247,18 @@ function suggestions(col,day,regioOnly){
 function applyMove(mid,day,targetLocId){moves[mid+':'+day]=targetLocId;sbSaveMove(mid,day,targetLocId);}
 
 /* ---------- datumhelpers ---------- */
+/* schuif het venster naar week-offset k (0 = nu) en open dag idx; klaar() draait nadat de roosters van die weken geladen zijn */
+function shiftWindow(k,dag,klaar){
+  if(k!==winShift&&typeof conceptAantal==='function'&&conceptAantal()>0&&!window.confirm('Je hebt een concept dat nog niet is vastgelegd. Als je naar andere weken gaat, vervalt dat concept. Doorgaan?'))return;
+  if(k===winShift){curDay=dag;pick=null;weekStart=curDay>=7?7:0;render();if(klaar)klaar();return;}
+  winShift=k;TODAY=realToday()-7*winShift;
+  moves={};conceptMoves={};scenarios=[];scenarioActief=null;conceptOverride=null;
+  M.forEach(function(m){for(var d=0;d<14;d++)m.roster[d]='vrij';});
+  pick=null;editCell=null;editCells=[];curDay=dag;weekStart=curDay>=7?7:0;
+  render();
+  var p=(typeof sbLoad==='function')?sbLoad():null;
+  Promise.resolve(p).then(function(){if(klaar)klaar();render();});
+}
 function dateFor(idx){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+(idx-TODAY));return d;}
 var WD=['zo','ma','di','wo','do','vr','za'];
 function dLabel(idx){var d=dateFor(idx);return WD[d.getDay()]+' '+d.getDate()+' '+['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()];}
@@ -2074,6 +2090,7 @@ function render(){
   else if(role==='TS') v.innerHTML=(tlMode==='waak'?viewWaak():(tlMode==='week'?weekStripHtml():'')+wdTeamBanner()+viewBuitenTeam('Zuid'));
   else if(role==='PL') v.innerHTML=viewHeatmap('Planner · alleen-lezen');
   else if(role==='UV') v.innerHTML=(uvView==='bord'?viewMonteurBord():viewUitvoering());
+  if(winShift!==0&&role==='RD'){v.insertAdjacentHTML('afterbegin','<div class="ai" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span><span class="dot"></span>Je werkt in <b>week '+isoWeek(dateForIdx(7))+'</b> ('+dLabel(7)+' t/m '+dLabel(13)+'), niet in de huidige week.</span><button class="acc ghost" onclick="shiftWindow(0,realToday())">terug naar vandaag</button></div>');}
   if(role==='RD'&&boardView==='bord') wireBoard();
   if(role==='RD'&&boardView==='week') wireWeek();
   if(role==='RD'&&boardView==='voorstellen') wireVoorstellen();
@@ -2096,7 +2113,7 @@ function wgNav(d){wgOff+=d;render();}
 function fmtIsoD(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function mondayOf(d){var t=new Date(d);t.setHours(0,0,0,0);t.setDate(t.getDate()-((t.getDay()+6)%7));return t;}
 // curDay 0-13 <-> echte datum: idx 7 = maandag van deze week (zie TODAY-formule hierboven).
-function dateForIdx(d){var mon=mondayOf(new Date());var dt=new Date(mon);dt.setDate(mon.getDate()+(d-7));return dt;}
+function dateForIdx(d){var mon=mondayOf(new Date());var dt=new Date(mon);dt.setDate(mon.getDate()+(d-7)+7*winShift);return dt;}
 function curDayIdxForIso(iso){for(var d=0;d<14;d++){if(fmtIsoD(dateForIdx(d))===iso)return d;}return null;}
 function gLocs(){return LOC.map(function(l){return l;});} // oude indeling: 5 regio's + ZARA-locaties + Techno
 /* ---- Klikbare KPI-kaarten met detail-uitklap (Manager G week/kwartaal) ---- */
@@ -2789,29 +2806,45 @@ function wireTrendDrag(){
    Dag = het live schuifbord-rooster (14-daags venster, idx 13 is de laatste dag). Week en kwartaal lezen de
    gedeelde roosterdata via ensureRange, dezelfde bron als Grafiek > Week/Kwartaal/Jaar. */
 var outlookMode='dag';
+var olWeekOff=0;   // week-modus: eerste getoonde week, in weken t.o.v. de huidige week
 function olWorkdays(van,tot){var out=[];for(var d=new Date(van);d<=tot;d.setDate(d.getDate()+1)){var wd=d.getDay();if(wd>=1&&wd<=5)out.push(new Date(d));}return out;}
+/* naar een week: schuif het venster, open de werkdag met de laagste dekking in het schuifbord */
+function olOpenWeek(w){
+  outlookMode='dag';
+  shiftWindow(w,7,function(){
+    var cols=columns(),best=null,bestV=1e9;
+    for(var d=(w===0?Math.max(TODAY,7):7);d<=11;d++){
+      cols.forEach(function(c){var v=colDekking(c,d);if(v<bestV){bestV=v;best=d;}});
+    }
+    curDay=(best===null?7:best);pick=null;render();
+  });
+}
+function olWeekNav(delta){var n=curDay+7*delta;if(n>=0&&n<=13){curDay=n;pick=null;render();}else shiftWindow(winShift+delta,curDay);}
+function olOpenKwartaal(wOff){olWeekOff=wOff;outlookMode='week';render();}
 function boardOutlook(cols){
   var modes=[['dag','Dag'],['week','Week'],['kwartaal','Kwartaal']];
   var tog='<div class="ctrl" style="margin:0">'+modes.map(function(m){return '<button class="'+(outlookMode===m[0]?'active':'')+'" onclick="outlookMode=\''+m[0]+'\';render()">'+m[1]+'</button>';}).join('')+'</div>';
-  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div style="font-size:14px;font-weight:600">Vooruitblik</div>'+tog+'</div>';
-  var heads=[],cellsFor,note='',klik=false;
+  var heads=[],cellsFor,note='',click=null,nav='';
   if(outlookMode==='dag'){
-    var van=curDay, tot=Math.min(13,curDay+6);
-    if(tot<=van)return '<div class="hm" style="margin-bottom:14px">'+head+'<p class="sub" style="margin:2px 0 0">Geen dagen meer vooruit in het rooster. Kies Week of Kwartaal.</p></div>';
+    var van=curDay>=7?7:0, tot=van+6;
     for(var d=van;d<=tot;d++)heads.push({lab:dShort(d),now:d===TODAY,sel:d===curDay,id:d});
     cellsFor=function(c,h){return colDekking(c,h.id);};
-    klik=true;
-    note='Dekking per dag, live uit het schuifbord (inclusief concept). Klik een cel om die dag te openen. De tool heeft roosters t/m '+dLabel(13)+'.';
+    click=function(h,v){return 'curDay='+h.id+';pick=null;render()';};
+    nav='<div class="ctrl" style="margin:0"><button onclick="olWeekNav(-1)">&#8249; week</button><span class="daylabel" style="min-width:70px">wk '+isoWeek(dateForIdx(van))+'</span><button onclick="olWeekNav(1)">week &#8250;</button></div>';
+    note='Dekking per dag voor week '+isoWeek(dateForIdx(van))+', live uit het schuifbord (inclusief concept). Klik een dag om die in het schuifbord te openen en daar te verplaatsen. Met &#8249; &#8250; ga je een week terug of vooruit.';
   } else {
     var perioden=[],laden=false,agg;
     if(outlookMode==='week'){
       var m0=mondayOf(new Date());
-      for(var w=0;w<8;w++){var a=new Date(m0);a.setDate(m0.getDate()+w*7);var e=new Date(a);e.setDate(a.getDate()+6);perioden.push({van:a,tot:e,lab:'wk '+isoWeek(a)+'<br><span style="font-size:9px;opacity:.7">'+a.getDate()+'/'+(a.getMonth()+1)+'</span>',now:w===0});}
-      note='Gemiddelde dekking per week (werkdagen), komende 8 weken. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
+      for(var w=0;w<8;w++){var wo=olWeekOff+w;var a=new Date(m0);a.setDate(m0.getDate()+wo*7);var e=new Date(a);e.setDate(a.getDate()+6);perioden.push({van:a,tot:e,wo:wo,lab:'wk '+isoWeek(a)+'<br><span style="font-size:9px;opacity:.7">'+a.getDate()+'/'+(a.getMonth()+1)+'</span>',now:wo===0});}
+      nav='<div class="ctrl" style="margin:0"><button onclick="olWeekOff-=4;render()">&#8249; 4 wkn</button><button onclick="olWeekOff=0;render()">nu</button><button onclick="olWeekOff+=4;render()">4 wkn &#8250;</button></div>';
+      note='Gemiddelde dekking per week (werkdagen), 8 weken. Klik op een cel: het schuifbord opent op de dag van die week met de laagste dekking, zodat je daar meteen kunt verplaatsen. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
     } else {
-      var nu=new Date(),qi=Math.floor(nu.getMonth()/3);
-      for(var k=0;k<4;k++){var idx=qi+k,yr=nu.getFullYear()+Math.floor(idx/4),q=idx%4;var a2=new Date(yr,q*3,1),e2=new Date(yr,q*3+3,0);perioden.push({van:a2,tot:e2,lab:'Q'+(q+1)+'<br><span style="font-size:9px;opacity:.7">'+yr+'</span>',now:k===0});}
-      note='Gemiddelde dekking per kwartaal (werkdagen), dit en de drie volgende kwartalen. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
+      var nu=new Date(),qi=Math.floor(nu.getMonth()/3),m1=mondayOf(nu);
+      for(var k=0;k<4;k++){var idx=qi+k,yr=nu.getFullYear()+Math.floor(idx/4),q=idx%4;var a2=new Date(yr,q*3,1),e2=new Date(yr,q*3+3,0);
+        var wo2=Math.round((mondayOf(a2)-m1)/(7*864e5));
+        perioden.push({van:a2,tot:e2,wo:wo2,lab:'Q'+(q+1)+'<br><span style="font-size:9px;opacity:.7">'+yr+'</span>',now:k===0});}
+      note='Gemiddelde dekking per kwartaal (werkdagen), dit en de drie volgende kwartalen. Klik op een kwartaal om de weken ervan te zien. Een &#8211; betekent: nog geen rooster ingevoerd. Een * betekent: maar een deel van de werkdagen is ingevoerd, het cijfer telt alleen die dagen.';
     }
     var van2=perioden[0].van,tot2=perioden[perioden.length-1].tot;
     agg=ensureRange('ov_'+outlookMode+'_'+fmtIsoD(van2)+'_'+fmtIsoD(tot2),fmtIsoD(van2),fmtIsoD(tot2));
@@ -2823,18 +2856,20 @@ function boardOutlook(cols){
       pd.deel=alle.length?pd.dagen.length/alle.length:0;pd.nAlle=alle.length;
       heads.push({lab:pd.lab,now:pd.now,sel:false,id:i});});
     cellsFor=function(c,h){var pd=perioden[h.id];return (laden||!pd.dagen.length)?null:aggRangeAvg(agg,c,pd.dagen);};
+    click=function(h,v){var pd=perioden[h.id];return outlookMode==='week'?('olOpenWeek('+pd.wo+')'):('olOpenKwartaal('+pd.wo+')');};
     if(laden)note='Laden…';
   }
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div style="font-size:14px;font-weight:600">Vooruitblik</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+nav+tog+'</div></div>';
   var hrow='';heads.forEach(function(h){hrow+='<td class="hm-day'+(h.now?' hm-now':'')+'">'+h.lab+'</td>';});
   var rows='';
   cols.forEach(function(c){var tds='';
     heads.forEach(function(h){var v=cellsFor(c,h);
       if(v===null){tds+='<td><div class="hm-cell" style="background:var(--surface-1);color:var(--muted)" title="'+c.naam+' · geen rooster ingevoerd">&#8211;</div></td>';return;}
-      var t=tone(v);
-      if(klik)tds+='<td><button class="hm-cell hm-cell-click'+(h.sel?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+dLabel(h.id)+' · '+v+'% — klik om deze dag te openen" onclick="curDay='+h.id+';pick=null;render()">'+v+'</button></td>';
-      else{var pd2=perioden[h.id];var deel=pd2&&pd2.deel<0.999;tds+='<td><div class="hm-cell" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+v+'%'+(deel?' · rooster ingevoerd voor '+pd2.dagen.length+' van '+pd2.nAlle+' werkdagen':'')+'">'+v+(deel?'*':'')+'</div></td>';}});
+      var t=tone(v), pd2=(outlookMode!=='dag')?perioden[h.id]:null, deel=pd2&&pd2.deel<0.999;
+      tds+='<td><button class="hm-cell hm-cell-click'+(h.sel?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+v+'%'+(deel?' · rooster ingevoerd voor '+pd2.dagen.length+' van '+pd2.nAlle+' werkdagen':'')+' — klik om te openen" onclick="'+click(h,v)+'">'+v+(deel?'*':'')+'</button></td>';});
     rows+='<tr><td class="hm-lab">'+c.naam+'</td>'+tds+'</tr>';});
-  var legenda='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bg);border:1px solid var(--risk-bar);vertical-align:-1px"></i> onder 45%</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bg);border:1px solid var(--warn-bar);vertical-align:-1px"></i> 45&#8211;59%</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bg);border:1px solid var(--ok-bar);vertical-align:-1px"></i> 60&#8211;99% (norm gehaald)</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ruim-bg);border:1px solid var(--ruim-bar);vertical-align:-1px"></i> 100% of meer</span></div>';
+  var sw=function(bg,bar,txt){return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--'+bg+');border:1px solid var(--'+bar+');vertical-align:-1px"></i> '+txt+'</span>';};
+  var legenda='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px">'+sw('risk-bg','risk-bar','onder 45%')+sw('warn-bg','warn-bar','45&#8211;59%')+sw('ok-bg','ok-bar','60&#8211;99% (norm gehaald)')+sw('ruim-bg','ruim-bar','100% of meer')+'</div>';
   return '<div class="hm" style="margin-bottom:14px">'+head+'<table class="hm-t"><tr><td class="hm-lab"></td>'+hrow+'</tr>'+rows+'</table>'+legenda+'<p class="sub" style="margin:6px 0 0">'+note+'</p></div>';
 }
 function viewBoard(){
@@ -4826,7 +4861,7 @@ function doLogin(){
   if(!selRole){err.textContent='Kies eerst een rol.';return;}
   var r=ROLES.find(function(x){return x.id===selRole;});
   if(document.getElementById('pin').value!==r.pin){err.textContent='Onjuiste pincode.';return;}
-  role=selRole;boardView='bord';curDay=TODAY;pick=null;weekStart=7;weekLoc='ZO';weekSel=[];editCell=null;editCells=[];gView='dag';tlMode='dag';uvView='bord';
+  winShift=0;TODAY=realToday();role=selRole;boardView='bord';curDay=TODAY;pick=null;weekStart=7;weekLoc='ZO';weekSel=[];editCell=null;editCells=[];gView='dag';tlMode='dag';uvView='bord';
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   render();
@@ -4837,9 +4872,9 @@ function doLogin(){
 document.getElementById('loginBtn').onclick=doLogin;
 document.getElementById('pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 document.getElementById('logout').onclick=function(){role=null;selRole=null;document.getElementById('pin').value='';document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('pinHint').textContent='';document.querySelectorAll('.role-btn').forEach(function(x){x.classList.remove('sel');});};
-document.getElementById('prevDay').onclick=function(){if(curDay>0){curDay--;pick=null;render();}};
-document.getElementById('nextDay').onclick=function(){if(curDay<13){curDay++;pick=null;render();}};
-document.getElementById('todayBtn').onclick=function(){curDay=TODAY;pick=null;render();};
+document.getElementById('prevDay').onclick=function(){if(curDay>0){curDay--;pick=null;render();}else shiftWindow(winShift-1,6);};
+document.getElementById('nextDay').onclick=function(){if(curDay<13){curDay++;pick=null;render();}else shiftWindow(winShift+1,7);};
+document.getElementById('todayBtn').onclick=function(){if(winShift!==0)shiftWindow(0,realToday());else{curDay=TODAY;pick=null;render();}};
 document.getElementById('groupToggle').querySelectorAll('button').forEach(function(b){b.onclick=function(){groupMode=b.dataset.g;pick=null;grafiekSel=null;trendSelIdx=null;editCell=null;editCells=[];render();};});
 
 /* ============================================================
