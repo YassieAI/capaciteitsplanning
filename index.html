@@ -1278,7 +1278,7 @@ function setCtrls(){
   show('groupToggle', false);   // indeling staat vast op 3 regio's
   var vt=document.getElementById('viewToggle');
   if(role==='RD'){
-    var openCount=proposals.filter(function(p){return p.status==='open';}).length;
+    var openCount=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal();
     vt.classList.remove('hidden');vt.innerHTML=
       '<button data-v="grafiek" class="'+(boardView==='grafiek'?'active':'')+'">Grafiek</button>'+
       '<button data-v="heat" class="'+(boardView==='heat'?'active':'')+'">Heatmap</button>'+
@@ -2108,7 +2108,7 @@ function render(){
   if(role==='PL') wireHeatmap();
   if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
-  document.getElementById('foot').innerHTML='Gedeelde data via Supabase (EU) · fictieve monteurnamen (privacy) · waakdienst: demowoonplaatsen (echte alleen lokaal in te laden) · ruilvoorstellen nog niet in de database · pincodes zijn demo.';
+  document.getElementById('foot').innerHTML='Fictieve monteurnamen (privacy) · waakdienst: demowoonplaatsen (echte alleen lokaal in te laden) · pincodes zijn demo.';
 }
 
 /* ---------- Manager G weekdashboard (alleen-lezen, echte data, bladerbaar) ---------- */
@@ -3093,8 +3093,20 @@ function wireBoard(){
 
 function viewVoorstellen(){
   var open=proposals.filter(function(p){return p.status==='open';});
+  var wdR=wdRuilen.filter(function(r){return r.status==='open';}),wdV=wdVerpl.filter(function(r){return r.status==='open';});
   var html='<h2>Te bespreken in het overleg</h2><p class="sub">Punten die de teamleiders aandragen. Geen automatische goedkeuring — bespreek ze en voer daarna eventueel door.</p>';
-  if(!open.length){html+='<div class="empty">Niets te bespreken op dit moment.</div>';return html;}
+  if(!open.length&&!wdR.length&&!wdV.length){html+='<div class="empty">Niets te bespreken op dit moment.</div>';return html;}
+  if(wdR.length||wdV.length){
+    var wc=wdC();
+    html+='<h3 style="margin:14px 0 4px;font-size:15px">Waakdienst</h3>';
+    wdR.forEach(function(r){var bad=wdRuilCheck(wc,r.k1,r.s1,r.k2,r.s2);
+      html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">Ruil '+r.a+' ⇄ '+r.b+'</span><span class="badge b-ok">'+esc(r.door)+'</span></div><div class="meta"><span>'+r.a+': wk '+(r.k1+1)+' '+wdGNaam(wc,r.s1)+' → wk '+(r.k2+1)+' '+wdGNaam(wc,r.s2)+'</span></div>'+(bad.length?'<div class="meta wd-bad">Klopt niet meer: '+bad[0]+'</div>':'')+
+        (role==='RD'?'<div style="margin-top:8px;display:flex;gap:8px"><button class="acc" data-vwdok="'+r.id+'"'+(bad.length?' disabled':'')+'>Besproken · doorvoeren</button><button class="acc ghost" data-vwdnee="'+r.id+'">Besproken · sluiten</button></div>':'')+'</div>';});
+    wdV.forEach(function(v){var mm=WD_POOL.filter(function(x){return x.ini===v.ini;})[0];
+      html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">'+v.ini+' → '+wdGNaam(wc,v.naar)+'</span><span class="badge b-ok">'+esc(v.door)+'</span></div><div class="meta"><span>woont '+(mm?mm.woon:'')+'</span><span>nu thuisgebied '+wdGNaam(wc,v.van)+'</span></div>'+
+        (role==='RD'?'<div style="margin-top:8px;display:flex;gap:8px"><button class="acc" data-vwvok="'+v.id+'">Besproken · doorvoeren</button><button class="acc ghost" data-vwvnee="'+v.id+'">Besproken · sluiten</button></div>':'')+'</div>';});
+    if(open.length)html+='<h3 style="margin:18px 0 4px;font-size:15px">Schuifbord en Weekrooster</h3>';
+  }
   open.forEach(function(p){
     var m=M.filter(function(x){return x.id===p.mid;})[0];
     var donor=null;columns().forEach(function(c){if(c.members.indexOf(locOf(m,p.day))>=0)donor=c;});
@@ -3105,6 +3117,10 @@ function viewVoorstellen(){
   return html;
 }
 function wireVoorstellen(){
+  document.querySelectorAll('[data-vwdok]').forEach(function(b){b.onclick=function(){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.vwdok;})[0];if(!r)return;var c=wdCache[r.key]||wdC();if(wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2).length)return;wdDoeRuil(c,r);r.status='goed';removeProposal(r.id,'doorgevoerd');render();};});
+  document.querySelectorAll('[data-vwdnee]').forEach(function(b){b.onclick=function(){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.vwdnee;})[0];if(!r)return;r.status='nee';removeProposal(r.id,'gesloten');render();};});
+  document.querySelectorAll('[data-vwvok]').forEach(function(b){b.onclick=function(){var v=wdVerpl.filter(function(x){return x.id===+b.dataset.vwvok;})[0];if(!v)return;v.status='goed';wdVerpPas(v);removeProposal(v.id,'doorgevoerd');render();};});
+  document.querySelectorAll('[data-vwvnee]').forEach(function(b){b.onclick=function(){var v=wdVerpl.filter(function(x){return x.id===+b.dataset.vwvnee;})[0];if(!v)return;v.status='nee';removeProposal(v.id,'gesloten');render();};});
   document.querySelectorAll('[data-vacc]').forEach(function(b){b.onclick=function(){var id=+b.dataset.vacc;var p=proposals.filter(function(x){return x.id===id;})[0];if(isDienstProp(p)){var pm=M.filter(function(x){return x.id===p.mid;})[0];pm.roster[p.day]=p.tgt.slice(3);sbSaveStatus(pm,p.day);}else applyMove(p.mid,p.day,p.tgt);removeProposal(id,'doorgevoerd');render();};});
   document.querySelectorAll('[data-vrej]').forEach(function(b){b.onclick=function(){removeProposal(+b.dataset.vrej,'gesloten');render();};});
 }
@@ -4118,12 +4134,24 @@ function wdCheck(prep,plan){
    WAAKDIENST — weergave in de tool (teamleiders + Manager R/D)
    ================================================================ */
 var wdKey='D', wdSub='kaart', wdSel=null, wdAlleen=true, wdKaartIni=null, wdKaartG=null;
+var wdVerpl=[];
 var wdRuilen=[], wdRuilId=1, wdCache={}, wdKaartWk=null, wdDEigen=false;
 var WD_NAAM={}; // code → fictieve naam uit de tool
 function wdNaam(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return m?m.naam:ini;}
 function wdBouw(){
-  WD_KEYS.forEach(function(k){var p=wdPrep(k,GEO.cells);var r=wdMaak(p,k==='D'&&wdDEigen);wdCache[k]={prep:p,plan:r.plan,leeg:r.leeg,vast:!!r.vast};});
+  WD_KEYS.forEach(function(k){var p=wdPrep(k,GEO.cells);var r=wdMaak(p,k==='D'&&wdDEigen);wdCache[k]={prep:p,plan:r.plan,leeg:r.leeg,vast:!!r.vast};
+    wdRuilen.filter(function(x){return x.key===k&&x.status==='goed';}).forEach(function(x){try{wdDoeRuil(wdCache[k],x);}catch(e){}});});
 }
+/* waakdienst-voorstellen (ruilen en verplaatsingen) staan in dezelfde tabel als de andere voorstellen; de soort zit in 'doel' */
+function wdOpslaan(id,doel,door,status){
+  ownWriteAt=Date.now();
+  if(!sb)return;
+  sb.from('stuur_voorstellen').upsert({id:id,monteur:M[0].naam,datum:isoOf(0),doel:doel,door:door,status:status||'open'},{onConflict:'id'}).then(chk);
+}
+function wdRoleNaam(){return ROLES.filter(function(x){return x.id===role;})[0].naam;}
+function wdOpenAantal(){return wdRuilen.filter(function(r){return r.status==='open';}).length+wdVerpl.filter(function(r){return r.status==='open';}).length;}
+function wdSigStr(){return wdRuilen.map(function(r){return r.id+r.status;}).join(',')+'|'+wdVerpl.map(function(r){return r.id+r.status;}).join(',');}
+function wdVerpPas(r){WD_OVERRIDE[r.key]=WD_OVERRIDE[r.key]||{};if(wdBase().home[r.ini]===r.naar)delete WD_OVERRIDE[r.key][r.ini];else WD_OVERRIDE[r.key][r.ini]=r.naar;wdBouw();}
 function wdC(){if(!wdCache[wdKey])wdBouw();return wdCache[wdKey];}
 /* ---------- echte gegevens: alleen lokaal, alleen in het geheugen ----------
    Het bestand waakdienst-echt.json bevat echte woonplaatsen, de 60+-indicatie en het rooster van de
@@ -4230,6 +4258,12 @@ function wdVerschoven(){
 function wdVerplaats(ini,g){
   var c=wdC();if(!g||c.prep.home[ini]===g)return;
   var oud=c.prep.home[ini];
+  if(role!=='RD'&&role!=='G'){
+    wdVerpl=wdVerpl.filter(function(x){return !(x.ini===ini&&x.key===wdKey&&x.status==='open');});
+    var v={id:propId++,key:wdKey,ini:ini,van:oud,naar:g,door:wdRoleNaam(),status:'open'};wdVerpl.push(v);
+    wdOpslaan(v.id,'wd:v|'+[v.key,v.ini,v.van,v.naar].join('|'),v.door,'open');
+    sbToast(ini+': voorstel '+wdGNaam(c,oud)+' → '+wdGNaam(c,g)+' staat bij Te bespreken.');render();return;
+  }
   if(wdBase().home[ini]===g)delete WD_OVERRIDE[wdKey][ini];else WD_OVERRIDE[wdKey][ini]=g;
   wdRuilen=wdRuilen.filter(function(r){return r.key!==wdKey;});
   wdBouw();
@@ -4312,7 +4346,7 @@ function wdKpi(key){
 /* ---------- hoofdweergave ---------- */
 function viewWaak(){
   var c=wdC();
-  var open=wdRuilen.filter(function(r){return r.status==='open';}).length;
+  var open=wdOpenAantal();
   var subs=[['kaart','Kaart'],['q4','Q4 2026'],['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')],['rooster','Jaarrooster 2027'],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']];
   var h='<h2>Waakdienst 2027</h2><p class="sub">Vr 1 januari 2027 t/m do 6 januari 2028 · 53 weken · elke week waakdienst per gebied plus één landelijke schaduwdienst · fictieve namen.</p>'+wdDatabron();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'</div>';
@@ -4577,7 +4611,7 @@ function wdTeamBanner(){
 /* ---------- ruil vastleggen + slepen in het jaarrooster ---------- */
 function wdMaakRuil(k1,s1,k2,s2){var c=wdC();
   var r={id:wdRuilId++,key:wdKey,k1:k1,s1:s1,k2:k2,s2:s2,a:c.plan[k1][s1],b:c.plan[k2][s2],door:ROLES.filter(function(x){return x.id===role;})[0].naam,status:'open'};
-  wdRuilen.push(r);wdSel=null;wdSub='ruil';sbToast('Ruil '+r.a+' ⇄ '+r.b+' staat op de agenda voor het overleg.');render();}
+  r.id=propId++;wdRuilen.push(r);wdOpslaan(r.id,'wd:r|'+[r.key,r.k1,r.s1,r.k2,r.s2,r.a,r.b].join('|'),r.door,'open');wdSel=null;wdSub='ruil';sbToast('Ruil '+r.a+' ⇄ '+r.b+' staat bij Te bespreken.');render();}
 function wdOpenPaneel(k,s){wdSel={k:k,s:s};render();var el=document.querySelector('.wd-ruil');if(el){var hb=document.querySelector('header.bar');window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-(hb?hb.offsetHeight:0)-10,behavior:'smooth'});}}
 function wdDoelen(k,s){ // alle diensten waarmee (k,s) geruild mag worden → {'k|s': [redenen]}
   var c=wdC(),A=c.plan[k][s],voor={},uit={};wdCheck(c.prep,c.plan).forEach(function(f){voor[f.m]=1;});
@@ -4621,7 +4655,7 @@ function wireWaak(){
     rd.readAsText(f);};
   if(wdSub==='vergelijk')wdMinis();else{WD_MINIS.forEach(function(m){try{m.remove();}catch(e){}});WD_MINIS=[];}
   if(wdSub==='kaart')wdLeaflet();else if(WD_LMAP){try{WD_LMAP.remove();}catch(e){}WD_LMAP=null;}
-  document.querySelectorAll('[data-wdundo]').forEach(function(b){b.onclick=function(){var i=b.dataset.wdundo;if(i==='*')WD_OVERRIDE[wdKey]={};else delete WD_OVERRIDE[wdKey][i];wdRuilen=wdRuilen.filter(function(r){return r.key!==wdKey;});wdBouw();render();};});
+  document.querySelectorAll('[data-wdundo]').forEach(function(b){b.onclick=function(){var i=b.dataset.wdundo;wdVerpl.filter(function(x){return x.status==='goed'&&x.key===wdKey&&(i==='*'||x.ini===i);}).forEach(function(x){x.status='nee';removeProposal(x.id,'gesloten');});if(i==='*')WD_OVERRIDE[wdKey]={};else delete WD_OVERRIDE[wdKey][i];wdRuilen=wdRuilen.filter(function(r){return r.key!==wdKey;});wdBouw();render();};});
   var q=function(sel,fn){document.querySelectorAll(sel).forEach(function(b){b.onclick=function(e){fn(b,e);};});};
   q('[data-wdk]',function(b){wdKey=b.dataset.wdk;wdSel=null;WD_LVIEW=WD_LVIEW;wdKaartIni=null;wdKaartG=null;wdKaartWk=null;render();});
   q('[data-wds]',function(b){wdSub=b.dataset.wds;wdSel=null;render();});
@@ -4637,9 +4671,9 @@ function wireWaak(){
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
   q('[data-wdclose]',function(){wdSel=null;render();});
   q('[data-wdruil]',function(b){var p=b.dataset.wdruil.split('|');wdMaakRuil(+p[0],p[1],+p[2],p[3]);});
-  q('[data-wdok]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdok;})[0];var c=wdCache[r.key];if(wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2).length)return;wdDoeRuil(c,r);r.status='goed';render();});
-  q('[data-wdnee]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdnee;})[0];r.status='nee';render();});
-  q('[data-wdin]',function(b){wdRuilen=wdRuilen.filter(function(x){return x.id!==+b.dataset.wdin;});render();});
+  q('[data-wdok]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdok;})[0];var c=wdCache[r.key];if(wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2).length)return;wdDoeRuil(c,r);r.status='goed';removeProposal(r.id,'doorgevoerd');render();});
+  q('[data-wdnee]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdnee;})[0];r.status='nee';removeProposal(r.id,'gesloten');render();});
+  q('[data-wdin]',function(b){wdRuilen=wdRuilen.filter(function(x){return x.id!==+b.dataset.wdin;});removeProposal(+b.dataset.wdin);render();});
   var g=document.getElementById('wdGrens');if(g)g.onchange=function(){
     WD_REGELS.grens=+g.value;wdRuilen=[];wdBouw();sbToast('Rooster opnieuw berekend met reistijdgrens '+g.value+' min.');render();};
 }
@@ -4996,7 +5030,7 @@ function sbSig(){
   return {
     rooster:M.map(function(m){return m.roster.join(',');}).join('|'),
     moves:Object.keys(moves).sort().map(function(k){return k+'='+moves[k];}).join(';'),
-    voorstellen:proposals.map(function(p){return p.id+':'+p.mid+':'+p.day+':'+p.tgt+':'+p.status;}).join(';'),
+    voorstellen:proposals.map(function(p){return p.id+':'+p.mid+':'+p.day+':'+p.tgt+':'+p.status;}).join(';')+'#'+wdSigStr(),
     norm:LOC.map(function(l){return l.benodigd;}).join(',')
   };
 }
@@ -5016,8 +5050,25 @@ async function sbLoad(opts){
     if(!mv.error){moves={};(mv.data||[]).forEach(function(row){var m=MNAAM[row.monteur];var idx=idxByIso[row.datum];
       if(m&&idx!==undefined&&LOCMAP[row.loc])moves[m.id+':'+idx]=row.loc;});}
     var pr=await sb.from('stuur_voorstellen').select('id,monteur,datum,doel,door,status').eq('status','open');
+    var wdVoor=wdSigStr();
+    try{
+      var wr=await sb.from('stuur_voorstellen').select('id,doel,door,status').like('doel','wd:%').in('status',['open','doorgevoerd']);
+      if(!wr.error){
+        wdRuilen=[];wdVerpl=[];
+        (wr.data||[]).sort(function(a,b){return Number(a.id)-Number(b.id);}).forEach(function(row){
+          var p=String(row.doel).split('|'),st=row.status==='open'?'open':'goed',id=Number(row.id);
+          if(id>=propId)propId=id+1;
+          if(p[0]==='wd:r'&&p.length>=8)wdRuilen.push({id:id,key:p[1],k1:+p[2],s1:p[3],k2:+p[4],s2:p[5],a:p[6],b:p[7],door:String(row.door||'').slice(0,40),status:st});
+          else if(p[0]==='wd:v'&&p.length>=5)wdVerpl.push({id:id,key:p[1],ini:p[2],van:p[3],naar:p[4],door:String(row.door||'').slice(0,40),status:st});
+        });
+        wdVerpl.filter(function(x){return x.status==='goed'&&WD_KEYS.indexOf(x.key)>=0;}).forEach(function(x){WD_OVERRIDE[x.key]=WD_OVERRIDE[x.key]||{};WD_OVERRIDE[x.key][x.ini]=x.naar;});
+        if(wdSigStr()!==wdVoor)wdCache={};
+      }
+    }catch(e){console.error('[waakdienst] voorstellen laden faalde',e);}
     if(!pr.error){proposals=[];(pr.data||[]).forEach(function(row){var m=MNAAM[row.monteur];var idx=idxByIso[row.datum];
-      if(!m||idx===undefined||!LOCMAP[row.doel])return;   // onbekende doellocatie zou het tabblad laten crashen
+      if(String(row.doel).indexOf('wd:')===0)return;
+      var dienstP=String(row.doel).indexOf('st:')===0;
+      if(!m||idx===undefined||(!dienstP&&!LOCMAP[row.doel]))return;   // onbekende doellocatie zou het tabblad laten crashen
       proposals.push({id:Number(row.id),mid:m.id,day:idx,tgt:row.doel,by:String(row.door||'').slice(0,40),status:'open'});
       if(Number(row.id)>=propId)propId=Number(row.id)+1;});}
     await sbLoadNorm();   // vóór render, want elke dekking rekent met LOC.benodigd
@@ -5188,7 +5239,7 @@ setInterval(function(){
   if(Date.now()-ownWriteAt<8000)return;                      // net zelf opgeslagen
   if(pick||editCell||(editCells&&editCells.length)||wkDrag.bezig)return;   // niet storen tijdens het werken
   sbLoad({melding:true});
-},30000);
+},10000);
 window.__sb={typeToStatus:typeToStatus,statusToRow:statusToRow,isoOf:isoOf,sbLoad:sbLoad,MNAAM:MNAAM};
 
 buildLogin();
