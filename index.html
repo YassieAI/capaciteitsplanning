@@ -1153,7 +1153,7 @@ function inScope(col){return col.members.every(function(m){return inScopeId(m);}
 function canDecide(){return role==='RD';}
 function isOperational(){return role==='RD'||role==='TZ'||role==='TB';}
 function isDienstProp(p){return typeof p.tgt==='string'&&p.tgt.indexOf('st:')===0;}
-function propNaam(p){if(isDienstProp(p)){var v=p.tgt.slice(3);return 'dienst: '+(dienstShow(v,p.day)||(v.indexOf('verlof:')===0?'verlof':v.indexOf('comp:')===0?'comp':'vrij'));}return LOCMAP[p.tgt]?propNaam(p):p.tgt;}
+function propNaam(p){if(isDienstProp(p)){var v=p.tgt.slice(3);return 'dienst: '+(dienstShow(v,p.day)||(v.indexOf('verlof:')===0?'verlof':v.indexOf('comp:')===0?'comp':'vrij'));}return LOCMAP[p.tgt]?LOCMAP[p.tgt].naam:p.tgt;}
 function pushProposal(mid,day,tgt){var p={id:propId++,mid:mid,day:day,tgt:tgt,by:ROLES.filter(function(r){return r.id===role;})[0].naam,status:'open'};proposals.push(p);sbSaveProposal(p);}
 
 var ROLES=[
