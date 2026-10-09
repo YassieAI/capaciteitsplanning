@@ -1159,7 +1159,7 @@ function pushProposal(mid,day,tgt){var p={id:propId++,mid:mid,day:day,tgt:tgt,by
 var ROLES=[
  {id:'G', naam:'Manager G', desc:'Totaaloverzicht per regio · alleen-lezen', pin:'1111'},
  {id:'RD',naam:'Manager R / D', desc:'Operationeel sturen · schuifbord + AI', pin:'2222'},
- {id:'TZ',naam:'Teamleider ZARA', desc:'Eigen team · bij tekort iemand uit een regio voorstellen', pin:'3333'},
+ {id:'TZ',naam:'Teamleider Zara en Technocenter', desc:'Eigen team · bij tekort iemand uit een regio voorstellen', pin:'3333'},
  {id:'TN',naam:'Teamleider Noord', desc:'NW, NO en noordelijk Midden · voorstellen', pin:'4444'},
  {id:'TS',naam:'Teamleider Zuid', desc:'ZW, ZO en zuidelijk Midden · voorstellen', pin:'5555'},
  {id:'PL',naam:'Planner', desc:'Alleen bekijken', pin:'6666'},
@@ -4347,7 +4347,8 @@ function wdKpi(key){
 function viewWaak(){
   var c=wdC();
   var open=wdOpenAantal();
-  var subs=[['kaart','Kaart'],['q4','Q4 2026'],['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')],['rooster','Jaarrooster 2027'],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']];
+  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['q4','Q4 2026']]:[]).concat([['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')],['rooster','Jaarrooster 2027'],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
+  if(wdSub==='q4'&&role!=='RD'&&role!=='G')wdSub='kaart';
   var h='<h2>Waakdienst 2027</h2><p class="sub">Vr 1 januari 2027 t/m do 6 januari 2028 · 53 weken · elke week waakdienst per gebied plus één landelijke schaduwdienst · fictieve namen.</p>'+wdDatabron();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'</div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
