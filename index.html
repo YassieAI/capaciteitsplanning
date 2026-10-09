@@ -1264,6 +1264,8 @@ function shiftWindow(k,dag,klaar){
 }
 function dateFor(idx){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+(idx-TODAY));return d;}
 var WD=['zo','ma','di','wo','do','vr','za'];
+function isoWeekNr(idx){var d=dateFor(idx);var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7);}
+function weekTxt(idx){return 'week '+isoWeekNr(idx)+' · '+dLabel(idx).replace(/^\S+ /,'')+' – '+dLabel(idx+6).replace(/^\S+ /,'');}
 function dLabel(idx){var d=dateFor(idx);return WD[d.getDay()]+' '+d.getDate()+' '+['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()];}
 function dShort(idx){var d=dateFor(idx);return WD[d.getDay()]+'<br>'+d.getDate();}
 
@@ -3217,9 +3219,9 @@ function viewBalansActies(){
   var opgelost=0, verbeterd=0;
   r.acties.forEach(function(a){a.items.forEach(function(it){if(it.haalt)opgelost++;else verbeterd++;});});
   var open=totaal-opgelost-verbeterd;
-  var wkLabel='week van '+dLabel(weekStart);
+  var wkLabel=weekTxt(weekStart);
   var html='<h2>Balans · week</h2><p class="sub">'+wkLabel+' · werkdagen ma t/m vr · alles wat deze week onder norm zit, gebundeld tot zo min mogelijk verplaatsingen.</p>';
-  html+='<div class="ctrl" style="margin-bottom:12px"><button id="blPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:160px">'+wkLabel+'</span><button id="blNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
+  html+='<div class="ctrl" style="margin-bottom:12px"><button id="blPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="blNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
   // balansRuimteStijl staat vast op 'lijst' (zie var balansRuimteStijl hierboven) — de
   // 'blok'-variant is na vergelijking verwijderd, dus hier geen keuzeknoppen meer.
   var telling=[];
@@ -3421,10 +3423,10 @@ function viewWeek(){
   var selNaam=alles?'alle gebieden':selCols.map(function(c){return c.naam;}).join(' + ');
   var combo={key:'wk',naam:selNaam,members:memberIds,benodigd:benTot};
   var monteurs=M.filter(function(m){return memberIds.indexOf(m.base)>=0;});
-  var wkLabel='week van '+dLabel(weekStart);
+  var wkLabel=weekTxt(weekStart);
   var html='<h2>Weekrooster</h2>'+(canDecide()?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
-  html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:160px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
+  html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
   html+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){html+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
   html+='</div></div><p class="sub" style="margin:-4px 0 10px">Klik meerdere gebieden aan om ze samen te zien, of &#8220;Alles&#8221; voor het hele land. De keuze volgt de groepering bovenin (5 regio\'s of 3 clusters).</p>';
@@ -3772,7 +3774,7 @@ function currentTeamMonteurs(){
 /* ---------- weekstrip: zelfde teamscherm als dag, per week navigeerbaar ---------- */
 function dChip(d){var dt=dateFor(d);return WD[dt.getDay()]+' '+dt.getDate();}
 function weekStripHtml(){
-  var label='week van '+dLabel(weekStart);
+  var label=weekTxt(weekStart);
   var h='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button id="wsPrev" style="height:32px;padding:0 10px;border:0.5px solid var(--border-strong);background:var(--surface);border-radius:8px;font-size:13px"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:150px">'+label+'</span><button id="wsNext" style="height:32px;padding:0 10px;border:0.5px solid var(--border-strong);background:var(--surface);border-radius:8px;font-size:13px"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">';
   for(var d=weekStart;d<weekStart+7;d++){var act=d===curDay;
@@ -3792,9 +3794,9 @@ function wireWeekStrip(){
 function viewTeamWeek(){
   var cols=currentTeamCols();
   var monteurs=currentTeamMonteurs();
-  var label='week van '+dLabel(weekStart);
+  var label=weekTxt(weekStart);
   var html='<h2>Mijn team · week</h2><p class="sub">'+label+' · dekking en rooster per dag · alleen-lezen</p>';
-  html+='<div class="ctrl" style="margin-bottom:12px"><button id="tlPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:160px">'+label+'</span><button id="tlNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
+  html+='<div class="ctrl" style="margin-bottom:12px"><button id="tlPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+label+'</span><button id="tlNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
   var legend='<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> OK ≥60</span>'+
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 45–59</span>'+
@@ -4290,8 +4292,6 @@ function wdLeaflet(){
   PC2.forEach(function(q,i){var g=PCG[q[0]],k=wdKleur(key,g);
     lay[q[0]]=L.polygon(WD_RING[i],{color:k,weight:0.6,fillColor:k,fillOpacity:fo(g)}).bindTooltip('Postcode '+q[0]+'xx · '+wdGNaam(c,g),{sticky:true}).addTo(map);});
   var cen=WD_OPZET[key].centers;
-  if(cen)cen.forEach(function(z){L.circle([z.lat,z.lng],{radius:z.km/1.25*1000,color:wdKleur(key,z.g),weight:1.4,dashArray:'6 5',fill:false,interactive:false}).addTo(map);
-    L.marker([z.lat,z.lng],{interactive:false,icon:L.divIcon({className:'',html:'<div class="wd-stand">standplaats '+z.stad+'</div>',iconSize:[0,0]})}).addTo(map);});
   var pos=wdPinPos();
   WD_POOL.forEach(function(m){
     var g=prep.home[m.ini],mv=!!(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini]),q=pos[m.ini],ds=duty?duty[m.ini]:null,mine=wdIsMine(m.ini),sel=wdKaartIni===m.ini;
@@ -4401,7 +4401,7 @@ function wdViewKaart(){
   var wkNav='<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span><button data-wdwk="'+(wdKaartWk==null?0:Math.max(0,wdKaartWk-1))+'" aria-label="vorige week">‹</button><span class="wd-wklab">'+(wdKaartWk==null?'geen week':'wk '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk))+'</span><button data-wdwk="'+(wdKaartWk==null?0:Math.min(WD_N-1,wdKaartWk+1))+'" aria-label="volgende week">›</button>'+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>';
   var h='<div class="wd-layout"><div class="wd-card wd-mapcard">'+wkNav+'<div class="wd-lwrap"><div id="wdLmap" class="wd-lmap" role="application" aria-label="Kaart van Nederland met waakdienstgebieden"></div></div>'+
     '<div class="wd-legend" style="margin-top:8px">'+c.prep.gIds.map(function(g){return '<button class="wd-lg'+(wdKaartG===g?' on':'')+'" data-wdg="'+g+'"><i style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</button>';}).join('')+
-    '<span class="wd-pinlg"><i class="d1"></i>'+(wdTeamSet()?'mijn team':'monteur')+'</span>'+(wdTeamSet()?'<span class="wd-pinlg"><i class="d2"></i>ander team</span>':'')+(WD_OPZET[wdKey].centers?'<span class="wd-pinlg">◯ standplaats · - - bereik</span>':'')+'</div>'+
+    '<span class="wd-pinlg"><i class="d1"></i>'+(wdTeamSet()?'mijn team':'monteur')+'</span>'+(wdTeamSet()?'<span class="wd-pinlg"><i class="d2"></i>ander team</span>':'')+'</div>'+
     '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. Klik een speld voor waar die monteur mag draaien, <b>sleep een speld naar een ander gebied</b> om die monteur te verplaatsen, of blader door de weken om te zien wie er dienst heeft. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+wdVerschoven();
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Week '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
