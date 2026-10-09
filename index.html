@@ -4924,7 +4924,8 @@ function sbToast(msg){
    De database is voor iedereen met de (publieke) sleutel beschrijfbaar; zonder dit kan iemand via het
    veld 'door' script laten draaien bij iedereen die de tool opent. */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function chk(res){ if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen — geen verbinding met de database.');} }
+var ownWriteAt=0;
+function chk(res){ ownWriteAt=Date.now(); if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen — geen verbinding met de database.');} }
 
 async function sbLoad(){
   if(!sb)return;
@@ -5017,7 +5018,18 @@ function removeProposal(id,status){
   else sb.from('stuur_voorstellen').delete().eq('id',id).then(chk);
 }
 var rtT=null;
-function poke(){clearTimeout(rtT);rtT=setTimeout(sbLoad,400);}
+var rtMelding=null;
+function poke(payload){
+  clearTimeout(rtT);rtT=setTimeout(sbLoad,400);
+  // melding alleen als de wijziging niet van jezelf komt: even wachten tot de eigen opslag is bevestigd
+  var tabel=payload&&payload.table;
+  clearTimeout(rtMelding);
+  rtMelding=setTimeout(function(){
+    if(Date.now()-ownWriteAt<5000||!role)return;
+    var wat=tabel==='stuur_moves'?'een verschuiving vastgelegd':tabel==='stuur_voorstellen'?'een voorstel gewijzigd':tabel==='stuur_norm'?'de dekkingsnorm aangepast':'het rooster aangepast';
+    sbToast('\uD83D\uDD04 Een collega heeft '+wat+'. Je scherm is bijgewerkt.');
+  },1500);
+}
 function sbRealtime(){
   if(!sb)return;
   try{sb.channel('stuurtool-rt')
@@ -5051,11 +5063,23 @@ function ensureRange(key,vanIso,totIso){
         if(!r.data||r.data.length<PAGE)break;
         from+=PAGE;
       }
+      // vastgelegde verplaatsingen (schuifbord) in hetzelfde bereik: een monteur telt mee in de locatie waar hij die dag staat
+      var mvMap={};
+      try{
+        var mf=0;
+        while(true){
+          var mr=await sb.from('stuur_moves').select('monteur,datum,loc').gte('datum',vanIso).lte('datum',totIso).range(mf,mf+999);
+          if(mr.error)break;
+          (mr.data||[]).forEach(function(x){if(LOCMAP[x.loc])mvMap[x.monteur+'|'+x.datum]=x.loc;});
+          if(!mr.data||mr.data.length<1000)break;
+          mf+=1000;
+        }
+      }catch(_){}
       var agg={};
       alle.forEach(function(row){
         var m=MNAAM[row.monteur]; if(!m)return;
         var w=rowWeight(row); if(!w)return;
-        var loc=m.base;
+        var loc=mvMap[row.monteur+'|'+row.datum]||m.base;
         if(!agg[loc])agg[loc]={};
         agg[loc][row.datum]=(agg[loc][row.datum]||0)+w;
       });
