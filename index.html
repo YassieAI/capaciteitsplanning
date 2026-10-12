@@ -39,6 +39,7 @@ h1{font-size:21px;font-weight:600;margin:2px 0 4px}
 .err{color:var(--risk);font-size:13px;margin-top:8px;min-height:18px}
 /* app shell */
 #app{max-width:1080px;margin:0 auto;padding:0 16px 40px}
+#dayNav{flex-basis:100%;margin-top:-4px}#dayNav.dn-leeg{visibility:hidden}
 header.bar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
 .rolechip{font-size:13px;font-weight:500;background:var(--surface-1);padding:5px 11px;border-radius:20px}
 .spacer{flex:1}
@@ -994,17 +995,17 @@ tr.wp-best td{background:var(--ok-bg)}
 <div id="app" class="hidden">
   <header class="bar">
     <span class="rolechip" id="roleChip"></span>
+    <div class="ctrl" id="groupToggle">
+      <button data-g="regio5" class="active">5 regio's</button>
+      <button data-g="cluster3">3 clusters</button>
+    </div>
+    <div class="ctrl" id="viewToggle"></div>
     <div class="ctrl" id="dayNav">
       <button id="prevDay" aria-label="vorige dag">‹</button>
       <span class="daylabel" id="dayLabel"></span>
       <button id="nextDay" aria-label="volgende dag">›</button>
       <button id="todayBtn">vandaag</button>
     </div>
-    <div class="ctrl" id="groupToggle">
-      <button data-g="regio5" class="active">5 regio's</button>
-      <button data-g="cluster3">3 clusters</button>
-    </div>
-    <div class="ctrl" id="viewToggle"></div>
     <span class="spacer"></span>
     <button class="linkbtn" id="logout">uitloggen</button>
   </header>
@@ -1281,7 +1282,10 @@ function setCtrls(){
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && !(boardView==='balans' && balansPeriode==='week');
   var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && (tlMode==='dag'||tlMode==='schuif');
   var uvDayNav = false;
-  show('dayNav', rdBoardNav || tlDayNav || uvDayNav || role==='PL');
+  var dnOn=rdBoardNav || tlDayNav || uvDayNav || role==='PL';
+  var dnRes=(role==='RD'||role==='TZ'||role==='TN'||role==='TS');   // vaste plek: de rij blijft staan, ook als de dagknoppen niet nodig zijn
+  show('dayNav', dnOn||dnRes);
+  document.getElementById('dayNav').classList.toggle('dn-leeg',!dnOn&&dnRes);
   show('groupToggle', false);   // indeling staat vast op 3 regio's
   var vt=document.getElementById('viewToggle');
   if(role==='RD'){
