@@ -4005,17 +4005,17 @@ var WD_POOL=[ // DEMO: fictieve woonplaatsen en 60+-verdeling; echte gegevens al
  ['W05','Haarlem',52.380,4.640,1],
  ['W06','DenHelder',52.960,4.760,1],
  ['M01','Utrecht',52.090,5.120,0.75],
- ['Z01','Nieuwegein',52.030,5.080,0.75],
+ ['M05','Nieuwegein',52.030,5.080,0.75],
  ['M03','Amsterdam',52.370,4.900,1],
  ['S01','Leiden',52.160,4.490,1],
  ['S02','Zoetermeer',52.060,4.490,1],
  ['S03','Gouda',52.010,4.710,0.75],
  ['S04','Delft',52.010,4.360,0.75],
- ['Z12','Schiedam',51.920,4.400,0.75],
+ ['S06','Schiedam',51.920,4.400,0.75],
  ['S05','Dordrecht',51.810,4.670,1],
- ['Z13','Gorinchem',51.830,4.970,1],
- ['Z15','Middelburg',51.500,3.610,1],
- ['Z16','Rotterdam',51.920,4.480,1],
+ ['M04','Gorinchem',51.830,4.970,1],
+ ['T03','Middelburg',51.500,3.610,1],
+ ['T07','Rotterdam',51.920,4.480,1],
  ['M02','Zwolle',52.510,6.090,1],
  ['N01','Kampen',52.550,5.910,1],
  ['N02','Groningen',53.220,6.570,1],
@@ -4031,6 +4031,10 @@ var WD_POOL=[ // DEMO: fictieve woonplaatsen en 60+-verdeling; echte gegevens al
  ['O05','DenBosch',51.700,5.300,1],
  ['O06','Eindhoven',51.440,5.480,0.75]
 ].map(function(r){return {ini:r[0],woon:r[1],lat:r[2],lng:r[3],f:r[4]};});
+/* Zara heeft een eigen waakdienst, alleen voor de Zara-locaties. Zara-monteurs draaien daarom niet mee
+   in deze waakdienst (2× Randstad, Noord, Zuid + schaduw). */
+function wdIsZara(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
+WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});
 /* Combinaties die nooit in dezelfde week mogen (waak of schaduw) — op code */
 var WD_VERBODEN=[['W02','W06'],['N03','N05'],['O02','O05']]; // DEMO; echte combinaties alleen via het lokale bestand
 
@@ -4153,6 +4157,7 @@ var WD_REGELS={grens:60,tussen:3,fac60:0.75,seeds:40,schTelt:true,geenSch60:fals
 function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s);}
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
+  if(!prep.tijd[ini])return false; // niet (meer) in de pool, bv. Zara-monteur
   if(s==='SCH'){var m=WD_POOL.filter(function(x){return x.ini===ini;})[0];return !(WD_REGELS.geenSch60&&m.f<1);}
   var sl=prep.slotDef[s];
   if(sl&&sl.wing){ // Randstad 1/2: alleen wie in de Randstad hoort, uit de juiste vleugel
@@ -4226,7 +4231,7 @@ function wdScore(prep,res){
 }
 function wdTel(prep,plan){
   var t={};WD_POOL.forEach(function(m){t[m.ini]={waak:0,sch:0,tot:0,feest:0,buiten:0,weken:[]};});
-  plan.forEach(function(wk,k){Object.keys(wk).forEach(function(s){var i=wk[s];if(!i)return;var x=t[i];
+  plan.forEach(function(wk,k){Object.keys(wk).forEach(function(s){var i=wk[s];if(!i||!t[i])return;var x=t[i];
     if(s==='SCH')x.sch++;else{x.waak++;if(prep.home[i]!==wdG(prep,s))x.buiten++;}
     x.tot++;if(wdIsFeest(k))x.feest++;x.weken.push({k:k,s:s});});});
   return t;
@@ -4297,6 +4302,8 @@ function wdPlanJaar(j){
     var res={jaar:j,prep:p,plan:m.plan,leeg:m.leeg,vast:!!m.vast,N:WD_N,knj:WD_KNJ};
     wdRuilen.filter(function(x){return x.key===wdKey&&(x.jaar||WD_BASISJAAR)===j&&x.status==='goed';}).forEach(function(x){try{wdDoeRuil(res,x);}catch(e){}});
     wdVerpl.filter(function(x){return x.t==='w'&&x.key===wdKey&&(x.jaar||WD_BASISJAAR)===j&&x.status==='goed';}).forEach(function(x){if(res.plan[x.k])res.plan[x.k][x.slot]=x.ini;});
+    // codes die niet (meer) in de pool zitten (bv. Zara-monteurs uit een oud voorstel of vast rooster) → dienst leeg
+    res.plan.forEach(function(wk){Object.keys(wk).forEach(function(sl){if(wk[sl]&&!p.tijd[wk[sl]]){wk[sl]=null;res.leeg++;}});});
     return res;});
   WD_JCACHE[j]=r;return r;
 }
@@ -4333,6 +4340,8 @@ var WD_ECHT=null; // bestandsnaam zodra echte gegevens zijn ingeladen
 function wdLaadEcht(j,naam){
   if(!j||!Array.isArray(j.pool)||!j.pool.length)throw new Error('geen pool in het bestand');
   WD_POOL=j.pool.map(function(r){return {ini:r[0],woon:r[1],lat:+r[2],lng:+r[3],f:+r[4]};});
+  var zr=WD_POOL.filter(function(m){return wdIsZara(m.ini);}).map(function(m){return m.ini;});
+  if(zr.length){WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});setTimeout(function(){sbToast('Niet meegenomen (Zara heeft een eigen waakdienst): '+zr.join(', '));},300);}
   if(Array.isArray(j.verboden))WD_VERBODEN=j.verboden;
   if(j.collega){
     WD_COLLEGA={plan:j.collega.plan||null,plannen:j.collega.plannen||null,home:j.collega.home||null,
@@ -4700,7 +4709,7 @@ function wdViewKaart(){
     '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. Met <b>Team</b> zie je alleen de monteurs van één team (bijv. Zara/Techno). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+wdVerschoven();
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
-      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=WD_POOL.filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+'</b></div>';}).join('')+'</div>';}
+      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=WD_POOL.filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+'</b></div>';}).join('')+'</div>';}
   if(wdKaartIni){var m=WD_POOL.filter(function(x){return x.ini===wdKaartIni;})[0],x=t[m.ini];
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
@@ -4754,15 +4763,15 @@ function wdViewQ4(){
     for(var i=0;i<7;i++){
       var dd=new Date(wk.getFullYear(),wk.getMonth(),wk.getDate()+i),k=iso(dd),buiten=(k<'2026-10-01'||k>'2026-12-31');
       var lst=buiten?[]:(per[k]||[]);
-      h+='<td'+(i>=5?' class="we"':'')+(buiten?' style="opacity:.35"':'')+'>'+(buiten?'':'<div class="wd-q4d">'+dd.getDate()+'</div>')+lst.map(function(n){var m=MNAAM[n];var ini=m?m.ini:n.slice(0,3);tel[n]=tel[n]||{wd:0,we:0};if(i>=5)tel[n].we++;else tel[n].wd++;return '<span class="wd-q4c" title="'+n+'">'+ini+'</span>';}).join('')+'</td>';
+      h+='<td'+(i>=5?' class="we"':'')+(buiten?' style="opacity:.35"':'')+'>'+(buiten?'':'<div class="wd-q4d">'+dd.getDate()+'</div>')+lst.map(function(n){var m=MNAAM[n];var ini=m?m.ini:n.slice(0,3);tel[n]=tel[n]||{wd:0,we:0};if(i>=5)tel[n].we++;else tel[n].wd++;var z=m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';return '<span class="wd-q4c" title="'+n+(z?' · Zara-waakdienst':'')+'"'+(z?' style="background:#8e5bd1"':'')+'>'+ini+'</span>';}).join('')+'</td>';
     }
     h+='</tr>';
     d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+7);
   }
-  h+='</tbody></table></div><p class="wd-uitleg">Elke code is een monteur met waakdienst (laat) op die dag, rechtstreeks uit het rooster. Weekenden (za/zo) zijn grijs gekleurd. '+WD_Q4.rows.length+' diensten in totaal.</p></div>';
+  h+='</tbody></table></div><p class="wd-uitleg">Elke code is een monteur met waakdienst (laat) op die dag, rechtstreeks uit het rooster. Weekenden (za/zo) zijn grijs gekleurd. Paars = Zara-waakdienst (aparte waakdienst alleen voor de Zara-locaties). '+WD_Q4.rows.length+' diensten in totaal, waarvan '+WD_Q4.rows.filter(function(r){var m=MNAAM[r.monteur];return m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';}).length+' Zara.</p></div>';
   var namen=Object.keys(tel).sort(function(a,b){return (tel[b].wd+tel[b].we)-(tel[a].wd+tel[a].we);});
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur</div><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Doordeweeks</th><th>Weekend</th><th>Totaal</th></tr></thead><tbody>'+
-    (namen.length?namen.map(function(n){var m=MNAAM[n];return '<tr><td>'+(m?'<b>'+m.ini+'</b> · ':'')+n+'</td><td>'+tel[n].wd+'</td><td>'+tel[n].we+'</td><td><b>'+(tel[n].wd+tel[n].we)+'</b></td></tr>';}).join(''):'<tr><td colspan="4">Geen waakdiensten gevonden in het rooster voor Q4 2026.</td></tr>')+'</tbody></table></div>';
+  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur</div><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Waakdienst</th><th>Doordeweeks</th><th>Weekend</th><th>Totaal</th></tr></thead><tbody>'+
+    (namen.length?namen.map(function(n){var m=MNAAM[n],z=m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';return '<tr><td>'+(m?'<b>'+m.ini+'</b> · ':'')+n+'</td><td>'+(z?'<span style="color:#8e5bd1;font-weight:600">Zara</span>':'regulier')+'</td><td>'+tel[n].wd+'</td><td>'+tel[n].we+'</td><td><b>'+(tel[n].wd+tel[n].we)+'</b></td></tr>';}).join(''):'<tr><td colspan="5">Geen waakdiensten gevonden in het rooster voor Q4 2026.</td></tr>')+'</tbody></table></div>';
   return h;
 }
 
