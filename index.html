@@ -1300,7 +1300,7 @@ function dShort(idx){var d=dateFor(idx);return WD[d.getDay()]+'<br>'+d.getDate()
 function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);}
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
-  var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && !(boardView==='balans' && balansPeriode==='week');
+  var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='log' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && !(boardView==='balans' && balansPeriode==='week');
   var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && (tlMode==='dag'||tlMode==='schuif');
   var uvDayNav = false;
   var dnOn=rdBoardNav || tlDayNav || uvDayNav || role==='PL';
@@ -1317,7 +1317,7 @@ function setCtrls(){
       '<button data-v="week" class="'+(boardView==='week'?'active':'')+'">Weekrooster</button>'+
       '<button data-v="bord" class="'+(boardView==='bord'?'active':'')+'">Schuifbord</button>'+
       '<button data-v="balans" class="'+(boardView==='balans'?'active':'')+'">Balans</button>'+
-      '<button data-v="voorstellen" class="'+(boardView==='voorstellen'?'active':'')+'">Te bespreken'+(openCount?' ('+openCount+')':'')+'</button>'+'<button data-v="waak" class="'+(boardView==='waak'?'active':'')+'">Waakdienst</button>';
+      '<button data-v="voorstellen" class="'+(boardView==='voorstellen'?'active':'')+'">Te bespreken'+(openCount?' ('+openCount+')':'')+'</button>'+'<button data-v="waak" class="'+(boardView==='waak'?'active':'')+'">Waakdienst</button>'+'<button data-v="log" class="'+(boardView==='log'?'active':'')+'">Wijzigingen</button>';
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){boardView=b.dataset.v;pick=null;editCell=null;editCells=[];setCtrls();render();};});
   } else if(role==='G'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-gv="dag" class="'+(gView==='dag'?'active':'')+'">Dagdashboard</button>'+
@@ -2118,6 +2118,7 @@ function render(){
     else if(boardView==='balans') v.innerHTML=viewBalans();
     else if(boardView==='voorstellen') v.innerHTML=viewVoorstellen();
     else if(boardView==='waak') v.innerHTML=viewWaak();
+    else if(boardView==='log') v.innerHTML=viewLog();
     else v.innerHTML=viewBoard();
   }
   else if(role==='TZ') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewTeam()));
@@ -2145,6 +2146,7 @@ function render(){
   }
   if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
+  if(role==='RD'&&boardView==='log') wireLog();
   document.getElementById('foot').innerHTML='Fictieve monteurnamen (privacy) · waakdienst: demowoonplaatsen (echte alleen lokaal in te laden) · pincodes zijn demo.';
 }
 
@@ -2585,6 +2587,8 @@ function viewManagerG(){
   /* Manager G kijkt altijd naar de oude regio-indeling (5 regio's), los van de RD-groepering */
   var regs=LOC.filter(function(l){return l.type==='regio';}).map(function(l){return colFor(l.id);});
   regs=columns().filter(function(c){return c.type==='cluster';});   // vast: 3 regio's (Noorden / Randstad / Zuiden)
+  var zl=LOC.filter(function(l){return l.type==='zara';});
+  if(zl.length)regs.push({key:'C_Zara',naam:'Zara',type:'cluster',members:zl.map(function(l){return l.id;}),benodigd:zl.reduce(function(a,l){return a+l.benodigd;},0),lat:zl.reduce(function(a,l){return a+l.lat;},0)/zl.length,lng:zl.reduce(function(a,l){return a+l.lng;},0)/zl.length});
   var periode=grafiekPeriode();
   var toggle='<div class="ctrl" style="margin-bottom:10px">'+
     '<button class="'+(periode==='dag'?'active':'')+'" onclick="grafiekSetPeriode(\'dag\')">Dag</button>'+
@@ -3142,7 +3146,7 @@ function viewVoorstellen(){
       if(!wdJaarOk(r))return void(html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">Ruil '+r.a+' ⇄ '+r.b+' · '+(r.jaar||WD_BASISJAAR)+'</span>'+tlBadge(r.door)+'</div><div class="meta"><span>wk '+(r.k1+1)+' ⇄ wk '+(r.k2+1)+'</span></div>'+(role==='RD'?'<div style="margin-top:8px"><button class="acc ghost" data-vwdjaar="'+(r.jaar||WD_BASISJAAR)+'">Open waakdienst '+(r.jaar||WD_BASISJAAR)+' om te bespreken</button></div>':'')+'</div>');
       html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">Ruil '+r.a+' ⇄ '+r.b+'</span>'+tlBadge(r.door)+'</div><div class="meta"><span>'+r.a+': wk '+(r.k1+1)+' '+wdGNaam(wc,r.s1)+' → wk '+(r.k2+1)+' '+wdGNaam(wc,r.s2)+'</span></div>'+(bad.length?'<div class="meta wd-bad">Klopt niet meer: '+bad[0]+'</div>':'')+
         (role==='RD'?'<div style="margin-top:8px;display:flex;gap:8px"><button class="acc" data-vwdok="'+r.id+'"'+(bad.length?' disabled':'')+'>Besproken · doorvoeren</button><button class="acc ghost" data-vwdnee="'+r.id+'">Besproken · sluiten</button></div>':'')+'</div>';});
-    wdV.forEach(function(v){var mm=WD_POOL.filter(function(x){return x.ini===v.ini;})[0];
+    wdV.forEach(function(v){var mm=wdAlle().filter(function(x){return x.ini===v.ini;})[0];
       if(v.t==='w'&&!wdJaarOk(v)){html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">'+v.ini+' neemt dienst over van '+(v.oud||'leeg')+' · '+(v.jaar||WD_BASISJAAR)+'</span>'+tlBadge(v.door)+'</div><div class="meta"><span>week '+(v.k+1)+' van '+(v.jaar||WD_BASISJAAR)+'</span></div>'+(role==='RD'?'<div style="margin-top:8px"><button class="acc ghost" data-vwdjaar="'+(v.jaar||WD_BASISJAAR)+'">Open waakdienst '+(v.jaar||WD_BASISJAAR)+' om te bespreken</button></div>':'')+'</div>';return;}
       if(v.t==='w'){html+='<div class="sugg" style="margin-top:8px"><div class="r1"><span class="nm">'+v.ini+' neemt dienst over van '+(v.oud||'leeg')+'</span>'+tlBadge(v.door)+'</div><div class="meta"><span>week '+(v.k+1)+' ('+WD_JAAR+') · '+wdWeekLabel(v.k)+'</span><span>'+wdGNaam(wc,v.slot)+'</span><span>'+(mm?'woont '+mm.woon:'')+'</span></div>'+
         (role==='RD'?'<div style="margin-top:8px;display:flex;gap:8px"><button class="acc" data-vwvok="'+v.id+'">Besproken · doorvoeren</button><button class="acc ghost" data-vwvnee="'+v.id+'">Besproken · sluiten</button></div>':'')+'</div>';return;}
@@ -4038,6 +4042,8 @@ WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});
 /* Zara-waakdienst: elke week 1 Zara-monteur, woonplaats maakt niet uit, eerlijk verdeeld over alle Zara-monteurs */
 function wdIsZaraEcht(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
 var WD_ZPOOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1,zara:1};});
+var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch mee maar kunnen een week overnemen
+function wdAlle(){return WD_POOL.concat(WD_FLEX);}
 var WD_ZTUSSEN=8; // minimaal aantal weken tussen twee Zara-diensten van dezelfde persoon
 function wdZaTel(za){var t={};WD_ZPOOL.forEach(function(m){t[m.ini]={n:0,feest:0};});(za||[]).forEach(function(i,k){if(i&&t[i]){t[i].n++;if(wdIsFeest(k))t[i].feest++;}});return t;}
 function wdZaMaak(carry){
@@ -4164,7 +4170,7 @@ function wdPrep(key,cells){
   var home={},tijd={};
   var slots=(o.slots||o.gebieden.map(function(g){return {id:g.id,g:g.id,naam:g.naam};}));
   var slotDef={};slots.forEach(function(x){slotDef[x.id]=x;});
-  WD_POOL.forEach(function(m){
+  wdAlle().forEach(function(m){
     var best=1e9,bi=0;cells.forEach(function(c,i){var d=(c[3]-m.lat)*(c[3]-m.lat)+((c[2]-m.lng)*0.61)*((c[2]-m.lng)*0.61);if(d<best){best=d;bi=i;}});
     home[m.ini]=(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini])||(o.home&&o.home[m.ini])||cg[bi];
     tijd[m.ini]={};
@@ -4185,7 +4191,7 @@ function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
   if(!prep.tijd[ini])return false; // niet (meer) in de pool, bv. Zara-monteur
-  if(s==='SCH'){var m=WD_POOL.filter(function(x){return x.ini===ini;})[0];return !(WD_REGELS.geenSch60&&m.f<1);}
+  if(s==='SCH'){var m=wdAlle().filter(function(x){return x.ini===ini;})[0];return !(WD_REGELS.geenSch60&&m.f<1);}
   var sl=prep.slotDef[s];
   if(sl&&sl.wing){ // Randstad 1/2: alleen wie in de Randstad hoort, uit de juiste vleugel
     if(prep.home[ini]!==sl.g)return false;
@@ -4204,7 +4210,7 @@ function wdGapOk(k,lw,ls,isSch){
 function wdVleugel(ini){
   if(WD_COLLEGA.wing.noord.indexOf(ini)>=0)return 'noord';
   if(WD_COLLEGA.wing.zuid.indexOf(ini)>=0)return 'zuid';
-  var m=WD_POOL.filter(function(x){return x.ini===ini;})[0];return m&&m.lat>=52.02?'noord':'zuid';
+  var m=wdAlle().filter(function(x){return x.ini===ini;})[0];return m&&m.lat>=52.02?'noord':'zuid';
 }
 function wdPartner(ini){var p=[];WD_VERBODEN.forEach(function(v){if(v[0]===ini)p.push(v[1]);if(v[1]===ini)p.push(v[0]);});return p;}
 
@@ -4257,7 +4263,7 @@ function wdScore(prep,res){
   return res.leeg*1e5+v*10+tr/n;
 }
 function wdTel(prep,plan){
-  var t={};WD_POOL.forEach(function(m){t[m.ini]={waak:0,sch:0,tot:0,feest:0,buiten:0,weken:[]};});
+  var t={};wdAlle().forEach(function(m){t[m.ini]={waak:0,sch:0,tot:0,feest:0,buiten:0,weken:[]};});
   plan.forEach(function(wk,k){Object.keys(wk).forEach(function(s){var i=wk[s];if(!i||!t[i])return;var x=t[i];
     if(s==='SCH')x.sch++;else{x.waak++;if(prep.home[i]!==wdG(prep,s))x.buiten++;}
     x.tot++;if(wdIsFeest(k))x.feest++;x.weken.push({k:k,s:s});});});
@@ -4357,7 +4363,7 @@ function wdOpslaan(id,doel,door,status){
 }
 function wdRoleNaam(){return ROLES.filter(function(x){return x.id===role;})[0].naam;}
 function wdOpenAantal(){return wdRuilen.filter(function(r){return r.status==='open'&&wdJaarOk(r);}).length+wdVerpl.filter(function(r){return r.status==='open'&&(!r.t||wdJaarOk(r));}).length;}
-function wdSigStr(){return wdRuilen.map(function(r){return r.id+r.status;}).join(',')+'|'+wdVerpl.map(function(r){return r.id+r.status;}).join(',');}
+function wdSigStr(){return WD_FLEX.map(function(f){return f.ini;}).join('+')+'#'+wdRuilen.map(function(r){return r.id+r.status;}).join(',')+'|'+wdVerpl.map(function(r){return r.id+r.status;}).join(',');}
 function wdWeekPas(r){if(!wdJaarOk(r)){wdCache={};return;}var c=wdCache[r.key];if(c&&c.plan[r.k])c.plan[r.k][r.slot]=r.ini;wdLaterWeg(WD_JAAR);}
 function wdVerpPas(r){WD_OVERRIDE[r.key]=WD_OVERRIDE[r.key]||{};if(wdBase().home[r.ini]===r.naar)delete WD_OVERRIDE[r.key][r.ini];else WD_OVERRIDE[r.key][r.ini]=r.naar;wdBouw();}
 function wdC(){if(!wdCache[wdKey])wdBouw();return wdCache[wdKey];}
@@ -4398,7 +4404,7 @@ function wdTeamSet(){
 var wdTeamF=null, wdKaartAuto=false;
 function wdTeamVan(ini){var m=M.filter(function(x){return x.ini===ini;})[0];if(!m)return null;var t=teamOf(m);return t==='ZARA'?'Zara':t;}
 function wdTeamTag(ini){var t=wdTeamVan(ini);if(!t)return '';var c=tlKleur(t);return ' <span style="font-size:10px;font-weight:600;color:'+c+';border:1px solid '+c+'66;background:'+c+'14;border-radius:8px;padding:0 6px;margin-left:4px">'+t+'</span>';}
-function wdIsMine(ini){var s=wdTeamSet();return !s||!!s[ini];}
+function wdIsMine(ini){var s=wdTeamSet();return !s||!!s[ini]||WD_FLEX.some(function(f){return f.ini===ini;});}
 var WD_MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 function wdD(d){return d.getDate()+' '+WD_MND[d.getMonth()];}
 function wdWeekLabel(k){return wdD(wdWeekStart(k))+' – '+wdD(wdWeekEnd(k));}
@@ -4506,15 +4512,15 @@ function wdLeaflet(){
   PC2.forEach(function(q,i){var g=PCG[q[0]],k=wdKleur(key,g);
     lay[q[0]]=L.polygon(WD_RING[i],{color:k,weight:0.6,fillColor:k,fillOpacity:fo(g)}).bindTooltip('Postcode '+q[0]+'xx · '+wdGNaam(c,g),{sticky:true}).addTo(map);});
   var cen=WD_OPZET[key].centers;
-  var pos=wdPinPos();
-  WD_POOL.forEach(function(m){
+  var pos=wdPinPos(wdAlle());
+  wdAlle().forEach(function(m){
     var g=prep.home[m.ini],mv=!!(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini]),q=pos[m.ini],ds=duty?duty[m.ini]:null,mine=wdIsMine(m.ini),sel=wdKaartIni===m.ini;
     var bg=ds?(ds==='SCH'?'#fff':wdKleur(key,ds)):(duty?'#b9b8b2':wdKleur(key,g));
     var uitTeam=!!(wdTeamF&&wdTeamVan(m.ini)!==wdTeamF);
     var vp=wdVerpl.filter(function(x){return x.status==='open'&&x.ini===m.ini&&x.key===key;})[0];
     var cls='wd-lpin'+(mv?' moved':'')+(duty&&!ds?' off':'')+(ds?' on':'')+(ds==='SCH'?' sch':'')+(sel?' sel':'')+(!mine?' other':'')+(uitTeam?' uit':'');
-    var ic=L.divIcon({className:'',html:'<div class="'+cls+'" style="background:'+bg+(vp?';box-shadow:0 0 0 3px '+tlKleur(vp.door)+',0 1px 4px rgba(0,0,0,.35)':'')+'" title="'+(vp?'Voorstel van '+esc(vp.door):'')+'">'+m.ini+'</div>'+(sel?'<div class="wd-slab">'+m.ini+' · '+esc(m.woon)+'</div>':'')+(ds&&!uitTeam?'<div class="wd-plab" style="border-color:'+(ds==='SCH'?'#1a1a19':wdKleur(key,ds))+'">'+(ds==='SCH'?'Schaduw':wdGNaam(c,ds))+'</div>':''),iconSize:[24,24],iconAnchor:[12,12]});
-    var mk=L.marker([q.lat,q.lng],{icon:ic,draggable:true,title:m.ini+' · '+m.woon+' · '+wdGNaam(c,g),keyboard:false,zIndexOffset:sel?3000:(ds&&!uitTeam?1000:0)}).addTo(map);
+    var ic=L.divIcon({className:'',html:'<div class="'+cls+'" style="background:'+bg+(m.flex?';border-style:dashed;border-color:#c98a16':'')+(vp?';box-shadow:0 0 0 3px '+tlKleur(vp.door)+',0 1px 4px rgba(0,0,0,.35)':'')+'" title="'+(vp?'Voorstel van '+esc(vp.door):'')+'">'+m.ini+'</div>'+(sel?'<div class="wd-slab">'+m.ini+' · '+esc(m.woon)+'</div>':'')+(ds&&!uitTeam?'<div class="wd-plab" style="border-color:'+(ds==='SCH'?'#1a1a19':wdKleur(key,ds))+'">'+(ds==='SCH'?'Schaduw':wdGNaam(c,ds))+'</div>':''),iconSize:[24,24],iconAnchor:[12,12]});
+    var mk=L.marker([q.lat,q.lng],{icon:ic,draggable:true,title:m.ini+' · '+m.woon+(m.flex?' · flex':' · '+wdGNaam(c,g)),keyboard:false,zIndexOffset:sel?3000:(ds&&!uitTeam?1000:0)}).addTo(map);
     var hot=null;
     mk.on('click',function(){wdKaartIni=wdKaartIni===m.ini?null:m.ini;wdKaartG=null;render();});
     mk.on('drag',function(e){var ll=e.target.getLatLng(),pc=wdPcOp(ll.lat,ll.lng),g2=pc?PCG[pc]:null;if(g2!==hot){hot=g2;PC2.forEach(function(x){lay[x[0]].setStyle({fillOpacity:PCG[x[0]]===hot?0.65:0.32});});}});
@@ -4693,7 +4699,7 @@ function wdStripPlan(c,plan,ini,mk){
 }
 function wdDelta(a,b){return a===b?'<span class="wd-d-gelijk">'+a+' → '+b+'</span>':'<b>'+a+' → '+b+'</b>';}
 function wdVoorstelPaneel(c,k,ini){
-  var prep=c.prep,m=WD_POOL.filter(function(x){return x.ini===ini;})[0],wk=c.plan[k];
+  var prep=c.prep,m=wdAlle().filter(function(x){return x.ini===ini;})[0],wk=c.plan[k];
   var T=WD_REGELS.tussen,tl=wdTijdlijn(c,k,ini);
   var alAan=prep.sIds.concat(['SCH']).filter(function(sl){return wk[sl]===ini;})[0];
   function wkTxt(o,rel){if(!o)return '<span class="wd-mut">geen andere dienst in '+WD_JAAR+'</span>';
@@ -4750,12 +4756,12 @@ function wdViewKaart(){
     '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+wdVerschoven();
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
-      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=WD_POOL.filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+'</b></div>';}).join('')+
+      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+'</b></div>';}).join('')+
       (function(){var zi=c.za&&c.za[wdKaartWk],zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zm?'<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+zm.woon:'leeg')+'</b></div>';})()+'</div>';}
   if(wdKaartIni&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za)[zm.ini],zo=0;
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+zm.woon+' · Zara-waakdienst, woonplaats maakt niet uit</div>'+
       '<div class="wd-kv"><span>Zara-diensten '+WD_JAAR+'</span><b>'+zt.n+' (doel ca. '+nl1(WD_N/WD_ZPOOL.length)+')</b></div>'+wdZaStrip(zm.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';
-  } else if(wdKaartIni){var m=WD_POOL.filter(function(x){return x.ini===wdKaartIni;})[0],x=t[m.ini];
+  } else if(wdKaartIni){var m=wdAlle().filter(function(x){return x.ini===wdKaartIni;})[0],x=t[m.ini];
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
       h+='<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</span><b>'+c.prep.tijd[m.ini][g]+' min · '+(thuis?'<span class="badge b-ok">thuis</span>':ok?'<span class="badge b-ruim">mag</span>':'<span class="badge b-risk">te ver</span>')+'</b></div>';});
@@ -4923,7 +4929,7 @@ function wdViewRuil(){
   if(!lijst.length&&!anders.length)h+='<div class="empty">Nog geen voorstellen voor deze opzet. Kies een dienst in het jaarrooster om te ruilen, of klik op de kaart op een monteur.</div>';
   if(anders.length){
     h+='<div class="wd-sub2">Verplaatsingen en weekvoorstellen ('+anders.length+')</div>';
-    anders.slice().reverse().forEach(function(v){var mm=WD_POOL.filter(function(x){return x.ini===v.ini;})[0];
+    anders.slice().reverse().forEach(function(v){var mm=wdAlle().filter(function(x){return x.ini===v.ini;})[0];
       var titel=v.t==='w'?v.ini+' neemt '+wdGNaam(c,v.slot)+' over van '+(v.oud||'leeg')+' · week '+(v.k+1):v.ini+': '+wdGNaam(c,v.van)+' → '+wdGNaam(c,v.naar);
       h+='<div class="sugg"><div class="r1"><span class="nm">'+titel+'</span><span class="badge b-warn">te bespreken</span></div><div class="meta"><span>'+(mm?'woont '+mm.woon:'')+'</span><span>door '+tlBadge(v.door)+'</span></div>'+
         '<div style="display:flex;gap:6px;margin-top:8px">'+(role==='RD'?'<button class="acc" data-vwvok="'+v.id+'">Goedkeuren</button><button class="acc ghost" data-vwvnee="'+v.id+'">Afwijzen</button>':'<button class="acc ghost" data-vwvnee="'+v.id+'">Intrekken</button>')+'</div></div>';});
@@ -4937,10 +4943,44 @@ function wdViewRuil(){
   return h;
 }
 
+/* ---------- flex-monteurs: alleen een code en een woonplaats ---------- */
+function wdFlexMag(){return role==='RD'||role==='TZ'||role==='TN'||role==='TS';}
+function wdFlexKaart(c,t){
+  var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct"><i class="wd-sw" style="background:#c98a16"></i>Flex-monteurs ('+WD_FLEX.length+')</div><p class="wd-uitleg" style="margin:0 0 8px">Iemand die één of meer weken meedraait. Je vult alleen een code en een woonplaats in. Flex draait niet automatisch mee en telt niet mee in de verdeling: hij staat op de kaart en je kunt hem een week laten overnemen (klik zijn speld, kies een week).</p>';
+  WD_FLEX.forEach(function(f){var x=t[f.ini]||{tot:0};
+    h+='<div class="wd-kv"><span><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+f.ini+'|" title="Toon op kaart">'+esc(f.ini)+'</button> · woont in '+esc(f.woon)+' · factor '+String(f.f).replace('.',',')+'</span><b>'+x.tot+' '+(x.tot===1?'dienst':'diensten')+(wdFlexMag()?' <button class="linkbtn" data-wdflexdel="'+f.id+'">verwijderen</button>':'')+'</b></div>';});
+  if(!WD_FLEX.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen flex-monteurs.</div>';
+  if(wdFlexMag())h+='<div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats" style="width:160px"><datalist id="wdFxLijst">'+Object.keys(WOON).map(function(w){return '<option value="'+w+'">';}).join('')+'</datalist><select id="wdFxF"><option value="1">Factor 1</option><option value="0.75">Factor 0,75 (60+)</option></select><button class="acc" data-wdflexadd="1">Toevoegen</button></div><div id="wdFxMsg" class="sub" style="margin-top:6px"></div>';
+  else h+='<p class="sub" style="margin:0">Flex-monteurs toevoegen kan Manager R/D of een teamleider.</p>';
+  return h+'</div>';
+}
+function wdZoekPlaats(naam){ // → promise {lat,lng,woon}
+  var k=Object.keys(WOON).filter(function(w){return w.toLowerCase()===naam.toLowerCase().replace(/\s+/g,'');})[0];
+  if(k)return Promise.resolve({lat:WOON[k][0],lng:WOON[k][1],woon:k});
+  return fetch('https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?rows=1&fq=type:woonplaats&q='+encodeURIComponent(naam)).then(function(r){return r.json();}).then(function(j){
+    var d=j&&j.response&&j.response.docs&&j.response.docs[0];if(!d||!d.centroide_ll)throw new Error('niet gevonden');
+    var m=/POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll);return {lat:+m[2],lng:+m[1],woon:d.woonplaatsnaam||naam};});
+}
+function wdFlexToevoegen(ini,woonIn,f){
+  ini=String(ini||'').trim().toUpperCase();woonIn=String(woonIn||'').trim();
+  if(!/^[A-Z0-9]{2,6}$/.test(ini))return Promise.reject(new Error('Code: 2 tot 6 letters of cijfers'));
+  if(!woonIn)return Promise.reject(new Error('Vul een woonplaats in'));
+  if(wdAlle().some(function(x){return x.ini===ini;})||M.some(function(x){return x.ini===ini;}))return Promise.reject(new Error('Code '+ini+' bestaat al'));
+  return wdZoekPlaats(woonIn).then(function(pl){
+    var id=propId++,fl={id:id,ini:ini,woon:pl.woon,lat:pl.lat,lng:pl.lng,f:+f||1,flex:1};
+    WD_FLEX.push(fl);wdCache={};
+    wdOpslaan(id,'wd:f|'+[ini,pl.woon,pl.lat.toFixed(4),pl.lng.toFixed(4),fl.f].join('|'),wdRoleNaam(),'doorgevoerd');
+    return fl;});
+}
+function wdFlexWeg(id){
+  var f=WD_FLEX.filter(function(x){return x.id===id;})[0];if(!f)return;
+  WD_FLEX=WD_FLEX.filter(function(x){return x.id!==id;});wdCache={};
+  wdOpslaan(id,'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].join('|'),wdRoleNaam(),'ingetrokken');
+}
 function wdViewMonteur(){
   var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),tot=WD_N*(c.prep.sIds.length+1),sf=wdTot();
   var rijen=WD_POOL.slice().filter(function(m){return !team||!wdAlleen||team[m.ini];}).sort(function(a,b){return c.prep.gIds.indexOf(c.prep.home[a.ini])-c.prep.gIds.indexOf(c.prep.home[b.ini])||(a.ini<b.ini?-1:1);});
-  var h='';
+  var h=wdFlexKaart(c,t);
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen</button></div>';
   h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. Doel = eerlijk deel van alle '+tot+' diensten naar inzetbaarheidsfactor (60+ telt voor 0,75). '+(WD_ECHT?'Woonplaats is echt, naam is fictief.':'Woonplaats en naam zijn fictief (demo).')+'</p><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th>Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
   rijen.forEach(function(m){var x=t[m.ini],doel=tot*wdFactor(m)/sf,afw=x.tot-doel;
@@ -5100,6 +5140,9 @@ function wireWaak(){
   q('[data-wdg]',function(b){wdKaartG=wdKaartG===b.dataset.wdg?null:b.dataset.wdg;wdKaartIni=null;render();});
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
+  q('[data-wdflexadd]',function(){var msg=document.getElementById('wdFxMsg');if(msg)msg.textContent='Even zoeken…';
+    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
+  q('[data-wdflexdel]',function(b){var f=WD_FLEX.filter(function(x){return x.id===+b.dataset.wdflexdel;})[0];if(!f)return;if(window.confirm('Flex-monteur '+f.ini+' verwijderen? Weken die hij had overgenomen worden weer leeg.')){wdFlexWeg(f.id);render();}});
   q('[data-wdza]',function(b){wdOpenPaneel(+b.dataset.wdza,'ZA');});
   q('[data-wdclose]',function(){wdSel=null;render();});
   q('[data-wdruil]',function(b){var p=b.dataset.wdruil.split('|');wdMaakRuil(+p[0],p[1],+p[2],p[3]);});
@@ -5265,7 +5308,7 @@ function wpScore(key){
   var som=0,tijd=0,boven=0,bel=[];
   c.plan.forEach(function(wk,k){var tot=WP_FC.wk[k].f,perSlot={};
     Object.keys(WP_FC.aand).forEach(function(p){var g=pg[p],q=P[p];if(!q||!g)return;var e=tot*WP_FC.aand[p];if(!e)return;
-      var best=1e9,bs=null;c.prep.slots.forEach(function(s){if(s.g!==g||!wk[s.id])return;var m=WD_POOL.filter(function(x){return x.ini===wk[s.id];})[0];var t=wdMin(wdKm(m.lat,m.lng,q[2],q[1]));if(t<best){best=t;bs=s.id;}});
+      var best=1e9,bs=null;c.prep.slots.forEach(function(s){if(s.g!==g||!wk[s.id])return;var m=wdAlle().filter(function(x){return x.ini===wk[s.id];})[0];var t=wdMin(wdKm(m.lat,m.lng,q[2],q[1]));if(t<best){best=t;bs=s.id;}});
       if(!bs)return;som+=e;tijd+=e*best;if(best>60)boven+=e;perSlot[bs]=(perSlot[bs]||0)+e;});
     c.prep.slots.forEach(function(s){bel.push(perSlot[s.id]||0);});});
   bel.sort(function(a,b){return a-b;});
@@ -5488,13 +5531,14 @@ async function sbLoad(opts){
     try{
       var wr=await sb.from('stuur_voorstellen').select('id,doel,door,status').like('doel','wd:%').in('status',['open','doorgevoerd']);
       if(!wr.error){
-        wdRuilen=[];wdVerpl=[];
+        wdRuilen=[];wdVerpl=[];WD_FLEX=[];
         (wr.data||[]).sort(function(a,b){return Number(a.id)-Number(b.id);}).forEach(function(row){
           var p=String(row.doel).split('|'),st=row.status==='open'?'open':'goed',id=Number(row.id);
           var kj=String(p[1]||'').split('@');p[1]=kj[0];var jr=kj[1]?+kj[1]:WD_BASISJAAR;
           if(id>=propId)propId=id+1;
           if(p[0]==='wd:r'&&p.length>=8)wdRuilen.push({id:id,key:p[1],jaar:jr,k1:+p[2],s1:p[3],k2:+p[4],s2:p[5],a:p[6],b:p[7],door:String(row.door||'').slice(0,40),status:st});
           else if(p[0]==='wd:w'&&p.length>=6)wdVerpl.push({id:id,key:p[1],jaar:jr,t:'w',k:+p[2],slot:p[3],oud:p[4],ini:p[5],door:String(row.door||'').slice(0,40),status:st});
+          else if(p[0]==='wd:f'&&p.length>=6&&st==='goed'&&!WD_POOL.some(function(x){return x.ini===p[1];}))WD_FLEX.push({id:id,ini:p[1],woon:p[2],lat:+p[3],lng:+p[4],f:+p[5]||1,flex:1});
           else if(p[0]==='wd:v'&&p.length>=5)wdVerpl.push({id:id,key:p[1],ini:p[2],van:p[3],naar:p[4],door:String(row.door||'').slice(0,40),status:st});
         });
         wdVerpl.filter(function(x){return !x.t&&x.status==='goed'&&WD_KEYS.indexOf(x.key)>=0;}).forEach(function(x){WD_OVERRIDE[x.key]=WD_OVERRIDE[x.key]||{};WD_OVERRIDE[x.key][x.ini]=x.naar;});
@@ -5592,9 +5636,62 @@ function removeProposal(id,status){
   if(status)sb.from('stuur_voorstellen').update({status:status}).eq('id',id).then(chk);
   else sb.from('stuur_voorstellen').delete().eq('id',id).then(chk);
 }
+/* ---------- wijzigingslog: wie veranderde wat en waar ----------
+   Eén regel per wijziging in stuur_voorstellen (doel 'log|tijd|soort|waar|wat'); de rol is de ingelogde rol. */
+function logW(soort,waar,wat){
+  try{
+    if(!sb||!role)return;
+    ownWriteAt=Date.now();
+    var rol=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||role;
+    var cl=function(x){return String(x).replace(/\|/g,'/').slice(0,160);};
+    sb.from('stuur_voorstellen').insert({id:propId++,monteur:M[0].naam,datum:isoOf(0),doel:'log|'+new Date().toISOString()+'|'+cl(soort)+'|'+cl(waar)+'|'+cl(wat),door:rol,status:'doorgevoerd'}).then(chk);
+  }catch(e){}
+}
+function metLog(naam,bouw){var o=window[naam];if(!o)return;window[naam]=function(){try{var l=bouw.apply(null,arguments);if(l)logW(l[0],l[1],l[2]);}catch(e){}return o.apply(this,arguments);};}
+function logMon(mid){return M.filter(function(x){return x.id===mid;})[0];}
+function locNaam(id){return LOCMAP[id]?LOCMAP[id].naam:String(id);}
+metLog('sbSaveStatus',function(m,idx){var r=statusToRow(m,m.roster[idx]);return ['Rooster','Rooster · '+isoOf(idx),m.ini+' ('+m.naam+'): '+(r.del?'dienst verwijderd':'dienst op '+r.type+(r.hrs?' ('+r.hrs+' u)':''))];});
+metLog('sbSaveMove',function(mid,idx,loc){var m=logMon(mid);return m?['Verschuiving','Schuifbord · '+isoOf(idx),m.ini+' naar '+locNaam(loc)]:null;});
+metLog('sbSaveProposal',function(p){var m=logMon(p.mid);return m?['Voorstel','Te bespreken · '+isoOf(p.day),'Nieuw voorstel: '+m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt))]:null;});
+metLog('removeProposal',function(id,status){var p=proposals.filter(function(x){return x.id===id;})[0],m=p&&logMon(p.mid);return ['Voorstel','Te bespreken'+(p?' · '+isoOf(p.day):''),'Voorstel '+(m?m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt)):'#'+id)+' '+(status==='doorgevoerd'?'doorgevoerd':status==='afgewezen'?'afgewezen':status?status:'ingetrokken')];});
+metLog('sbSaveNorm',function(perLoc){return ['Dekkingsnorm','Norm',(perLoc||[]).map(function(x){return x.id+' '+(x.oud!=null?x.oud+' → ':'')+x.nieuw;}).join(', ')||'norm aangepast'];});
+metLog('sbWisNorm',function(){return ['Dekkingsnorm','Norm','norm teruggezet naar standaard'];});
+metLog('wdOpslaan',function(id,doel,door,status){var p=String(doel).split('|'),st=status==='open'?'voorgesteld':status==='doorgevoerd'?'doorgevoerd':status==='ingetrokken'?'ingetrokken':status||'';
+  var kj=String(p[1]||'').split('@'),jr=kj[1]||WD_JAAR;
+  if(p[0]==='wd:r')return ['Waakdienst','Waakdienst · '+jr+' · wk '+(+p[2]+1),'Ruil '+p[6]+' ⇄ '+p[7]+' (wk '+(+p[2]+1)+' ↔ wk '+(+p[4]+1)+') '+st];
+  if(p[0]==='wd:w')return ['Waakdienst','Waakdienst · '+jr+' · wk '+(+p[2]+1),p[5]+' neemt '+p[3]+' over'+(p[4]?' van '+p[4]:'')+' ('+st+')'];
+  if(p[0]==='wd:v')return ['Waakdienst','Waakdienst · kaart',p[2]+' verplaatst van '+p[3]+' naar '+p[4]+' ('+st+')'];
+  if(p[0]==='wd:f')return ['Waakdienst','Waakdienst · flex','Flex-monteur '+p[1]+' ('+p[2]+') '+(status==='ingetrokken'?'verwijderd':'toegevoegd')];
+  return null;});
+var LOG_RIJEN=null, LOG_SOORT='', LOG_BEZIG=false;
+async function logLaad(){
+  if(!sb||LOG_BEZIG)return;LOG_BEZIG=true;
+  try{var r=await sb.from('stuur_voorstellen').select('id,doel,door').like('doel','log|%').order('id',{ascending:false}).limit(400);
+    LOG_RIJEN=(r.data||[]).map(function(x){var p=String(x.doel).split('|');return {id:x.id,t:p[1],soort:p[2],waar:p[3],wat:p.slice(4).join('|'),door:x.door};});
+  }catch(e){LOG_RIJEN=[];}
+  LOG_BEZIG=false;if(role==='RD'&&boardView==='log')render();
+}
+function viewLog(){
+  if(LOG_RIJEN===null){logLaad();return '<div class="empty">Log laden…</div>';}
+  var soorten=['Rooster','Verschuiving','Voorstel','Waakdienst','Dekkingsnorm'];
+  var rijen=LOG_RIJEN.filter(function(r){return !LOG_SOORT||r.soort===LOG_SOORT;});
+  var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  function tijd(t){var d=new Date(t);if(isNaN(d))return '';return d.getDate()+' '+MND[d.getMonth()]+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  var h='<p class="sub">Wie heeft wat gewijzigd en waar. Tijdstip en rol worden automatisch vastgelegd bij elke wijziging in rooster, schuifbord, voorstellen, waakdienst en dekkingsnorm. Vanaf het moment dat dit aanstaat; oudere wijzigingen staan er niet in.</p>'+
+    '<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap"><button data-logs="" class="'+(!LOG_SOORT?'active':'')+'">Alles ('+LOG_RIJEN.length+')</button>'+soorten.map(function(x){return '<button data-logs="'+x+'" class="'+(LOG_SOORT===x?'active':'')+'">'+x+'</button>';}).join('')+'<button data-logref="1">Ververs</button></div>';
+  if(!rijen.length)return h+'<div class="empty">Nog geen wijzigingen vastgelegd.</div>';
+  h+='<div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Wanneer</th><th>Wie</th><th>Soort</th><th>Waar</th><th>Wat</th></tr></thead><tbody>';
+  rijen.forEach(function(r){h+='<tr><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.wat)+'</td></tr>';});
+  return h+'</tbody></table></div>';
+}
+function wireLog(){
+  document.querySelectorAll('[data-logs]').forEach(function(b){b.onclick=function(){LOG_SOORT=b.dataset.logs;render();};});
+  document.querySelectorAll('[data-logref]').forEach(function(b){b.onclick=function(){LOG_RIJEN=null;render();};});
+}
 var rtT=null;
 var rtMelding=null;
 function poke(payload){
+  try{var nw=payload&&payload.new;if(nw&&String(nw.doel||'').indexOf('log|')===0){if(role==='RD'&&boardView==='log'){LOG_RIJEN=null;render();}return;}}catch(e){}
   clearTimeout(rtT);rtT=setTimeout(function(){sbLoad({melding:true});},400);
   return;
   // melding alleen als de wijziging niet van jezelf komt: even wachten tot de eigen opslag is bevestigd
