@@ -4135,6 +4135,7 @@ WD_OPZET.A.kleur={NW:'#3b7dd8',NO:'#2a9d8f',MI:'#9b6bd6',ZW:'#e07a3f',ZO:'#d4a72
    Een roosterjaar begint op de eerste vrijdag van januari en loopt door tot de dag voor de eerste
    vrijdag van het volgende jaar. Zo sluiten de jaren naadloos op elkaar aan (52 of 53 weken). */
 var WD_BASISJAAR=2027, WD_JAAR=2027, WD_JAREN=6;  // keuze 2027 t/m 2032
+var WD_EERSTE=WD_BASISJAAR-1;                      // 2026: demo-indeling tot aan het 2027-rooster, sluit daarop aan
 function wdJaarStart(j){var d=new Date(j,0,1);while(d.getDay()!==5)d.setDate(d.getDate()+1);return d;}
 function wdDagen(a,b){return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);}
 function wdPasen(j){var a=j%19,b=Math.floor(j/100),c=j%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(j,mo-1,da);}
@@ -4241,6 +4242,7 @@ function wdTry(prep,seed){
         var c=WD_POOL.filter(function(m){var x=st[m.ini];
           if(bezet[m.ini])return false;
           if(!wdGapOk(k,x.lw,x.ls,s==='SCH'))return false;
+          if(prep.nx&&prep.nx[m.ini]!==undefined&&(WD_N-k)+prep.nx[m.ini]<=WD_REGELS.tussen)return false;
           if(!wdMag(prep,m.ini,s))return false;
           if(wdPartner(m.ini).some(function(p){return bezet[p];}))return false;
           if(wdIsKerstNj(k)&&x.kn>=1)return false;
@@ -4338,9 +4340,11 @@ function wdCarryUit(r){
 }
 function wdPlanJaar(j){
   if(WD_JCACHE[j])return WD_JCACHE[j];
-  var carry=null;if(j>WD_BASISJAAR){var pr=wdPlanJaar(j-1);carry=wdMetJaar(pr.jaar,function(){return wdCarryUit(pr);});}
+  var carry=null;if(j>WD_EERSTE){var pr=wdPlanJaar(j-1);carry=wdMetJaar(pr.jaar,function(){return wdCarryUit(pr);});}
   var r=wdMetJaar(j,function(){
     var p=wdPrep(wdKey,GEO.cells);p.carry=carry;p.vast=wdVastVoor(j);p.jaar=j;
+    if(j===WD_EERSTE){ // laatste weken sluiten aan op de eerste weken van het volgende rooster (tussentijd)
+      var vn=wdVastVoor(j+1);if(vn){p.nx={};vn.slice(0,WD_REGELS.tussen+1).forEach(function(w,o){Object.keys(w).forEach(function(sl){var i=w[sl];if(i&&p.nx[i]===undefined)p.nx[i]=o;});});}}
     var m=wdMaak(p,wdKey==='D'&&wdDEigen);
     var res={jaar:j,prep:p,plan:m.plan,leeg:m.leeg,vast:!!m.vast,N:WD_N,knj:WD_KNJ};
     var zr=wdZaMaak(j>WD_BASISJAAR?wdPlanJaar(j-1).zc:null);res.za=zr.za;res.zc=zr.c;
@@ -4596,7 +4600,7 @@ function viewWaak(){
   var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['q4','Q4 2026']]:[]).concat(role==='RD'||role==='G'?[['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')]]:[]).concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
   if((wdSub==='q4'||wdSub==='voorspel')&&role!=='RD'&&role!=='G')wdSub='kaart';
   var jk='<div class="ctrl wd-jaren" style="margin:0 0 8px;flex-wrap:wrap"><span class="wd-lbl" style="margin-right:4px">Roosterjaar</span>';
-  for(var jj=WD_BASISJAAR;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
+  for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
   var eind=wdWeekEnd(WD_N-1),vj=WD_JAAR>WD_BASISJAAR;
   var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst · fictieve namen.'+
@@ -5692,14 +5696,15 @@ function viewStart(){
   h+='</tbody></table></div>'+(laag.length?'<p class="wd-uitleg" style="margin:8px 0 0"><b>Aandacht:</b> vandaag onder 60% bij '+laag.map(esc).join(', ')+'.</p>':'<p class="wd-uitleg" style="margin:8px 0 0">Alle regio\'s en locaties zitten vandaag boven 60%.</p>')+'</div>';
   // te bespreken + waakdienst
   var open=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal();
-  h+='<div class="wd-grid2" style="margin-bottom:12px"><div class="wd-card"><div class="wd-ct">Te bespreken</div><div class="wd-kv"><span>Openstaande voorstellen</span><b>'+open+'</b></div><p class="wd-uitleg" style="margin:6px 0 0">Verschuivingen, dienstvoorstellen en waakdienst-ruilen die nog besluit nodig hebben.'+(role==='RD'?'':' Manager R/D beslist.')+'</p></div>';
+  var toonOpen=role!=='PL'&&role!=='UV';
+  h+='<div class="'+(toonOpen?'wd-grid2':'')+'" style="margin-bottom:12px">'+(!toonOpen?'':'<div class="wd-card"><div class="wd-ct">Te bespreken</div><div class="wd-kv"><span>Openstaande voorstellen</span><b>'+open+'</b></div><p class="wd-uitleg" style="margin:6px 0 0">Verschuivingen, dienstvoorstellen en waakdienst-ruilen die nog besluit nodig hebben.'+(role==='RD'?'':' Manager R/D beslist.')+'</p></div>')+'';
   var xj=wdJaarVan(nu),wh='<p class="wd-uitleg" style="margin:0">Het waakdienstrooster '+WD_BASISJAAR+' staat klaar en start op vr '+wdD(wdJaarStart(WD_BASISJAAR))+'. Q4 2026 staat onder Waakdienst.</p>';
-  if(xj&&xj.j>=WD_BASISJAAR&&xj.j<WD_BASISJAAR+WD_JAREN){try{
+  if(xj&&xj.j>=WD_EERSTE&&xj.j<WD_BASISJAAR+WD_JAREN){try{
     var rj=wdPlanJaar(xj.j),wk=rj.plan[xj.k],c0={prep:rj.prep};
     wh=wdMetJaar(xj.j,function(){var t='';rj.prep.sIds.concat(['SCH']).forEach(function(sl){t+='<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+esc(wdGNaam(c0,sl))+'</span><b>'+esc(wk[sl]||'leeg')+'</b></div>';});
       var zi=rj.za&&rj.za[xj.k];t+='<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara</span><b>'+esc(zi||'leeg')+'</b></div>';return t;});
   }catch(e){}}
-  h+='<div class="wd-card"><div class="wd-ct">Waakdienst deze week</div>'+wh+'</div></div>';
+  h+='<div class="wd-card"><div class="wd-ct">Waakdienst deze week'+(xj&&xj.j<WD_BASISJAAR?' <span class="badge b-ruim">demo-indeling</span>':'')+'</div>'+wh+'</div></div>';
   // laatste wijzigingen
   if(LOG_RIJEN===null)logLaad();
   var lr=(LOG_RIJEN||[]).slice(0,6);
