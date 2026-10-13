@@ -83,6 +83,7 @@ h2{font-size:18px;font-weight:600;margin:20px 0 6px}
 .acc{height:30px;padding:0 13px;border:0.5px solid var(--text);background:var(--text);color:#fff;border-radius:8px;font-size:12.5px;font-weight:500}
 .acc.ghost{background:var(--surface);color:var(--text)}
 /* heatmap */
+.hm-wk{text-align:center;font-size:11px;font-weight:600;color:var(--text);background:var(--surface-1);border-radius:6px;padding:3px 0}
 .hm{overflow-x:auto}
 table.hm-t{border-collapse:collapse;width:100%;table-layout:fixed;font-size:11px}
 /* jaarrooster: 52 weken passen niet op één schermbreedte — vaste minimumbreedte + horizontaal
@@ -861,6 +862,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	}
 /* ---------- waakdienst ---------- */
 .wd-q4 td,.wd-q4 th{vertical-align:top;min-width:64px}.wd-q4 .we{background:var(--bg2,rgba(128,128,128,.12))}.wd-q4d{font-size:10px;color:var(--text3,#888)}.wd-q4c{display:inline-block;margin:1px 2px 1px 0;padding:1px 6px;border-radius:9px;background:#3b7dd8;color:#fff;font-size:11px;font-weight:600}.wd-q4 .we .wd-q4c{background:#c2462f}
+.uv-maand{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px}.uv-mk{font-size:11px;color:var(--muted);text-align:center;font-weight:600}.uv-mwk{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:600}.uv-md{border-radius:8px;padding:5px 5px;min-height:58px;overflow:hidden}.uv-md.uv-buiten{background:transparent}.uv-md.uv-nu{outline:2px solid var(--text);outline-offset:1px}.uv-mdn{font-size:11px;opacity:.8}.uv-mdd{font-size:12px;font-weight:700;line-height:1.2;margin-top:2px;word-break:break-word}.uv-mdl{font-size:10px;font-weight:600;color:var(--risk);margin-top:2px}@media(max-width:600px){.uv-mdd{font-size:10px}.uv-md{min-height:50px;padding:4px 3px}}
 .uv-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.uv-dag{border-radius:10px;padding:10px 8px;min-height:78px}.uv-nu{outline:2px solid var(--text);outline-offset:1px}.uv-dk{font-size:12px;opacity:.85}.uv-dn{font-size:14px;font-weight:700;margin-top:4px}.uv-dw{font-size:11px;margin-top:3px}@media(max-width:640px){.uv-week{grid-template-columns:1fr}.uv-dag{min-height:0;display:flex;gap:10px;align-items:baseline}.uv-dn{margin:0}.uv-dw{margin:0}}
 .wd-bar{margin:4px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .wd-lbl{font-size:12px;color:var(--muted);font-weight:500}
@@ -869,8 +871,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-subs{margin:0 0 14px}
 .wd-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .wd-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.wd-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px;align-items:start}
-#app:has(.wd-mapcard){max-width:1400px}
+.wd-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:start}
+#app:has(.wd-mapcard){max-width:1280px}
 @media(max-width:860px){.wd-grid3,.wd-grid2,.wd-layout{grid-template-columns:1fr}}
 .wd-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px;min-width:0}
 .wd-card.sel{border:2px solid var(--accent)}
@@ -963,7 +965,7 @@ tr.wp-best td{background:var(--ok-bg)}
 .wp-chk{font-size:12.5px;display:inline-flex;gap:6px;align-items:center;margin-top:8px}
 
 .wd-lwrap{position:relative}
-.wd-lmap{height:max(720px,82vh);background:#eef1f4;border-radius:10px;overflow:hidden;z-index:0}
+.wd-lmap{height:max(600px,68vh);background:#eef1f4;border-radius:10px;overflow:hidden;z-index:0}
 .wd-lmap .wd-lpin{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:grab;text-shadow:0 0 2px rgba(0,0,0,.55)}
 .wd-lmap .wd-lpin.moved{border:2px dashed #1a1a19}
 .wd-lmap .wd-lpin.off{opacity:.85}
@@ -1216,7 +1218,8 @@ function weight(st,day){
   return 0;
 }
 function stLabel(st){if(st&&st.indexOf(':')>=0){var p=st.split(':');return (p[0]==='comp'?'comp':'verlof')+' '+p[1]+'u';}return st;}
-function dienstShow(st,d){return (st==='dag'||st==='dagvroeg'||st==='waak')?st:'';}
+function dienstShow(st,d){return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='cursus'||st==='nacht')?st:'';}
+var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',cursus:'opleiding / cursus',nacht:'nachtklus',vrij:'vrij'};
 function beschikbaar(locId,day){var s=0;M.forEach(function(m){if(locOf(m,day)===locId)s+=weight(m.roster[day],day);});return s;}
 function dekkingLoc(locId,day){var l=LOCMAP[locId];return Math.round(beschikbaar(locId,day)/l.benodigd*100);}
 function km(aLat,aLng,bLat,bLng){var R=6371,dLa=(bLat-aLat)*Math.PI/180,dLo=(bLng-aLng)*Math.PI/180,la=aLat*Math.PI/180,lb=bLat*Math.PI/180;var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la)*Math.cos(lb)*Math.sin(dLo/2)*Math.sin(dLo/2);return Math.round(2*R*Math.asin(Math.sqrt(h)));}
@@ -2134,6 +2137,7 @@ function render(){
   if(role==='UV'){
     document.querySelectorAll('[data-uvkies]').forEach(function(b){b.onclick=function(){uvKies(b.dataset.uvkies);};});
     document.querySelectorAll('[data-uvwk]').forEach(function(b){b.onclick=function(){var d=+b.dataset.uvwk;if(d===0)shiftWindow(1,realToday()-7);else uvWeek(d);};});
+    document.querySelectorAll('[data-uvmd]').forEach(function(b){b.onclick=function(){var d=+b.dataset.uvmd;uvMaandOff=d===0?0:uvMaandOff+d;render();};});
     var z=document.getElementById('uvZoek');if(z){z.oninput=function(){var q=z.value.toLowerCase().trim();document.querySelectorAll('.uv-kies').forEach(function(b){b.style.display=!q||b.dataset.zoek.indexOf(q)>=0?'':'none';});document.querySelectorAll('.uv-grp').forEach(function(g){g.style.display=[].some.call(g.querySelectorAll('.uv-kies'),function(b){return b.style.display!=='none';})?'':'none';});};}
   }
   if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
@@ -3433,7 +3437,7 @@ function wireBalans(){
 function dienstStyle(st){
   if(st&&st.indexOf('comp:')===0)return ['#e1f5ee','#0f6e56'];
   if(st&&st.indexOf('verlof:')===0)return ['#fceceb','#a32d2d'];
-  var map={dag:['var(--accent-bg)','var(--accent)'],dagvroeg:['#faeeda','#854f0b'],waak:['#eeedfe','#3c3489'],vrij:['var(--surface-1)','var(--muted)']};
+  var map={dag:['var(--accent-bg)','var(--accent)'],dagvroeg:['#faeeda','#854f0b'],waak:['#eeedfe','#3c3489'],cursus:['#fbe7f3','#9d174d'],nacht:['#24324a','#e6ecf5'],ziek:['#fceceb','#a32d2d'],vrij:['var(--surface-1)','var(--muted)']};
   return map[st]||['var(--surface-1)','var(--muted)'];
 }
 function miniWeekChart(locId){
@@ -3456,13 +3460,15 @@ function viewWeek(){
   var combo={key:'wk',naam:selNaam,members:memberIds,benodigd:benTot};
   var monteurs=M.filter(function(m){return memberIds.indexOf(m.base)>=0;});
   var wkLabel=weekTxt(weekStart);
-  var html='<h2>Weekrooster</h2>'+(canDecide()?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs.</p>';
+  var html='<h2>Weekrooster</h2>'+(canDecide()?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0&&winShift<=0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7&&winShift>=12?' disabled':'')+'>week ›</button>'+(winShift>0||weekStart===0?'<button id="wkNu">deze week</button>':'')+'</div>';
   html+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){html+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
   html+='</div></div><p class="sub" style="margin:-4px 0 10px">Klik meerdere gebieden aan om ze samen te zien, of &#8220;Alles&#8221; voor het hele land. De keuze volgt de groepering bovenin (5 regio\'s of 3 clusters).</p>';
+  var paneel='',paneelNa=null;
   if(editCell){
+    var html0=html;html='';
     var meerdere=editCells.length>1;
     var em=M.filter(function(m){return m.id===editCell.mid;})[0];
     var targets=monteurs.filter(function(m){return m.id!==em.id&&m.roster[editCell.day]!=='verlof'&&m.roster[editCell.day]!=='comp8';});
@@ -3481,7 +3487,7 @@ function viewWeek(){
     html+='</div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">';
     // zelfde keuzes op elke dag — ook in het weekend kun je een gewone dienst inroosteren
-    ['dagvroeg','dag','waak','vrij'].forEach(function(d){html+='<button class="acc ghost" data-set="'+d+'">'+d+'</button>';});
+    ['dagvroeg','dag','waak','cursus','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);html+='<button class="acc ghost" data-set="'+d+'" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
     html+='</div>';
     if(meerdere){
       html+='<div style="margin-top:10px;font-size:13px;color:var(--muted)">De gekozen dienst wordt op alle '+editCells.length+' cellen gezet. <button class="linkbtn" id="wkCancel">annuleer</button></div></div>';
@@ -3491,6 +3497,11 @@ function viewWeek(){
       else{html+='niemand beschikbaar in dit team';}
       html+=' <button class="linkbtn" id="wkCancel">annuleer</button></div></div>';
     }
+    paneel=html;html=html0;
+    // onder welke rij komt het paneel: de onderste monteur van de selectie
+    var volg=monteurs.map(function(x){return x.id;}),laatste=-1;
+    (editCells.length?editCells:[editCell]).forEach(function(c){var i=volg.indexOf(c.mid);if(i>laatste)laatste=i;});
+    paneelNa=laatste>=0?volg[laatste]:null;
   }
   html+='<h2 style="font-size:16px">Dekking deze week · '+selNaam+'</h2>'+miniWeekChart(combo);
   html+='<h2 style="font-size:16px">Rooster</h2>';
@@ -3506,8 +3517,10 @@ function viewWeek(){
       html+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="wkcell'+(sel?' wkcell-sel':'')+'" data-mid="'+m.id+'" data-day="'+d2+'" style="text-align:center;padding:5px 2px;border-radius:5px;font-weight:500;background:'+cs[0]+';color:'+cs[1]+(vp?';outline:1.5px dashed var(--accent);outline-offset:-2px':'')+'"'+(vp?' title="Voorstel: '+propNaam(vp)+'"':'')+'>'+(dienstShow(st,d2)||'–')+(vp?'<span style="font-size:9px;display:block;opacity:.8">→ '+(dienstShow(vp.tgt.slice(3),d2)||'vrij')+'</span>':'')+'</div></td>';
     }
     html+='</tr>';
+    if(paneel&&m.id===paneelNa)html+='<tr class="wk-paneelrij"><td colspan="8" style="padding:6px 0 12px;font-size:14px">'+paneel+'</td></tr>';
   });
   html+='</table></div>';
+  if(paneel&&!paneelNa)html+=paneel;
   html+='<p class="sub" style="margin-top:10px">Diensten schuiven verandert wie welke dienst draait, niet de headcount. Voor méér mensen in een regio stuur je een voorstel naar Manager R / D; er wordt niets automatisch gewijzigd.'+(canDecide()?'':' Gestippeld = jouw voorstel dat nog open staat.')+'</p>';
   return html;
 }
@@ -3604,12 +3617,14 @@ function viewHeatmap(title){
 
   var navHtml='<div class="ctrl" style="margin-bottom:8px">'+
     '<button onclick="heatWeekNav(-1)">‹ week</button>'+
-    '<span class="daylabel" style="min-width:170px">'+dChip(base)+' – '+dChip(base+13)+(live?' · huidig venster':'')+'</span>'+
+    '<span class="daylabel" style="min-width:170px">wk '+isoWeek(dateFor(base))+'–'+isoWeek(dateFor(base+13))+' · '+dChip(base)+' – '+dChip(base+13)+(live?' · huidig venster':'')+'</span>'+
     '<button onclick="heatWeekNav(1)">week ›</button>'+
     (heatWeekOff!==0?' <button class="linkbtn" onclick="heatWeekOff=0;heatmapSel=null;render()">naar nu</button>':'')+
   '</div>';
 
-  var days='';
+  var days='',wkRij='',wkPrev=null,wkSpan=0;
+  for(var dw=0;dw<14;dw++){var wn=isoWeek(dateFor(base+dw));if(wn!==wkPrev){if(wkPrev!==null)wkRij+='<td colspan="'+wkSpan+'" class="hm-wk">week '+wkPrev+'</td>';wkPrev=wn;wkSpan=0;}wkSpan++;}
+  wkRij+='<td colspan="'+wkSpan+'" class="hm-wk">week '+wkPrev+'</td>';
   for(var d=0;d<14;d++){
     var idx=base+d;
     var sel=idx===curDay;
@@ -3671,7 +3686,7 @@ function viewHeatmap(title){
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 45–59</span>'+
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> risico &lt;45</span></div>'+
    (live?'':'<p class="sub" style="margin-bottom:8px">Buiten het huidige venster tonen cellen alleen een samenvattingspercentage — geen monteursdetail of dag-selectie op celniveau.</p>')+
-   '<div class="hm"><table class="hm-t"><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table></div>'+
+   '<div class="hm"><table class="hm-t"><tr><td class="hm-lab"></td>'+wkRij+'</tr><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table></div>'+
    detailHtml;
 }
 function wireHeatmap(){
@@ -3894,6 +3909,44 @@ function viewMonteurBord(){
 var uvMid=null; try{uvMid=localStorage.getItem('uvMonteur');}catch(e){}
 function uvKies(id){uvMid=id||null;try{if(id)localStorage.setItem('uvMonteur',id);else localStorage.removeItem('uvMonteur');}catch(e){}render();}
 function uvWeek(d){var k=Math.max(1,Math.min(12,winShift+d));if(k!==winShift)shiftWindow(k,TODAY>=0&&TODAY<=13?TODAY:7);}
+/* Uitvoering: eigen rooster per maand. Binnen het geladen venster (2 weken) komt het uit het geheugen,
+   daarbuiten wordt de maand voor deze ene monteur uit de database gehaald. */
+var uvMaandOff=0, UV_MAAND={};
+function uvIdxVan(d){var t=dateFor(TODAY);return TODAY+Math.round((d-t)/864e5);}
+function uvMaandLaad(m,j,mo){
+  var key=m.id+'|'+j+'-'+mo;if(UV_MAAND[key])return UV_MAAND[key];
+  UV_MAAND[key]={loaded:false,st:{},loc:{}};
+  if(!sb){UV_MAAND[key].loaded=true;return UV_MAAND[key];}
+  var van=fmtIsoD(new Date(j,mo,1)),tot=fmtIsoD(new Date(j,mo+1,0));
+  (async function(){try{
+    var r=await sb.from('rooster_entries').select('datum,type,hrs').eq('monteur',m.naam).gte('datum',van).lte('datum',tot);
+    (r.data||[]).forEach(function(x){UV_MAAND[key].st[x.datum]=typeToStatus(x.type,x.hrs);});
+    try{var mr=await sb.from('stuur_moves').select('datum,loc').eq('monteur',m.naam).gte('datum',van).lte('datum',tot);(mr.data||[]).forEach(function(x){if(LOCMAP[x.loc])UV_MAAND[key].loc[x.datum]=x.loc;});}catch(_){}
+  }catch(e){console.error('[Uitvoering] maand laden faalde',e);}
+  UV_MAAND[key].loaded=true;if(role==='UV')render();})();
+  return UV_MAAND[key];
+}
+function uvMaandHtml(m,dienstNaam){
+  var nu=new Date(),eerste=new Date(nu.getFullYear(),nu.getMonth()+uvMaandOff,1),j=eerste.getFullYear(),mo=eerste.getMonth();
+  var mnL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  var data=uvMaandLaad(m,j,mo),dagen=new Date(j,mo+1,0).getDate();
+  var h='<div class="ctrl" style="margin:6px 0 10px;flex-wrap:wrap"><button data-uvmd="-1">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button data-uvmd="1">maand ›</button>'+(uvMaandOff?'<button data-uvmd="0">deze maand</button>':'')+'</div>';
+  if(!data.loaded)h+='<p class="sub">Rooster van '+mnL[mo]+' wordt geladen…</p>';
+  h+='<div class="uv-maand"><div class="uv-mk">wk</div>'+['ma','di','wo','do','vr','za','zo'].map(function(x){return '<div class="uv-mk">'+x+'</div>';}).join('');
+  var start=new Date(j,mo,1),lead=(start.getDay()+6)%7,cur=new Date(j,mo,1-lead);
+  while(cur<=new Date(j,mo,dagen)||((cur.getDay()+6)%7)!==0){
+    if(((cur.getDay()+6)%7)===0){if(cur>new Date(j,mo,dagen))break;h+='<div class="uv-mwk">'+isoWeek(cur)+'</div>';}
+    var inM=cur.getMonth()===mo,idx=uvIdxVan(cur),iso=fmtIsoD(cur),st,loc;
+    var live=idx>=0&&idx<=13&&m.roster[idx]!==undefined;
+    st=live?m.roster[idx]:(data.st[iso]||'vrij');loc=live?locOf(m,idx):(data.loc[iso]||m.base);
+    var cs=dienstStyle(st),werk=!!dienstShow(st,idx),isNu=fmtIsoD(cur)===fmtIsoD(nu);
+    if(!inM)h+='<div class="uv-md uv-buiten"></div>';
+    else h+='<div class="uv-md'+(isNu?' uv-nu':'')+'" style="background:'+cs[0]+';color:'+cs[1]+(werk?'':';opacity:.7')+'"><div class="uv-mdn">'+cur.getDate()+'</div><div class="uv-mdd">'+dienstNaam(st)+'</div>'+(werk&&loc!==m.base&&LOCMAP[loc]?'<div class="uv-mdl">'+LOCMAP[loc].naam+'</div>':'')+'</div>';
+    cur=new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()+1);
+  }
+  h+='</div>';
+  return h;
+}
 function viewUitvoering(){
   var m=uvMid?M.filter(function(x){return x.id===uvMid;})[0]:null;
   if(!m){
@@ -3906,17 +3959,12 @@ function viewUitvoering(){
   }
   var st0=m.roster[TODAY];
   var mn=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dn=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-  function dienstNaam(st){if(st==='dag')return 'Dagdienst';if(st==='dagvroeg')return 'Vroege dienst';if(st==='waak')return 'Waakdienst';if(st&&st.indexOf('verlof')===0)return 'Verlof';if(st&&st.indexOf('comp')===0)return 'Compensatie';if(st==='ziek')return 'Ziek';return 'Vrij';}
+  function dienstNaam(st){if(st==='dag')return 'Dagdienst';if(st==='dagvroeg')return 'Vroege dienst';if(st==='waak')return 'Waakdienst';if(st==='cursus')return 'Opleiding / cursus';if(st==='nacht')return 'Nachtklus';if(st&&st.indexOf('verlof')===0)return 'Verlof';if(st&&st.indexOf('comp')===0)return 'Compensatie';if(st==='ziek')return 'Ziek';return 'Vrij';}
   function waar(d){var l=locOf(m,d),st=m.roster[d];if(!dienstShow(st,d))return '';return l!==m.base?'<span style="color:var(--risk);font-weight:600">ingezet bij '+LOCMAP[l].naam+'</span>':LOCMAP[l].naam;}
   var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h2 style="margin-bottom:2px">Mijn rooster</h2><p class="sub" style="margin:0"><b>'+m.ini+'</b> · '+esc(m.naam)+' · vaste plek '+LOCMAP[m.base].naam+'</p></div><button class="linkbtn" data-uvkies="">Niet jij? Wissel</button></div>';
   if(TODAY>=0&&TODAY<=13){var cs0=dienstStyle(st0);
     h+='<div style="margin:14px 0;padding:16px;border-radius:14px;background:'+cs0[0]+';color:'+cs0[1]+'"><div style="font-size:13px;opacity:.8">Vandaag · '+dn[dateFor(TODAY).getDay()]+' '+dateFor(TODAY).getDate()+' '+mn[dateFor(TODAY).getMonth()]+'</div><div style="font-size:24px;font-weight:700;margin-top:2px">'+dienstNaam(st0)+'</div><div style="font-size:14px;margin-top:2px">'+(waar(TODAY)||'&nbsp;')+'</div></div>';}
-  h+='<div class="ctrl" style="margin:6px 0 12px"><button data-uvwk="-1"'+(winShift<=1?' disabled':'')+'>‹ eerder</button><button data-uvwk="1"'+(winShift>=12?' disabled':'')+'>later ›</button>'+(winShift!==1?'<button data-uvwk="0">deze week</button>':'')+'</div>';
-  [0,7].forEach(function(w){
-    h+='<div style="font-size:15px;font-weight:700;margin:14px 0 6px">Week '+isoWeekNr(w)+' <span style="font-weight:400;color:var(--muted);font-size:13px">'+dLabel(w).replace(/^\S+ /,'')+' – '+dLabel(w+6).replace(/^\S+ /,'')+'</span></div><div class="uv-week">';
-    for(var d=w;d<w+7;d++){var st=m.roster[d],cs=dienstStyle(st),vrij=!dienstShow(st,d),dd=dateFor(d);
-      h+='<div class="uv-dag'+(d===TODAY?' uv-nu':'')+'" style="background:'+cs[0]+';color:'+cs[1]+(vrij?';opacity:.75':'')+'"><div class="uv-dk">'+WD[dd.getDay()]+' '+dd.getDate()+(d===TODAY?' · vandaag':'')+'</div><div class="uv-dn">'+dienstNaam(st)+'</div><div class="uv-dw">'+(waar(d)||'')+'</div></div>';}
-    h+='</div>';});
+  h+=uvMaandHtml(m,dienstNaam);
   h+='<p class="sub" style="margin-top:12px">Alleen-lezen. Klopt er iets niet? Neem contact op met je teamleider.</p>';
   return h;
 }
@@ -5212,6 +5260,7 @@ function typeToStatus(type,hrs){
   if(type==='verlof')return 'verlof:'+Math.max(1,Math.min(8,Math.round(hrs||8)));
   if(type==='ziek')return 'ziek';
   if(type==='cursus')return 'cursus';
+  if(type==='nacht')return 'nacht';
   if(type&&type.indexOf('c-')===0){var u=Math.max(1,Math.min(8,Math.round(8-(hrs||0))));return 'comp:'+u;}
   return 'vrij';
 }
@@ -5222,6 +5271,7 @@ function statusToRow(m,st){
   if(st==='waak')return {type:'laat',hrs:8};
   if(st==='ziek')return {type:'ziek',hrs:8};
   if(st==='cursus')return {type:'cursus',hrs:8};
+  if(st==='nacht')return {type:'nacht',hrs:8};
   if(st.indexOf('verlof:')===0)return {type:'verlof',hrs:parseInt(st.split(':')[1],10)||8};
   if(st.indexOf('comp:')===0){var u=parseInt(st.split(':')[1],10)||8;return {type:'c-wkd',hrs:Math.max(0,8-u)};}
   return {del:true};
