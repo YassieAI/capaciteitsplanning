@@ -963,14 +963,17 @@ tr.wp-best td{background:var(--ok-bg)}
 
 .wd-lwrap{position:relative}
 .wd-lmap{height:600px;background:#eef1f4;border-radius:10px;overflow:hidden;z-index:0}
-.wd-lmap .wd-lpin{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;cursor:grab}
+.wd-lmap .wd-lpin{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:grab;text-shadow:0 0 2px rgba(0,0,0,.55)}
 .wd-lmap .wd-lpin.moved{border:2px dashed #1a1a19}
-.wd-lmap .wd-lpin.off{opacity:.45;transform:scale(.62)}
-.wd-lmap .wd-lpin.on{width:38px;height:38px;margin:-7px;font-size:11px;border-width:3px;box-shadow:0 0 0 2px #1a1a19,0 2px 8px rgba(0,0,0,.45)}
-.wd-lmap .wd-lpin.uit{opacity:.18;transform:scale(.6)}
+.wd-lmap .wd-lpin.off{opacity:.85}
+.wd-lmap .wd-lpin.on{width:38px;height:38px;margin:-7px;font-size:12px;border-width:3px;box-shadow:0 0 0 2px #1a1a19,0 2px 8px rgba(0,0,0,.45)}
+.wd-lmap .wd-lpin.uit{opacity:.3;transform:scale(.75)}
 .wd-lmap .wd-plab{position:absolute;top:34px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#fff;color:#1a1a19;border:2px solid #1a1a19;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none}
 .wd-lmap .wd-lpin.sch{color:#1a1a19;border:2px dashed #1a1a19}
-.wd-lmap .wd-lpin.sel{outline:3px solid var(--accent,#2f6fed);outline-offset:1px}
+.wd-lmap .wd-lpin.sel{width:42px;height:42px;margin:-9px;font-size:12px;opacity:1!important;transform:none;border:4px solid #fff;box-shadow:0 0 0 4px #e11d48,0 0 0 8px rgba(225,29,72,.3),0 3px 10px rgba(0,0,0,.55);animation:wdPuls 1.6s ease-out infinite}
+@keyframes wdPuls{0%,100%{box-shadow:0 0 0 4px #e11d48,0 0 0 8px rgba(225,29,72,.3),0 3px 10px rgba(0,0,0,.55)}50%{box-shadow:0 0 0 4px #e11d48,0 0 0 14px rgba(225,29,72,.08),0 3px 10px rgba(0,0,0,.55)}}
+.wd-lmap .wd-slab{position:absolute;bottom:38px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#e11d48;color:#fff;border-radius:8px;padding:2px 9px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none}
+.wd-lmap .wd-lpin.sel.other{opacity:1}
 .wd-lmap .wd-lpin.other{opacity:.7}
 .wd-lmap .wd-stand{position:absolute;transform:translate(-50%,10px);white-space:nowrap;font-size:11px;color:#333;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
 .wd-tilenote{position:absolute;left:10px;bottom:30px;z-index:500;background:#fff3d6;color:#7a4b00;font-size:12px;padding:6px 10px;border-radius:8px}
@@ -4357,8 +4360,8 @@ function wdLeaflet(){
     var uitTeam=!!(wdTeamF&&wdTeamVan(m.ini)!==wdTeamF);
     var vp=wdVerpl.filter(function(x){return x.status==='open'&&x.ini===m.ini&&x.key===key;})[0];
     var cls='wd-lpin'+(mv?' moved':'')+(duty&&!ds?' off':'')+(ds?' on':'')+(ds==='SCH'?' sch':'')+(sel?' sel':'')+(!mine?' other':'')+(uitTeam?' uit':'');
-    var ic=L.divIcon({className:'',html:'<div class="'+cls+'" style="background:'+bg+(vp?';box-shadow:0 0 0 3px '+tlKleur(vp.door)+',0 1px 4px rgba(0,0,0,.35)':'')+'" title="'+(vp?'Voorstel van '+esc(vp.door):'')+'">'+m.ini+'</div>'+(ds&&!uitTeam?'<div class="wd-plab" style="border-color:'+(ds==='SCH'?'#1a1a19':wdKleur(key,ds))+'">'+(ds==='SCH'?'Schaduw':wdGNaam(c,ds))+'</div>':''),iconSize:[24,24],iconAnchor:[12,12]});
-    var mk=L.marker([q.lat,q.lng],{icon:ic,draggable:true,title:m.ini+' · '+m.woon+' · '+wdGNaam(c,g),keyboard:false,zIndexOffset:ds&&!uitTeam?1000:(sel?400:0)}).addTo(map);
+    var ic=L.divIcon({className:'',html:'<div class="'+cls+'" style="background:'+bg+(vp?';box-shadow:0 0 0 3px '+tlKleur(vp.door)+',0 1px 4px rgba(0,0,0,.35)':'')+'" title="'+(vp?'Voorstel van '+esc(vp.door):'')+'">'+m.ini+'</div>'+(sel?'<div class="wd-slab">'+m.ini+' · '+esc(m.woon)+'</div>':'')+(ds&&!uitTeam?'<div class="wd-plab" style="border-color:'+(ds==='SCH'?'#1a1a19':wdKleur(key,ds))+'">'+(ds==='SCH'?'Schaduw':wdGNaam(c,ds))+'</div>':''),iconSize:[24,24],iconAnchor:[12,12]});
+    var mk=L.marker([q.lat,q.lng],{icon:ic,draggable:true,title:m.ini+' · '+m.woon+' · '+wdGNaam(c,g),keyboard:false,zIndexOffset:sel?3000:(ds&&!uitTeam?1000:0)}).addTo(map);
     var hot=null;
     mk.on('click',function(){wdKaartIni=wdKaartIni===m.ini?null:m.ini;wdKaartG=null;render();});
     mk.on('drag',function(e){var ll=e.target.getLatLng(),pc=wdPcOp(ll.lat,ll.lng),g2=pc?PCG[pc]:null;if(g2!==hot){hot=g2;PC2.forEach(function(x){lay[x[0]].setStyle({fillOpacity:PCG[x[0]]===hot?0.65:0.32});});}});
