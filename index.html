@@ -1214,12 +1214,13 @@ function weight(st,day){
   // 'vrij' telt nooit mee, en compensatie-restuur telt in het weekend niet als capaciteit.
   if(day!==undefined && isWeekendIdx(day)) return (st==='waak'||st==='dag'||st==='dagvroeg') ? 1 : 0;
   if(st==='dag'||st==='dagvroeg'||st==='waak')return 1;
+  if(st==='nacht')return 0.5; // nachtklus: 's ochtends inzetbaar, 's middags compensatie vóór de nacht
   if(st&&st.indexOf(':')>=0){var u=parseInt(st.split(':')[1],10)||0;return Math.max(0,(8-u)/8);}
   return 0;
 }
 function stLabel(st){if(st&&st.indexOf(':')>=0){var p=st.split(':');return (p[0]==='comp'?'comp':'verlof')+' '+p[1]+'u';}return st;}
 function dienstShow(st,d){return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='cursus'||st==='nacht')?st:'';}
-var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',cursus:'opleiding / cursus',nacht:'nachtklus',vrij:'vrij'};
+var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',cursus:'opleiding / cursus',nacht:'nachtklus (½ dag + comp.)',vrij:'vrij'};
 function beschikbaar(locId,day){var s=0;M.forEach(function(m){if(locOf(m,day)===locId)s+=weight(m.roster[day],day);});return s;}
 function dekkingLoc(locId,day){var l=LOCMAP[locId];return Math.round(beschikbaar(locId,day)/l.benodigd*100);}
 function km(aLat,aLng,bLat,bLng){var R=6371,dLa=(bLat-aLat)*Math.PI/180,dLo=(bLng-aLng)*Math.PI/180,la=aLat*Math.PI/180,lb=bLat*Math.PI/180;var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la)*Math.cos(lb)*Math.sin(dLo/2)*Math.sin(dLo/2);return Math.round(2*R*Math.asin(Math.sqrt(h)));}
@@ -3524,6 +3525,7 @@ function viewWeek(){
   });
   html+='</table></div>';
   if(paneel&&!paneelNa)html+=paneel;
+  html+='<p class="sub" style="margin-top:10px"><b>Nachtklus</b>: de monteur werkt die dag \'s ochtends en heeft \'s middags een halve dag compensatie vóór de nacht. Die middag telt niet mee in de capaciteit (de dag telt als halve dag). <b>Opleiding / cursus</b> telt de hele dag niet mee.</p>';
   html+='<p class="sub" style="margin-top:10px">Diensten schuiven verandert wie welke dienst draait, niet de headcount. Voor méér mensen in een regio stuur je een voorstel naar Manager R / D; er wordt niets automatisch gewijzigd.'+(canDecide()?'':' Gestippeld = jouw voorstel dat nog open staat.')+'</p>';
   return html;
 }
@@ -3962,7 +3964,7 @@ function viewUitvoering(){
   }
   var st0=m.roster[TODAY];
   var mn=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dn=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-  function dienstNaam(st){if(st==='dag')return 'Dagdienst';if(st==='dagvroeg')return 'Vroege dienst';if(st==='waak')return 'Waakdienst';if(st==='cursus')return 'Opleiding / cursus';if(st==='nacht')return 'Nachtklus';if(st&&st.indexOf('verlof')===0)return 'Verlof';if(st&&st.indexOf('comp')===0)return 'Compensatie';if(st==='ziek')return 'Ziek';return 'Vrij';}
+  function dienstNaam(st){if(st==='dag')return 'Dagdienst';if(st==='dagvroeg')return 'Vroege dienst';if(st==='waak')return 'Waakdienst';if(st==='cursus')return 'Opleiding / cursus';if(st==='nacht')return 'Nachtklus · middag comp.';if(st&&st.indexOf('verlof')===0)return 'Verlof';if(st&&st.indexOf('comp')===0)return 'Compensatie';if(st==='ziek')return 'Ziek';return 'Vrij';}
   function waar(d){var l=locOf(m,d),st=m.roster[d];if(!dienstShow(st,d))return '';return l!==m.base?'<span style="color:var(--risk);font-weight:600">ingezet bij '+LOCMAP[l].naam+'</span>':LOCMAP[l].naam;}
   var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h2 style="margin-bottom:2px">Mijn rooster</h2><p class="sub" style="margin:0"><b>'+m.ini+'</b> · '+esc(m.naam)+' · vaste plek '+LOCMAP[m.base].naam+'</p></div><button class="linkbtn" data-uvkies="">Niet jij? Wissel</button></div>';
   if(TODAY>=0&&TODAY<=13){var cs0=dienstStyle(st0);
@@ -4523,8 +4525,8 @@ function wdKpi(key){
 function viewWaak(){
   var c=wdC();
   var open=wdOpenAantal();
-  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['q4','Q4 2026']]:[]).concat([['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')],['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
-  if(wdSub==='q4'&&role!=='RD'&&role!=='G')wdSub='kaart';
+  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['q4','Q4 2026']]:[]).concat(role==='RD'||role==='G'?[['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')]]:[]).concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
+  if((wdSub==='q4'||wdSub==='voorspel')&&role!=='RD'&&role!=='G')wdSub='kaart';
   var jk='<div class="ctrl wd-jaren" style="margin:0 0 8px;flex-wrap:wrap"><span class="wd-lbl" style="margin-right:4px">Roosterjaar</span>';
   for(var jj=WD_BASISJAAR;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
@@ -5521,6 +5523,7 @@ var sbAgg={};
 function rowWeight(row){
   var t=row.type;
   if(t==='vroeg'||t==='dag'||t==='zara'||t==='techno'||t==='laat')return 1;
+if(t==='nacht')return 0.5; // halve dag compensatie vóór de nachtklus
   if(t&&t.indexOf('c-')===0)return Math.max(0,Math.min(1,(Number(row.hrs)||0)/8));
   return 0; // verlof / cursus / ziek
 }
