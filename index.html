@@ -909,6 +909,17 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-bad{color:var(--risk);font-weight:500}
 .wd-strip{display:grid;grid-template-columns:repeat(53,1fr);gap:1px;margin:6px 0}
 .wd-strip span{height:14px;background:var(--surface-1);border-radius:1px}
+.wd-strip span.wd-nw{outline:2px solid var(--text);outline-offset:0;position:relative;z-index:1}
+.wd-vs{border:2px solid var(--accent)}
+.wd-vs .wd-zin{font-size:14px;margin:0 0 8px;line-height:1.4}
+.wd-vs .wd-uit{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+.wd-vs ul.wd-why{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--risk)}
+.wd-vs ul.wd-why.zacht{color:var(--warn)}
+.wd-alt{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.wd-alt button{border:0.5px solid var(--border-strong);background:var(--surface);border-radius:20px;padding:4px 10px;font-size:12px}
+.wd-alt button.on{border:1.5px solid var(--accent);background:var(--accent-bg);font-weight:500}
+.wd-alt button.nok{opacity:.55}
+.wd-d-ok{color:var(--ok);font-weight:600}.wd-d-bad{color:var(--risk);font-weight:600}.wd-d-gelijk{color:var(--muted)}
 .wd-ruil{margin-bottom:12px}
 .wd-sub2{font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:500}
 .wd-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -4446,6 +4457,111 @@ function wdViewVergelijk(){
   return h;
 }
 
+/* ---------- automatisch voorstel bij een klik op een monteur (waakdienstkaart) ----------
+   Klik je in week N op een monteur, dan zoekt de tool zelf de beste dienst om hem/haar die week op te zetten,
+   rekent door hoe de verdeling over alle monteurs er dan uitziet en wanneer hij/zij eerder en later dienst heeft. */
+var wdKiesSl=null, wdKiesKey='';
+function wdKopie(plan){return plan.map(function(w){var o={};for(var x in w)o[x]=w[x];return o;});}
+function wdSpreiding(prep,plan){
+  var t=wdTel(prep,plan),v=[],mn=1e9,mx=-1e9,g=0;
+  WD_POOL.forEach(function(m){var x=t[m.ini].tot/wdFactor(m);v.push(x);g+=x;if(x<mn)mn=x;if(x>mx)mx=x;});
+  g/=v.length;var q=0;v.forEach(function(x){q+=(x-g)*(x-g);});
+  return {t:t,sd:Math.sqrt(q/v.length),min:mn,max:mx,gem:g};
+}
+/* vorige en volgende dienst (waak of schaduw) van een monteur, buiten week k om */
+function wdTijdlijn(c,k,ini){
+  var voor=null,na=null;
+  c.plan.forEach(function(wk,kk){Object.keys(wk).forEach(function(sl){if(wk[sl]!==ini||kk===k)return;
+    if(kk<k&&(!voor||kk>voor.k))voor={k:kk,s:sl};
+    if(kk>k&&(!na||kk<na.k))na={k:kk,s:sl};});});
+  return {voor:voor,na:na};
+}
+/* wat gebeurt er als ini in week k op dienst sl komt? */
+function wdAnalyse(c,k,ini,sl){
+  var prep=c.prep,kop=wdKopie(c.plan),cur=kop[k][sl];kop[k][sl]=ini;
+  var voorM=wdCheck(prep,c.plan).map(function(f){return f.m;});
+  var nieuw=wdCheck(prep,kop).filter(function(f){return voorM.indexOf(f.m)<0;});
+  var hard=nieuw.filter(function(f){return f.t==='vast';}).map(function(f){return f.m;});
+  var zacht=nieuw.filter(function(f){return f.t!=='vast';}).map(function(f){return f.m;});
+  var sp0=wdSpreiding(prep,c.plan),sp1=wdSpreiding(prep,kop),g=wdG(prep,sl);
+  var score=hard.length*1000+zacht.length*100+(sp1.sd-sp0.sd)*10+(prep.home[ini]===g?0:1)+prep.tijd[ini][g]/100;
+  return {sl:sl,cur:cur,hard:hard,zacht:zacht,sp0:sp0,sp1:sp1,kop:kop,score:score,ok:!hard.length};
+}
+/* dichtstbijzijnde weken (eerder en later) waarin ini wel een dienst kan overnemen */
+function wdEerstKan(c,k,ini){
+  var prep=c.prep,basis=wdCheck(prep,c.plan).map(function(f){return f.m;}),res={voor:null,na:null};
+  function kan(kk){
+    var wk=c.plan[kk];
+    if(prep.sIds.concat(['SCH']).some(function(sl){return wk[sl]===ini;}))return null;
+    for(var i=0;i<prep.sIds.length;i++){var sl=prep.sIds[i];
+      if(!wdMag(prep,ini,sl))continue;
+      var kop=wdKopie(c.plan);kop[kk][sl]=ini;
+      var hard=wdCheck(prep,kop).filter(function(f){return f.t==='vast'&&basis.indexOf(f.m)<0;});
+      if(!hard.length)return {k:kk,sl:sl,cur:wk[sl]};}
+    return null;}
+  for(var d=1;d<WD_N&&(!res.voor||!res.na);d++){
+    if(!res.voor&&k-d>=0)res.voor=kan(k-d);
+    if(!res.na&&k+d<WD_N)res.na=kan(k+d);}
+  return res;
+}
+function wdEerstTxt(c,ini,e){
+  if(!e.voor&&!e.na)return '<p class="wd-uit">In 2027 is er geen week waarin '+ini+' een dienst kan overnemen zonder een regel te breken.</p>';
+  function b(o,l){return o?'<button class="acc ghost" style="margin:3px 6px 3px 0" data-wdwk="'+o.k+'">'+l+' wk '+(o.k+1)+' · '+wdGNaam(c,o.sl)+(o.cur?' (nu '+o.cur+')':'')+'</button>':'';}
+  return '<div class="wd-sub2">Wel mogelijk voor '+ini+'</div><div>'+b(e.voor,'‹ eerder:')+b(e.na,'later: ›')+'</div>';
+}
+function wdStripPlan(c,plan,ini,mk){
+  var occ={};plan.forEach(function(wk,k){Object.keys(wk).forEach(function(sl){if(wk[sl]===ini)occ[k]=sl;});});
+  var h='<div class="wd-strip" aria-label="53 weken, gekleurd = dienst">';
+  for(var k=0;k<WD_N;k++){var sl=occ[k];h+='<span class="'+(k===mk?'wd-nw':'')+'" title="wk '+(k+1)+' · '+wdWeekLabel(k)+(sl?' · '+wdGNaam(c,sl):'')+'" style="'+(sl?'background:'+wdKleur(wdKey,sl):'')+(wdIsFeest(k)?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';}
+  return h+'</div>';
+}
+function wdDelta(a,b){return a===b?'<span class="wd-d-gelijk">'+a+' → '+b+'</span>':'<b>'+a+' → '+b+'</b>';}
+function wdVoorstelPaneel(c,k,ini){
+  var prep=c.prep,m=WD_POOL.filter(function(x){return x.ini===ini;})[0],wk=c.plan[k];
+  var T=WD_REGELS.tussen,tl=wdTijdlijn(c,k,ini);
+  var alAan=prep.sIds.concat(['SCH']).filter(function(sl){return wk[sl]===ini;})[0];
+  function wkTxt(o,rel){if(!o)return '<span class="wd-mut">geen andere dienst in 2027</span>';
+    var d=Math.abs(k-o.k);return '<b>week '+(o.k+1)+'</b> <span class="wd-mut">('+wdWeekLabel(o.k)+' · '+wdGNaam(c,o.s)+')</span> · '+d+' '+(d===1?'week':'weken')+' '+rel;}
+  var h='<div class="wd-card wd-vs" style="margin-bottom:12px"><div class="wd-ct">Automatisch voorstel · week '+(k+1)+' <span class="wd-mut" style="font-weight:400">'+wdWeekLabel(k)+'</span></div>';
+  // historie: altijd tonen, ook als de monteur die week al dienst heeft
+  var hist='<div class="wd-kv"><span>Vorige dienst van '+ini+'</span><b>'+wkTxt(tl.voor,'eerder')+'</b></div>'+
+           '<div class="wd-kv"><span>Volgende dienst van '+ini+'</span><b>'+wkTxt(tl.na,'later')+'</b></div>';
+  if(alAan){
+    return h+'<p class="wd-zin"><b>'+ini+'</b> heeft deze week al dienst ('+wdGNaam(c,alAan)+').</p>'+hist+wdStripPlan(c,c.plan,ini,k)+'</div>';
+  }
+  var kand=prep.sIds.filter(function(sl){return wk[sl]!==ini&&wdMag(prep,ini,sl);}).map(function(sl){return wdAnalyse(c,k,ini,sl);});
+  if(!kand.length){
+    return h+'<p class="wd-zin"><b>'+ini+'</b> kan deze week <b>geen</b> waakdienst overnemen: '+m.woon+' ligt te ver van alle gebieden of de vleugel past niet.</p>'+hist+wdStripPlan(c,c.plan,ini,k)+wdEerstTxt(c,ini,wdEerstKan(c,k,ini))+'</div>';
+  }
+  kand.sort(function(a,b){return a.score-b.score;});
+  var key=ini+'|'+k;if(wdKiesKey!==key){wdKiesKey=key;wdKiesSl=null;}
+  var gekozen=kand.filter(function(a){return a.sl===wdKiesSl;})[0]||kand[0];
+  var A=gekozen,nm=wdGNaam(c,A.sl),dec=(role==='RD');
+  var verdict=A.hard.length?'<span class="badge b-risk">kan niet</span>':A.zacht.length?'<span class="badge b-warn">kan, let op</span>':'<span class="badge b-ok">kan</span>';
+  h+='<p class="wd-zin"><b>'+ini+'</b> ('+m.woon+') neemt <b>'+nm+'</b> over'+(A.cur?' van <b>'+A.cur+'</b>':' (nu leeg)')+' '+verdict+'</p>';
+  // wanneer eerder / later dienst, met toets op de minimale tussentijd
+  var minGap=T+1;
+  function gapBadge(o){if(!o)return '';var d=Math.abs(k-o.k);return d>=minGap?' <span class="badge b-ok">ruim genoeg</span>':' <span class="badge b-risk">te kort</span>';}
+  h+='<div class="wd-kv"><span>Vorige dienst van '+ini+'</span><b>'+wkTxt(tl.voor,'eerder')+gapBadge(tl.voor)+'</b></div>'+
+     '<div class="wd-kv"><span>Volgende dienst van '+ini+'</span><b>'+wkTxt(tl.na,'later')+gapBadge(tl.na)+'</b></div>';
+  // verdeling voor/na
+  var t0=A.sp0.t,t1=A.sp1.t;
+  h+='<div class="wd-kv"><span>Diensten '+ini+' (2027)</span><b>'+wdDelta(t0[ini].tot,t1[ini].tot)+'</b></div>';
+  if(A.cur)h+='<div class="wd-kv"><span>Diensten '+A.cur+' (valt weg)</span><b>'+wdDelta(t0[A.cur].tot,t1[A.cur].tot)+'</b></div>';
+  var dsd=A.sp1.sd-A.sp0.sd,kl=Math.abs(dsd)<0.005?'wd-d-gelijk':dsd<0?'wd-d-ok':'wd-d-bad';
+  h+='<div class="wd-kv"><span>Verdeling over '+WD_POOL.length+' monteurs</span><b><span class="'+kl+'">'+(Math.abs(dsd)<0.005?'blijft gelijk':dsd<0?'eerlijker':'minder eerlijk')+'</span> · spreiding '+A.sp0.sd.toFixed(2).replace('.',',')+' → '+A.sp1.sd.toFixed(2).replace('.',',')+'<br><small>laagste–hoogste (per factor): '+nl1(A.sp0.min)+'–'+nl1(A.sp0.max)+' → '+nl1(A.sp1.min)+'–'+nl1(A.sp1.max)+'</small></b></div>';
+  h+=wdStripPlan(c,A.kop,ini,k);
+  if(A.hard.length)h+='<ul class="wd-why">'+A.hard.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
+  if(A.zacht.length)h+='<ul class="wd-why zacht">'+A.zacht.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
+  if(!kand.some(function(a){return a.ok;}))h+=wdEerstTxt(c,ini,wdEerstKan(c,k,ini));
+  if(kand.length>1){
+    h+='<div class="wd-sub2">Andere diensten voor '+ini+' in week '+(k+1)+'</div><div class="wd-alt">'+kand.map(function(a){
+      return '<button data-wdkies="'+a.sl+'" class="'+(a.sl===A.sl?'on':'')+(a.ok?'':' nok')+'" title="'+(a.ok?'':'kan niet: '+a.hard.join('; '))+'">'+wdGNaam(c,a.sl)+(a.cur?' (nu '+a.cur+')':'')+(a.ok?'':' ✕')+'</button>';}).join('')+'</div>';}
+  h+='<div style="margin-top:8px"><button class="acc" data-wdw="'+A.sl+'"'+(A.hard.length?' disabled':'')+'>'+(dec?'Zet in: ':'Dien voorstel in: ')+ini+' → '+nm+'</button></div>';
+  h+='<p class="wd-uit">Minimaal '+T+' weken tussen twee diensten van dezelfde monteur'+(WD_REGELS.schTelt?' (schaduw telt mee)':'')+'. Het voorstel kiest de dienst die aan de regels voldoet, de verdeling het minst scheeftrekt en de kortste aanrijtijd geeft. Dienst vóór 2027 (Q4 2026) zit hier niet in.</p></div>';
+  return h;
+}
+
 function wdViewKaart(){
   if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=0;if(role==='TZ')wdTeamF='Zara/Techno';else if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';}
   var c=wdC(),t=wdTel(c.prep,c.plan);
@@ -4462,10 +4578,7 @@ function wdViewKaart(){
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
       h+='<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</span><b>'+c.prep.tijd[m.ini][g]+' min · '+(thuis?'<span class="badge b-ok">thuis</span>':ok?'<span class="badge b-ruim">mag</span>':'<span class="badge b-risk">te ver</span>')+'</b></div>';});
-    if(wdKaartWk!=null){var wkp=c.plan[wdKaartWk],opt=[];
-      var alAan=c.prep.sIds.concat(['SCH']).some(function(sl){return wkp[sl]===m.ini;});
-      if(!alAan)c.prep.sIds.forEach(function(sl){var cur=wkp[sl];if(cur&&cur!==m.ini&&wdMag(c.prep,m.ini,sl))opt.push('<button class="acc ghost" style="margin:3px 6px 3px 0" data-wdw="'+sl+'">'+(role==='RD'?'Zet in: ':'Voorstel: ')+wdGNaam(c,sl)+' (nu '+cur+')</button>');});
-      h+='<div class="wd-kv" style="display:block"><div style="margin-bottom:4px"><b>Week '+(wdKaartWk+1)+'</b>: '+(alAan?m.ini+' heeft deze week al dienst.':(opt.length?(role==='RD'?'zet '+m.ini+' op een dienst':'stel '+m.ini+' voor op een dienst')+':':m.ini+' kan deze week geen dienst overnemen.'))+'</div>'+opt.join('')+'</div>';}
+    if(wdKaartWk!=null)h+=wdVoorstelPaneel(c,wdKaartWk,m.ini);
     h+='<div class="wd-kv"><span>Diensten 2027</span><b>'+x.waak+' waak + '+x.sch+' schaduw = '+x.tot+'</b></div>'+wdStrip(m.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';}
   h+='<div class="wd-card"><div class="wd-ct">Per gebied</div><table class="wd-tbl"><thead><tr><th>Gebied</th><th>Woont</th><th>Inzetbaar</th><th>Waak / pers.</th><th>Aanrij</th></tr></thead><tbody>';
   c.prep.gIds.forEach(function(g){var woont=WD_POOL.filter(function(m){return c.prep.home[m.ini]===g;}).length;var inz=WD_POOL.filter(function(m){return wdMagG(c.prep,m.ini,g);}).length;var ns=wdNSlots(c.prep,g);
@@ -4744,6 +4857,7 @@ function wireWaak(){
     wdVerpl.push(v);wdOpslaan(v.id,'wd:w|'+[v.key,v.k,v.slot,v.oud||'',v.ini].join('|'),v.door,dec?'doorgevoerd':'open');
     if(dec){wdWeekPas(v);sbToast(ini+' staat nu in '+wdGNaam(c,sl)+' van week '+(k+1)+'.');}else sbToast('Voorstel verstuurd naar Manager R/D: '+ini+' neemt '+wdGNaam(c,sl)+' over in week '+(k+1)+'.');
     render();});
+  q('[data-wdkies]',function(b){wdKiesSl=b.dataset.wdkies;render();});
   q('[data-wdteam]',function(b){wdTeamF=b.dataset.wdteam||null;render();});
   q('[data-wdg]',function(b){wdKaartG=wdKaartG===b.dataset.wdg?null:b.dataset.wdg;wdKaartIni=null;render();});
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
