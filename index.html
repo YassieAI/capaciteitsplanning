@@ -4311,7 +4311,7 @@ function wdBase(){ // gebiedsindeling zonder handmatig verschuiven, om effect te
 function wdVerschoven(){
   var ov=Object.keys(WD_OVERRIDE[wdKey]||{}),c=wdC(),b=wdBase();
   var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Verschoven monteurs ('+ov.length+')</div>';
-  if(!ov.length)return h+'<p class="wd-uitleg" style="margin:0">Nog niets verschoven. Sleep een speld op de kaart naar een ander gebied: het rooster wordt direct opnieuw berekend.</p></div>';
+  if(!ov.length)return h+'<p class="wd-uitleg" style="margin:0">Nog niets verschoven. Sleep een speld op de kaart naar een ander gebied: je krijgt eerst een bevestiging, daarna pas gaat het in (of wordt het een voorstel).</p></div>';
   ov.forEach(function(i){var m=WD_POOL.filter(function(x){return x.ini===i;})[0];
     h+='<div class="wd-kv"><span><b>'+i+'</b> · '+m.woon+': '+wdGNaam(c,b.home[i])+' → <b>'+wdGNaam(c,WD_OVERRIDE[wdKey][i])+'</b> · '+c.prep.tijd[i][WD_OVERRIDE[wdKey][i]]+' min</span><button class="linkbtn" data-wdundo="'+i+'">terugzetten</button></div>';});
   var k=wdKpi(wdKey);
@@ -4367,7 +4367,11 @@ function wdLeaflet(){
     mk.on('click',function(){wdKaartIni=wdKaartIni===m.ini?null:m.ini;wdKaartG=null;render();});
     mk.on('drag',function(e){var ll=e.target.getLatLng(),pc=wdPcOp(ll.lat,ll.lng),g2=pc?PCG[pc]:null;if(g2!==hot){hot=g2;PC2.forEach(function(x){lay[x[0]].setStyle({fillOpacity:PCG[x[0]]===hot?0.65:0.32});});}});
     mk.on('dragend',function(){var g2=hot;hot=null;
-      if(g2&&g2!==prep.home[m.ini]){wdVerplaats(m.ini,g2);}
+      if(g2&&g2!==prep.home[m.ini]){
+        var wie=(role==='RD'||role==='G')?'Dit gaat direct in en het rooster wordt opnieuw berekend.':'Dit wordt een voorstel voor Manager R/D, het rooster verandert niet.';
+        if(window.confirm(m.ini+' ('+m.woon+') verplaatsen van '+wdGNaam(c,prep.home[m.ini])+' naar '+wdGNaam(c,g2)+'?\nAanrijtijd daar: ca. '+prep.tijd[m.ini][g2]+' min.\n\n'+wie)){wdVerplaats(m.ini,g2);}
+        else{mk.setLatLng([q.lat,q.lng]);PC2.forEach(function(x){lay[x[0]].setStyle({fillOpacity:fo(PCG[x[0]])});});}
+      }
       else{mk.setLatLng([q.lat,q.lng]);PC2.forEach(function(x){lay[x[0]].setStyle({fillOpacity:fo(PCG[x[0]])});});}});
   });
 }
@@ -4706,7 +4710,15 @@ function wdViewRuil(){
   var c=wdC();
   var h='<p class="sub">Een ruil is een voorstel. Hij gaat pas in als Manager R/D hem goedkeurt in het weekoverleg; tot die tijd blijft het rooster zoals het is.</p>';
   var lijst=wdRuilen.filter(function(r){return r.key===wdKey;});
-  if(!lijst.length)h+='<div class="empty">Nog geen ruilvoorstellen voor deze opzet. Kies een dienst in het jaarrooster om te ruilen.</div>';
+  var anders=wdVerpl.filter(function(v){return v.key===wdKey&&v.status==='open';});
+  if(!lijst.length&&!anders.length)h+='<div class="empty">Nog geen voorstellen voor deze opzet. Kies een dienst in het jaarrooster om te ruilen, of klik op de kaart op een monteur.</div>';
+  if(anders.length){
+    h+='<div class="wd-sub2">Verplaatsingen en weekvoorstellen ('+anders.length+')</div>';
+    anders.slice().reverse().forEach(function(v){var mm=WD_POOL.filter(function(x){return x.ini===v.ini;})[0];
+      var titel=v.t==='w'?v.ini+' neemt '+wdGNaam(c,v.slot)+' over van '+(v.oud||'leeg')+' · week '+(v.k+1):v.ini+': '+wdGNaam(c,v.van)+' → '+wdGNaam(c,v.naar);
+      h+='<div class="sugg"><div class="r1"><span class="nm">'+titel+'</span><span class="badge b-warn">te bespreken</span></div><div class="meta"><span>'+(mm?'woont '+mm.woon:'')+'</span><span>door '+tlBadge(v.door)+'</span></div>'+
+        '<div style="display:flex;gap:6px;margin-top:8px">'+(role==='RD'?'<button class="acc" data-vwvok="'+v.id+'">Goedkeuren</button><button class="acc ghost" data-vwvnee="'+v.id+'">Afwijzen</button>':'<button class="acc ghost" data-vwvnee="'+v.id+'">Intrekken</button>')+'</div></div>';});
+  }
   lijst.slice().reverse().forEach(function(r){
     var bad=r.status==='open'?wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2):[];
     h+='<div class="sugg"><div class="r1"><span class="nm">'+r.a+' ⇄ '+r.b+'</span><span class="badge '+(r.status==='open'?'b-warn':r.status==='goed'?'b-ok':'b-risk')+'">'+(r.status==='open'?'te bespreken':r.status==='goed'?'goedgekeurd':'afgewezen')+'</span></div>'+
@@ -4824,6 +4836,8 @@ function wdSleepChip(b){
       ghost.remove();document.querySelectorAll('.wd-ok,.wd-nok,.wd-hot,.wd-bron').forEach(function(x){x.classList.remove('wd-ok','wd-nok','wd-hot','wd-bron');});
       if(!hot)return;var q=hot.dataset.wdcell.split('|'),red=doel[hot.dataset.wdcell];
       if(red&&red.length){sbToast('Kan niet: '+red[0]);return;}
+      var cc=wdC(),pa=cc.plan[k][s],pb=cc.plan[+q[0]][q[1]];
+      if(!window.confirm('Ruil voorstellen?\n\n'+pa+': week '+(k+1)+' '+wdGNaam(cc,s)+' → week '+(+q[0]+1)+' '+wdGNaam(cc,q[1])+'\n'+pb+': week '+(+q[0]+1)+' '+wdGNaam(cc,q[1])+' → week '+(k+1)+' '+wdGNaam(cc,s)+'\n\nHet wordt een voorstel bij Te bespreken.'))return;
       wdMaakRuil(k,s,+q[0],q[1]);
     }
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
@@ -4832,6 +4846,7 @@ function wdSleepChip(b){
 
 /* ---------- events ---------- */
 function wireWaak(){
+  wireVoorstellen();
   wireVoorspel();
   var ef=document.getElementById('wdEchtFile');
   if(ef)ef.onchange=function(){var f=ef.files&&ef.files[0];if(!f)return;var rd=new FileReader();
