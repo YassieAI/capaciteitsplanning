@@ -5467,7 +5467,7 @@ var selRole=null;
 function buildLogin(){
   var rl=document.getElementById('roleList');
   rl.innerHTML=ROLES.map(function(r){return '<button class="role-btn" data-r="'+r.id+'"><span>'+r.naam+'<small>'+r.desc+'</small></span><span class="t">›</span></button>';}).join('');
-  rl.querySelectorAll('.role-btn').forEach(function(b){b.onclick=function(){selRole=b.dataset.r;rl.querySelectorAll('.role-btn').forEach(function(x){x.classList.toggle('sel',x===b);});var r=ROLES.find(function(x){return x.id===selRole;});document.getElementById('pinHint').textContent='Demo-pincode voor '+r.naam+': '+r.pin;document.getElementById('loginErr').textContent='';document.getElementById('pin').focus();};});
+  rl.querySelectorAll('.role-btn').forEach(function(b){b.onclick=function(){selRole=b.dataset.r;rl.querySelectorAll('.role-btn').forEach(function(x){x.classList.toggle('sel',x===b);});var r=ROLES.find(function(x){return x.id===selRole;});document.getElementById('loginErr').textContent='';document.getElementById('pin').focus();};});
 }
 function doLogin(){
   var err=document.getElementById('loginErr');
