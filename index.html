@@ -95,6 +95,12 @@ table.hm-t.hm-jaar{min-width:1240px;font-size:10px}
 .hm-jaar .q-sep.kw-now,.hm-jaar .q-sep.kw-now-top,.hm-jaar .q-sep.kw-now-bottom{box-shadow:inset 2px 0 0 var(--text),inset -2px 0 0 var(--text)}
 .qlab{font-size:10px;color:var(--muted);font-weight:600}
 /* jaaroverzicht als kleine trendlijnen: één rij per locatie, naam links, kerncijfer rechts */
+.jk-rij{display:flex;gap:1px}
+.jk-cel{flex:1;height:20px;border-radius:2px;cursor:pointer;min-width:0}
+.jk-cel:hover{filter:brightness(.88)}
+.jk-nu{box-shadow:0 0 0 2px var(--text);position:relative;z-index:1}
+.jk-leg{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-2px}
+.jk-kop{font-size:13px;font-weight:600;margin:16px 0 4px}
 .jr-lijst{border-top:0.5px solid var(--border)}
 .jr-rij{display:flex;align-items:center;gap:12px;padding:5px 0;border-bottom:0.5px solid var(--border)}
 .jr-rij:hover{background:var(--surface-1)}
@@ -1324,7 +1330,7 @@ function setCtrls(){
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;boardView=b.dataset.v;pick=null;editCell=null;editCells=[];setCtrls();render();};});
   } else if(role==='G'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button>'+
-    '<button data-gv="dag" class="'+(gView==='dag'?'active':'')+'">Dagdashboard</button>'+
+    '<button data-gv="dag" class="'+(gView==='dag'?'active':'')+'">Dashboard</button>'+
     '<button data-gv="week" class="'+(gView==='week'?'active':'')+'">Week</button>'+
     '<button data-gv="kwartaal" class="'+(gView==='kwartaal'?'active':'')+'">Kwartaal</button>'+
     '<button data-gv="jaar" class="'+(gView==='jaar'?'active':'')+'">Jaar</button>';
@@ -2298,12 +2304,12 @@ function viewKwartaal(){
 /* ---------- jaaroverzicht (Manager G): mini-trendlijn per locatie ---------- */
 var yOff=0;   // jaren t.o.v. huidig jaar
 function yNav(d){yOff+=d;render();}
-var jaarWeergave='grafiek';   // 'grafiek' = trendlijn per locatie | 'tabel' = cijfermatrix
+var jaarWeergave='overzicht';   // 'overzicht' = totaallijn + kleurkaart | 'grafiek' = trendlijn per locatie | 'tabel' = cijfermatrix
 function jaarSetWeergave(w){jaarWeergave=w;render();}
 // Eén compacte jaarlijn voor één locatie. Onder de normlijn ligt een rode zone, zodat een dip
 // meteen leesbaar is zonder cijfers. Gaten (weken zonder planning) breken de lijn op.
-function jaarSpark(vals, weeks, curWkMon, naam){
-  var n=vals.length, W=1000, H=42, step=n>1?W/(n-1):W, MAXV=150;
+function jaarSpark(vals, weeks, curWkMon, naam, hoogte){
+  var n=vals.length, W=1000, H=hoogte||42, step=n>1?W/(n-1):W, MAXV=150;
   function yv(v){return H-(Math.min(v,MAXV)/MAXV*H);}
   var normY=yv(60);
   var segs=[],cur=[];
@@ -2331,12 +2337,41 @@ function jaarSpark(vals, weeks, curWkMon, naam){
     return '<rect class="jr-zone" x="'+((i-0.5)*step).toFixed(1)+'" y="0" width="'+step.toFixed(1)+'" height="'+H+'" fill="transparent" data-kwweek="'+fmtIsoD(wk)+'">'+
       '<title>'+naam+' · week '+isoWeek(wk)+' · '+(v===null?'geen gegevens':v+'%')+'</title></rect>';
   }).join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:42px;display:block" role="img" aria-label="jaarverloop '+naam+'">'+
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:'+H+'px;display:block" role="img" aria-label="jaarverloop '+naam+'">'+
     '<rect x="0" y="'+normY.toFixed(1)+'" width="'+W+'" height="'+(H-normY).toFixed(1)+'" fill="var(--risk-bar)" opacity="0.10"/>'+
     '<line x1="0" y1="'+normY.toFixed(1)+'" x2="'+W+'" y2="'+normY.toFixed(1)+'" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 3"/>'+
     (nuX!==null?'<line x1="'+nuX+'" y1="0" x2="'+nuX+'" y2="'+H+'" stroke="var(--text)" stroke-width="1.5"/>':'')+
     lijnen+punten+zones+
   '</svg>';
+}
+
+// Maandlabels uitgelijnd op de kleurkaart (cel i staat op i/n van de breedte).
+function jaarMaandAsKaart(weeks){
+  var n=weeks.length, MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  var gezien={}, out='';
+  weeks.forEach(function(wk,i){
+    var don=new Date(wk); don.setDate(wk.getDate()+3); var m=don.getMonth();
+    if(gezien[m])return; gezien[m]=true;
+    out+='<span style="position:absolute;left:'+(i/n*100).toFixed(2)+'%;font-size:10px;color:var(--muted)">'+MND[m]+'</span>';
+  });
+  return '<div style="position:relative;height:14px">'+out+'</div>';
+}
+// Kleurkaart: één rij per locatie, één gekleurd vlakje per week, geen cijfers in de vlakjes.
+function jaarKaart(perLoc, weeks, curWkMon, laden){
+  var n=weeks.length;
+  var rijen=perLoc.map(function(pl){
+    var cellen=weeks.map(function(wk,i){
+      var v=pl.vals[i], iso=fmtIsoD(wk), nu=iso===curWkMon;
+      var bg=(v===null)?'var(--surface-1)':(v>=60?'var(--ok-bar)':tone(v).bar);
+      var tip=pl.naam+' · week '+isoWeek(wk)+' · '+(v===null?'geen gegevens':v+'% ('+tone(v).lb+')');
+      return '<span class="jk-cel'+(nu?' jk-nu':'')+'" data-kwweek="'+iso+'" style="background:'+bg+'" title="'+tip+'"></span>';
+    }).join('');
+    return '<div class="jr-rij"><div class="jr-naam">'+pl.naam+'</div>'+
+      '<div class="jr-graf"><div class="jk-rij">'+cellen+'</div></div>'+
+      '<div class="jr-cijfer">'+(pl.gem===null?'<span style="color:var(--muted)">'+(laden?'laden…':'geen data')+'</span>':'gem. <strong>'+pl.gem+'%</strong>')+'</div></div>';
+  }).join('');
+  return '<div class="jr-lijst">'+rijen+'</div>'+
+    '<div class="jr-rij jr-as"><div class="jr-naam"></div><div class="jr-graf">'+jaarMaandAsKaart(weeks)+'</div><div class="jr-cijfer"></div></div>';
 }
 // Maandlabels onder de laatste grafiek — vervangt de weeknummerrij van de tabel.
 function jaarMaandAs(weeks){
@@ -2412,7 +2447,8 @@ function viewJaar(){
 
   var nav='<div class="ctrl" style="margin-bottom:10px"><button onclick="yNav(-1)">‹ jaar</button><span class="daylabel" style="min-width:90px">'+jaar+'</span><button onclick="yNav(1)">jaar ›</button>'+(yOff!==0?' <button class="linkbtn" onclick="yOff=0;render()">naar nu</button>':'')+'</div>';
   var wisselaar='<div class="ctrl" style="margin-bottom:12px">'+
-    '<button class="'+(jaarWeergave==='grafiek'?'active':'')+'" onclick="jaarSetWeergave(\'grafiek\')">Grafiek</button>'+
+    '<button class="'+(jaarWeergave==='overzicht'?'active':'')+'" onclick="jaarSetWeergave(\'overzicht\')">Overzicht</button>'+
+    '<button class="'+(jaarWeergave==='grafiek'?'active':'')+'" onclick="jaarSetWeergave(\'grafiek\')">Per locatie</button>'+
     '<button class="'+(jaarWeergave==='tabel'?'active':'')+'" onclick="jaarSetWeergave(\'tabel\')">Cijfers</button>'+
   '</div>';
   var kpis='<div class="metrics" style="grid-template-columns:repeat(2,1fr)">'+
@@ -2432,6 +2468,35 @@ function viewJaar(){
      '<span>– = geen gegevens</span></div>'+
      '<div class="hm"><table class="hm-t hm-jaar"><tr>'+qRow+'</tr><tr>'+head+'</tr>'+body+'</table></div>'+kpis+
      '<p class="sub" style="margin-top:6px">Huidige week zwart omkaderd · Q-scheidingen als lijn · scroll horizontaal voor de latere weken.</p>';
+  }
+
+  if(jaarWeergave==='overzicht'){
+    // totaallijn = gemiddelde dekking van alle locaties per week
+    var tot=weeks.map(function(wk,i){
+      var xs=perLoc.map(function(pl){return pl.vals[i];}).filter(function(v){return v!==null;});
+      return xs.length?Math.round(xs.reduce(function(a,b){return a+b;},0)/xs.length):null;
+    });
+    var gemAlle=(function(){var xs=tot.filter(function(v){return v!==null;});return xs.length?Math.round(xs.reduce(function(a,b){return a+b;},0)/xs.length):null;})();
+    var zwakW=null;tot.forEach(function(v,i){if(v!==null&&(zwakW===null||v<tot[zwakW]))zwakW=i;});
+    var zwakL=null;perLoc.forEach(function(pl){if(pl.gem!==null&&(zwakL===null||pl.gem<zwakL.gem))zwakL=pl;});
+    var kpiTop='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'+
+      gKpiCard(null,'Gem. dekking '+jaar,(gemAlle===null?(laden?'laden…':'–'):gemAlle+'%'),(gemAlle===null?'':tone(gemAlle).tx),'')+
+      gKpiCard('q-onder','Locatie-weken onder norm',(gemeten?onder+' / '+gemeten:'–'),(onder?'var(--risk)':'var(--ok)'),'')+
+      gKpiCard(null,'Zwakste week',(zwakW===null?'–':'wk '+isoWeek(weeks[zwakW])+' · '+tot[zwakW]+'%'),(zwakW===null?'':tone(tot[zwakW]).tx),'18px')+
+      gKpiCard(null,'Zwakste locatie',(zwakL===null?'–':zwakL.naam+' · '+zwakL.gem+'%'),(zwakL===null?'':tone(zwakL.gem).tx),'18px')+
+    '</div>'+
+    (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder norm (&lt;60%)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
+    var leg='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 6px;font-size:12px;color:var(--muted);align-items:center">'+
+      '<span><span class="jk-leg" style="background:var(--ok-bar)"></span> OK ≥60</span>'+
+      '<span><span class="jk-leg" style="background:var(--warn-bar)"></span> let op 45–59</span>'+
+      '<span><span class="jk-leg" style="background:var(--risk-bar)"></span> risico &lt;45</span>'+
+      '<span><span class="jk-leg" style="background:var(--surface-1);border:0.5px solid var(--border-strong)"></span> geen gegevens</span></div>';
+    return kop+kpiTop+
+      '<h3 class="jk-kop">Verloop van de totale dekking</h3>'+
+      '<div class="jr-rij" style="border:none"><div class="jr-naam" style="font-size:11px;color:var(--muted)">alle locaties<br>gemiddeld</div><div class="jr-graf">'+jaarSpark(tot,weeks,curWkMon,'Alle locaties',96)+'</div><div class="jr-cijfer">norm 60%<br>gestippeld</div></div>'+
+      '<div class="jr-rij jr-as"><div class="jr-naam"></div><div class="jr-graf">'+jaarMaandAs(weeks)+'</div><div class="jr-cijfer"></div></div>'+
+      '<h3 class="jk-kop">Welke locatie, welke week</h3>'+leg+jaarKaart(perLoc,weeks,curWkMon,laden)+
+      '<p class="sub" style="margin-top:8px">Elk vlakje is één week. Wijs een vlakje aan voor het percentage, klik erop voor het dag-voor-dag Weekdashboard. De zwarte rand is de huidige week.</p>';
   }
 
   // ---- grafiekweergave: één mini-trendlijn per locatie ----
@@ -2546,10 +2611,10 @@ function trendSvg(pts, opts){
     '<span style="font-style:italic">&#128070; sleep de rode lijn of tik een punt voor datum en percentage</span></div>';
   return '<div class="trendwrap" data-n="'+n+'" data-w="'+W+'" data-h="'+H+'" data-pl="'+pl+'" data-step="'+step.toFixed(4)+'"'+(dayIsos?' data-isos="'+dayIsos.join(',')+'"':'')+'>'+svg+legenda+'</div>';
 }
-// Elke rol onthoudt zijn eigen periode-keuze in Grafiek — RD's "Grafiek"-tab en G's "Dagdashboard"-tab
+// Elke rol onthoudt zijn eigen periode-keuze in Grafiek — RD's "Grafiek"-tab en G's "Dashboard"-tab
 // delen dezelfde weergavefunctie maar mogen niet elkaars stand overnemen (RD start op Week, G op Dag).
 var grafiekPeriodeRD='week'; // 'dag' | 'week' | 'kwartaal' — Manager R/D, tabblad "Grafiek"
-var grafiekPeriodeG='dag';   // 'dag' | 'week' | 'kwartaal' — Manager G, tabblad "Dagdashboard"
+var grafiekPeriodeG='dag';   // 'dag' | 'week' | 'kwartaal' — Manager G, tabblad "Dashboard"
 function grafiekPeriode(){ return role==='G' ? grafiekPeriodeG : grafiekPeriodeRD; }
 function grDagNav(d){var n=curDay+d;if(n<0)shiftWindow(winShift-1,n+7);else if(n>13)shiftWindow(winShift+1,n-7);else{curDay=n;render();}}
 function grafiekSetPeriode(p){ if(role==='G') grafiekPeriodeG=p; else grafiekPeriodeRD=p; grafiekSel=null; trendSelIdx=null; render(); }
@@ -5742,7 +5807,7 @@ function viewStart(){
   h+=(role==='RD'?'<button class="linkbtn" data-go="rd:log" style="margin-top:6px">Alle wijzigingen ›</button>':'')+'</div>';
   // acties per rol
   var acties={RD:[['rd:bord','Schuifbord'],['rd:voorstellen','Te bespreken'],['rd:week','Weekrooster'],['rd:grafiek','Grafiek'],['rd:waak','Waakdienst'],['rd:log','Wijzigingen']],
-    G:[['g:dag','Dagdashboard'],['g:week','Week'],['g:kwartaal','Kwartaal'],['g:jaar','Jaar']],
+    G:[['g:dag','Dashboard'],['g:week','Week'],['g:kwartaal','Kwartaal'],['g:jaar','Jaar']],
     TZ:[['tl:dag','Mijn team vandaag'],['tl:week','Week'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     TN:[['tl:dag','Mijn team vandaag'],['tl:week','Week'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     TS:[['tl:dag','Mijn team vandaag'],['tl:week','Week'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
