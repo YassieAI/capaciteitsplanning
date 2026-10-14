@@ -180,7 +180,7 @@ table.hm-t.hm-jaar{min-width:1240px;font-size:10px}
 .kw-now-bottom{box-shadow:inset 2px 0 0 var(--text), inset -2px 0 0 var(--text), inset 0 -2px 0 var(--text)}
 .chart{position:relative;height:190px;border-bottom:0.5px solid var(--border);margin-bottom:6px}
 .norm{position:absolute;left:0;right:0;border-top:1.5px dashed var(--border-strong)}
-.norm span{position:absolute;right:0;top:-16px;font-size:11px;color:var(--muted);background:var(--bg);padding:0 4px}
+.norm span{position:absolute;right:0;top:-16px;font-weight:600;color:var(--text)!important;z-index:2;font-size:11px;color:var(--muted);background:var(--bg);padding:0 4px}
 .bars{display:flex;align-items:flex-end;justify-content:space-around;height:100%;gap:10px}
 .barc{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .barc-click{cursor:pointer;border-radius:8px;padding-top:4px;transition:background .1s}
@@ -2700,6 +2700,7 @@ function viewManagerG(){
   var regs=LOC.filter(function(l){return l.type==='regio';}).map(function(l){return colFor(l.id);});
   regs=columns().filter(function(c){return c.type==='cluster';});   // vast: 3 regio's (Noorden / Randstad / Zuiden)
   LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});   // alle Zara-locaties los
+  if(role==='G') return weekStrip()+totaalCapBlokWeek()+viewGrafiekWeek(regs);
   var periode=grafiekPeriode();
   var toggle='<div class="ctrl" style="margin-bottom:10px">'+
     '<button class="'+(periode==='dag'?'active':'')+'" onclick="grafiekSetPeriode(\'dag\')">Dag</button>'+
@@ -2708,7 +2709,7 @@ function viewManagerG(){
     '<button class="'+(periode==='jaar'?'active':'')+'" onclick="grafiekSetPeriode(\'jaar\')">Jaar</button>'+
   '</div>';
   if(periode==='dag')toggle+='<div class="ctrl" style="margin:-2px 0 10px"><button onclick="grDagNav(-1)">‹ dag</button><span class="daylabel" style="min-width:130px">'+dLabel(curDay)+(curDay===TODAY?' · vandaag':'')+'</span><button onclick="grDagNav(1)">dag ›</button></div>';
-  if(periode==='week') return toggle+totaalCapBlok()+viewGrafiekWeek(regs);
+  if(periode==='week') return toggle+totaalCapBlokWeek()+viewGrafiekWeek(regs);
   if(periode==='kwartaal') return toggle+viewGrafiekKwartaal(regs);
   if(periode==='jaar') return toggle+viewGrafiekJaar(regs);
   return toggle+totaalCapBlok()+viewGrafiekDag(regs);
@@ -2836,7 +2837,7 @@ function viewGrafiekWeek(regs){
     }
   }
 
-  var nav='<div class="ctrl" style="margin-bottom:10px"><button onclick="grafiekPeriodeNav(-1)">‹ week</button>'+
+  var nav=role==='G'?'':'<div class="ctrl" style="margin-bottom:10px"><button onclick="grafiekPeriodeNav(-1)">‹ week</button>'+
    '<span class="daylabel" style="min-width:190px">week '+isoWeek(mon)+' · '+mon.getDate()+'/'+(mon.getMonth()+1)+' – '+end.getDate()+'/'+(end.getMonth()+1)+' '+end.getFullYear()+'</span>'+
    '<button onclick="grafiekPeriodeNav(1)">week ›</button>'+(wgOff!==0?' <button class="linkbtn" onclick="wgOff=0;render()">naar nu</button>':'')+'</div>';
 
@@ -3631,6 +3632,70 @@ function weekUrenGrafiek(monteurs){
   h+='</div><div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;font-size:12px;color:var(--muted)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2a78d6;vertical-align:-1px"></span> beschikbaar</span>'+
     soorten.map(function(k){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+kleur(k)+';vertical-align:-1px"></span> '+(k==='comp'?'comp / nachtklus':AFW_LABEL[k])+'</span>';}).join('')+'</div>';
   return h;
+}
+
+/* ---------- Dashboard Manager G: weeknummers bovenaan ---------- */
+function wgSet(o){wgOff=o;grafiekSel=null;trendSelIdx=null;render();}
+function weekStrip(){
+  var mon0=mondayOf(new Date()),h='<div class="ctrl" style="margin-bottom:12px;flex-wrap:wrap;gap:6px;align-items:center"><button onclick="wgSet(wgOff-1)" title="vorige week">‹</button>';
+  for(var o=wgOff-4;o<=wgOff+4;o++){var m=new Date(mon0);m.setDate(mon0.getDate()+o*7);
+    h+='<button class="'+(o===wgOff?'active':'')+'" onclick="wgSet('+o+')" title="'+m.getDate()+'/'+(m.getMonth()+1)+(o===0?' · deze week':'')+'" style="min-width:44px;'+(o===0&&o!==wgOff?'box-shadow:inset 0 -2px 0 var(--text)':'')+'">'+isoWeek(m)+'</button>';}
+  h+='<button onclick="wgSet(wgOff+1)" title="volgende week">›</button>'+(wgOff!==0?'<button class="linkbtn" onclick="wgSet(0)">deze week</button>':'')+'<span style="font-size:12px;color:var(--muted);margin-left:6px">weeknummer</span></div>';
+  return h;
+}
+var totSel=null;
+function totSetSel(k){totSel=(totSel===k?null:k);render();}
+function totaalCapBlokWeek(){
+  var mon=mondayOf(new Date());mon.setDate(mon.getDate()+wgOff*7);
+  var end=new Date(mon);end.setDate(mon.getDate()+6);
+  var agg=ensureRange('gweek_'+fmtIsoD(mon),fmtIsoD(mon),fmtIsoD(end));
+  var laden=!agg||!agg.loaded;
+  var dagen=[];for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);dagen.push(d);}
+  var types=['regio','zara','techno'];
+  var per=dagen.map(function(d){var r={regio:0,zara:0,techno:0};if(!laden&&agg.byGrpDay)types.forEach(function(t){r[t]=((agg.byGrpDay[t]||{})[fmtIsoD(d)]||0)*8;});return r;});
+  var weekTot={regio:0,zara:0,techno:0};per.forEach(function(r){types.forEach(function(t){weekTot[t]+=r[t];});});
+  var nodigDag=(CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno)/5;
+  var maxV=nodigDag*1.5;per.forEach(function(r){var t=r.regio+r.zara+r.techno;if(t>maxV)maxV=t;});
+  var H=190, lijnY=(nodigDag/maxV*H);
+  var tot=[],chart='',dl='';
+  dagen.forEach(function(d,i){
+    var r=per[i],t=Math.round(r.regio+r.zara+r.techno),nd=(i<5)?nodigDag:0;
+    var segs=types.map(function(g){var hh=r[g]/maxV*H;if(hh<=0)return '';return '<div title="'+CONTRACT_NAAM[g]+': '+Math.round(r[g])+' u" style="height:'+hh.toFixed(1)+'px;background:'+GROEP_KLEUR[g]+';border-top:2px solid var(--surface)"></div>';}).reverse().join('');
+    var dek=nd?Math.round(t/nd*100):null;
+    tot.push('<div style="flex:1;text-align:center;font-size:12px;font-weight:700;color:'+(dek===null?'var(--muted)':tone(dek).tx)+'">'+(laden?'…':t+' u')+'</div>');
+    chart+='<div style="flex:1;display:flex;justify-content:center"><div style="width:70%;max-width:50px;height:'+H+'px;display:flex;flex-direction:column;justify-content:flex-end">'+segs+'</div></div>';
+    dl+='<div style="flex:1;text-align:center;font-size:11px;color:var(--muted)">'+WD[d.getDay()]+' '+d.getDate()+'</div>';
+  });
+  var nodigWeek=CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno;
+  var totWeek=Math.round(weekTot.regio+weekTot.zara+weekTot.techno);
+  var pAll=Math.round(totWeek/nodigWeek*100);
+  var tegel=function(k,naam,kleur,val,con,klik){var p=Math.round(val/con*100);
+    return '<div class="metric'+(klik?' metric-click':'')+(klik&&totSel===k?' metric-sel':'')+'"'+(klik?' onclick="totSetSel(\''+k+'\')"':'')+'><div class="l">'+(kleur?'<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+kleur+';vertical-align:-1px"></span> ':'')+naam+(klik?' <span class="kpi-arrow">'+(totSel===k?'&#9662;':'&#9656;')+' per '+(k==='regio'?'regio':'locatie')+'</span>':'')+'</div>'+
+      '<div class="v" style="font-size:19px;color:'+tone(p).tx+'">'+(laden?'…':Math.round(val)+' u')+'</div><div style="font-size:12px;color:var(--muted)"><b style="color:var(--text)">contract '+con+' u</b> per week</div></div>';};
+  var tegels='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">'+tegel('tot','Totaal Field Force + Zara + Techno','',totWeek,nodigWeek,false)+
+    tegel('regio','Field Force',GROEP_KLEUR.regio,weekTot.regio,CONTRACT_UREN.regio,true)+tegel('zara','Zara',GROEP_KLEUR.zara,weekTot.zara,CONTRACT_UREN.zara,true)+tegel('techno','Techno',GROEP_KLEUR.techno,weekTot.techno,CONTRACT_UREN.techno,false)+'</div>';
+  // uitklap per regio (Field Force) of per locatie (Zara)
+  var detail='';
+  if(totSel==='regio'||totSel==='zara'){
+    var rijen=[];
+    if(totSel==='regio'){columns().filter(function(c){return c.type==='cluster';}).forEach(function(c){rijen.push({naam:c.naam,ids:c.members,con:c.benodigd*40});});}
+    else{LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){rijen.push({naam:l.naam,ids:[l.id],con:l.benodigd*40});});}
+    var maxR=0;rijen.forEach(function(r){r.u=0;r.ids.forEach(function(id){dagen.forEach(function(d){r.u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(d)]||0)*8;});});if(r.u>maxR)maxR=r.u;if(r.con>maxR)maxR=r.con;});
+    detail='<div class="ai" style="margin:0 0 14px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+(totSel==='regio'?'Field Force per regio':'Zara per locatie')+' · week '+isoWeek(mon)+'</span><button class="linkbtn" onclick="totSetSel(null)">sluiten &#10006;</button></div><div style="margin-top:8px">'+
+      rijen.map(function(r){var p=Math.round(r.u/r.con*100),w=(r.u/maxR*100).toFixed(1),cw=(r.con/maxR*100).toFixed(1);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:5px 0"><div style="width:140px;flex:none;font-size:13px">'+r.naam+'</div>'+
+          '<div style="flex:1;position:relative;height:16px;background:var(--surface-1);border-radius:3px"><div style="width:'+w+'%;height:100%;background:'+tone(p).bar+';border-radius:3px"></div><div style="position:absolute;top:-3px;bottom:-3px;left:'+cw+'%;border-left:2.5px solid var(--text)" title="contract '+Math.round(r.con)+' u"></div></div>'+
+          '<div style="width:130px;flex:none;text-align:right;font-size:13px;font-variant-numeric:tabular-nums"><b>'+Math.round(r.u)+'</b> / '+Math.round(r.con)+' u</div></div>';}).join('')+
+      '</div><div style="font-size:12px;color:var(--muted);margin-top:4px">De zwarte streep is het contract van die regio (uren per week).</div></div>';
+  }
+  return '<h2 style="margin-top:6px">Totale capaciteit · Field Force, Zara en Techno</h2><p class="sub">week '+isoWeek(mon)+' · beschikbare uren van alle monteurs tegen de KPN-contracturen · klik op Field Force of Zara voor de verdeling</p>'+
+    tegels+detail+
+    '<div style="position:relative"><div style="display:flex;gap:8px;margin-bottom:4px">'+tot.join('')+'</div>'+
+    '<div style="position:relative"><div style="display:flex;gap:8px;border-bottom:0.5px solid var(--border)">'+chart+'</div>'+
+    '<div style="position:absolute;left:0;right:0;bottom:'+lijnY.toFixed(1)+'px;border-top:2.5px dashed var(--text);pointer-events:none"></div>'+
+    '<div style="position:absolute;right:0;bottom:'+(lijnY+4).toFixed(1)+'px;font-size:12px;font-weight:700;background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--text)">contract: '+Math.round(nodigDag)+' u per werkdag</div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:4px">'+dl+'</div></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)">'+types.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+'</span>';}).join('')+'</div>';
 }
 /* ---------- weekrooster (Manager R/D): diensten schuiven ---------- */
 function dienstStyle(st){
@@ -6058,7 +6123,7 @@ function ensureRange(key,vanIso,totIso){
           mf+=1000;
         }
       }catch(_){}
-      var agg={},nachten={};
+      var agg={},nachten={},grp={regio:{},zara:{},techno:{}};
       alle.forEach(function(row){if(row.type==='nacht')nachten[row.monteur+'|'+row.datum]=1;});
       function isoPlus1(iso){var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+1);return fmtIsoD(d);}
       alle.forEach(function(row){
@@ -6068,8 +6133,10 @@ function ensureRange(key,vanIso,totIso){
         var loc=mvMap[row.monteur+'|'+row.datum]||m.base;
         if(!agg[loc])agg[loc]={};
         agg[loc][row.datum]=(agg[loc][row.datum]||0)+w;
+        var zgA=zdGroep(typeToStatus(row.type,row.hrs)), grA=zgA||(LOCMAP[loc]?LOCMAP[loc].type:'regio');
+        grp[grA][row.datum]=(grp[grA][row.datum]||0)+w;
       });
-      sbAgg[key]={loaded:true,byLocDay:agg};
+      sbAgg[key]={loaded:true,byLocDay:agg,byGrpDay:grp};
     }catch(e){
       console.error('[Supabase] bereik laden faalde',e);
       sbAgg[key]={loaded:true,byLocDay:{}};
