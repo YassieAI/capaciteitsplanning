@@ -1041,7 +1041,7 @@ tr.wp-best td{background:var(--ok-bg)}
 <script>
 /* ---------- data ---------- */
 var WOON={
- 'Amsterdam-west':[52.38,4.80],'Amsterdam-zuidoost':[52.31,4.97],'Amsterdam-oost':[52.36,4.94],Stekene:[51.20,4.03],Spijkenisse:[51.85,4.33],Almelo:[52.36,6.66],Hoogeveen:[52.72,6.48],Voorburg:[52.07,4.36],Drunen:[51.69,5.14],Antwerpen:[51.22,4.40],'Sint-Oedenrode':[51.57,5.46],IJmuiden:[52.46,4.62],Nuth:[50.92,5.88],Uffelte:[52.78,6.28],Hoofddorp:[52.30,4.69],Maarssen:[52.14,5.04],Nootdorp:[52.05,4.39],Uithoorn:[52.24,4.83],'Den Bosch':[51.70,5.30],
+ 'Bergen (L)':[51.60,6.04],'Amsterdam-west':[52.38,4.80],'Amsterdam-zuidoost':[52.31,4.97],'Amsterdam-oost':[52.36,4.94],Stekene:[51.20,4.03],Spijkenisse:[51.85,4.33],Almelo:[52.36,6.66],Hoogeveen:[52.72,6.48],Voorburg:[52.07,4.36],Drunen:[51.69,5.14],Antwerpen:[51.22,4.40],'Sint-Oedenrode':[51.57,5.46],IJmuiden:[52.46,4.62],Nuth:[50.92,5.88],Uffelte:[52.78,6.28],Hoofddorp:[52.30,4.69],Maarssen:[52.14,5.04],Nootdorp:[52.05,4.39],Uithoorn:[52.24,4.83],'Den Bosch':[51.70,5.30],
  Amsterdam:[52.37,4.90],Haarlem:[52.38,4.64],Alkmaar:[52.63,4.75],Zaandam:[52.44,4.83],Purmerend:[52.51,4.96],Hoorn:[52.64,5.06],DenHelder:[52.96,4.76],
  Utrecht:[52.09,5.12],Amersfoort:[52.16,5.39],Nieuwegein:[52.03,5.08],Ede:[52.04,5.66],
  Zwolle:[52.51,6.09],Deventer:[52.25,6.16],Kampen:[52.55,5.91],Groningen:[53.22,6.57],Assen:[53.00,6.56],Meppel:[52.70,6.19],
@@ -1104,6 +1104,7 @@ var RAW=[
  ['MEAS01','Uithoorn','MI','MEAS01'],
  ['NGHU01','Eindhoven','ZO','NGHU01'],
  ['MUGO07','Rotterdam','ZW','MUGO07'],
+ ['BASW01','Bergen (L)','ZO','BASW01'],
  ['Z01','Nieuwegein','ZAM','ZARA Ams Z01'],
  ['Z02','Haarlem','ZAM','ZARA Ams Z02'],
  ['Z03','Zaandam','ZAM','ZARA Ams Z03'],
@@ -5813,7 +5814,7 @@ function sbToast(msg){
    veld 'door' script laten draaien bij iedereen die de tool opent. */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 var ownWriteAt=0;
-function chk(res){ ownWriteAt=Date.now(); if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen: '+String(res.error.message||res.error.code||'onbekende fout').slice(0,140)+(res.error.code==='23514'||/check|constraint|violat/i.test(String(res.error.message))?' — dit dienst-type staat nog niet in de database.':''));} }
+function chk(res){ ownWriteAt=Date.now(); if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen: '+String(res.error.message||res.error.code||'onbekende fout').slice(0,140)+(res.error.code==='23514'||/violates check constraint/i.test(String(res.error.message))?' — dit dienst-type staat nog niet in de database.':''));} }
 
 /* Handtekening van de gedeelde data, per onderdeel, om te zien of een collega iets heeft veranderd */
 function sbSig(){
@@ -5864,6 +5865,7 @@ async function sbLoad(opts){
       if(!m||idx===undefined||(!dienstP&&!LOCMAP[row.doel]))return;   // onbekende doellocatie zou het tabblad laten crashen
       proposals.push({id:Number(row.id),mid:m.id,day:idx,tgt:row.doel,by:String(row.door||'').slice(0,40),status:'open'});
       if(Number(row.id)>=propId)propId=Number(row.id)+1;});}
+    try{var mxr=await sb.from('stuur_voorstellen').select('id').order('id',{ascending:false}).limit(1);if(mxr.data&&mxr.data[0]&&Number(mxr.data[0].id)>=propId)propId=Number(mxr.data[0].id)+1;}catch(e){}   // log-regels tellen mee: nooit een bestaand id hergebruiken
     await sbLoadNorm();   // vóór render, want elke dekking rekent met LOC.benodigd
     if(melding){
       var na=sbSig(), wat=[];
@@ -5955,7 +5957,13 @@ function logW(soort,waar,wat){
     ownWriteAt=Date.now();
     var rol=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||role;
     var cl=function(x){return String(x).replace(/\|/g,'/').slice(0,160);};
-    sb.from('stuur_voorstellen').insert({id:propId++,monteur:M[0].naam,datum:isoOf(0),doel:'log|'+new Date().toISOString()+'|'+cl(soort)+'|'+cl(waar)+'|'+cl(wat),door:rol,status:'doorgevoerd'}).then(chk);
+    var logRij=function(id){return {id:id,monteur:M[0].naam,datum:isoOf(0),doel:'log|'+new Date().toISOString()+'|'+cl(soort)+'|'+cl(waar)+'|'+cl(wat),door:rol,status:'doorgevoerd'};};
+    sb.from('stuur_voorstellen').insert(logRij(propId++)).then(function(res){
+      if(res&&res.error&&res.error.code==='23505'){   // id bestond al: haal het hoogste id op en probeer opnieuw
+        sb.from('stuur_voorstellen').select('id').order('id',{ascending:false}).limit(1).then(function(mx){
+          var nid=(mx.data&&mx.data[0]?Number(mx.data[0].id):propId)+1;if(nid>propId)propId=nid+1;
+          sb.from('stuur_voorstellen').insert(logRij(nid)).then(chk);});
+      } else chk(res);});
   }catch(e){}
 }
 function metLog(naam,bouw){var o=window[naam];if(!o)return;window[naam]=function(){try{var l=bouw.apply(null,arguments);if(l)logW(l[0],l[1],l[2]);}catch(e){}return o.apply(this,arguments);};}
