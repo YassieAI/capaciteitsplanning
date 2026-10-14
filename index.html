@@ -1103,6 +1103,7 @@ var RAW=[
  ['ROKR02','Amsterdam-oost','MI','ROKR02'],
  ['MEAS01','Uithoorn','MI','MEAS01'],
  ['NGHU01','Eindhoven','ZO','NGHU01'],
+ ['MUGO07','Rotterdam','ZW','MUGO07'],
  ['Z01','Nieuwegein','ZAM','ZARA Ams Z01'],
  ['Z02','Haarlem','ZAM','ZARA Ams Z02'],
  ['Z03','Zaandam','ZAM','ZARA Ams Z03'],
@@ -6152,5 +6153,5 @@ buildLogin();
 /* expose voor smoke test */
 window.__t={render:render,setPgView:function(v){pgView=v;render();},PG_A:PG_A,PG_CAT:PG_CAT,pgTot:pgTot,pgSom:pgSom,pgGroeiGemeten:pgGroeiGemeten,pg2027:pg2027,pgNormVoorstel:pgNormVoorstel,pgFteNodig:pgFteNodig,PG_CANC25:PG_CANC25,PG_CANC26:PG_CANC26,PG_OVL:PG_OVL,pgUurGem:pgUurGem,setRole:function(r){role=r;boardView='bord';gView='dag';render();},setView:function(v){boardView=v;render();},setGView:function(v){gView=v;render();},dekkingLoc:dekkingLoc,suggestions:suggestions,columns:columns,M:M,LOC:LOC,curDayGet:function(){return curDay;},todayGet:function(){return TODAY;},setWeekLoc:function(l){weekLoc=l;},getRoster:function(mid){return M.filter(function(m){return m.id===mid;})[0].roster;},weight:weight,stLabel:stLabel,getProposals:function(){return proposals;},setTlMode:function(m){tlMode=m;render();}};
 </script>
-<!-- build 2 --></body>
+</body>
 </html>
