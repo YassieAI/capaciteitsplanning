@@ -1232,7 +1232,11 @@ function conceptSet(){
 }
 function conceptAantal(){return Object.keys(conceptSet()).length;}
 function locOf(m,day){var k=m.id+':'+day;var c=conceptSet();return c[k]||moves[k]||m.base;}
+/* ZARA- en Techno-dienst: status 'zara:<uren>' / 'techno:<uren>'; de uren vul je zelf in, telt als uren/8 en ook in het weekend. */
+function zdUren(st){if(!st||typeof st!=='string')return null;var k=st.split(':');if((k[0]==='zara'||k[0]==='techno')&&k.length===2)return Math.max(0,Math.min(12,parseInt(k[1],10)||0));return null;}
+function zdGroep(st){return st&&st.indexOf('zara:')===0?'zara':(st&&st.indexOf('techno:')===0?'techno':null);}
 function weight(st,day){
+  var zu=zdUren(st); if(zu!==null) return zu/8;
   // In het weekend telt alleen wat expliciet is ingeroosterd (waak/dag/dagvroeg).
   // 'vrij' telt nooit mee, en compensatie-restuur telt in het weekend niet als capaciteit.
   if(day!==undefined && isWeekendIdx(day)) return (st==='waak'||st==='dag'||st==='dagvroeg') ? 1 : 0;
@@ -1249,7 +1253,7 @@ function afwUren(st){if(!st)return 0;if(st.indexOf(':')<0)return AFW.indexOf(st)
 function stLabel(st){var k=afwSoort(st);if(k){var u=afwUren(st);return AFW_LABEL[k]+(u<8?' · nog '+(8-u)+'u':'');}return st;}
 /* tekst in een roostercel: dienst, of afwezigheid met resterende uren */
 function celLabel(st,d){var w=dienstShow(st,d);if(w)return w;var k=afwSoort(st);if(!k)return '';var u=afwUren(st);return AFW_KORT[k]+(u<8&&k!=='comp'?'<span style="font-size:9px;display:block;opacity:.85">nog '+(8-u)+'u</span>':(k==='comp'?' '+u+'u':''));}
-function dienstShow(st,d){return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='cursus'||st==='nacht')?st:'';}
+function dienstShow(st,d){var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA ':'Techno ')+zdUren(st)+'u';return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='cursus'||st==='nacht')?st:'';}
 var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',cursus:'opleiding (hele dag)',nacht:'nachtklus (comp. hele dag + middag ervoor)',vrij:'vrij'};
 /* capaciteit van één monteur op één dag. Nachtklus: de dag zelf is hele dag compensatie (telt 0),
    de middag van de dag ervoor ook (die dag telt een halve dag minder). */
@@ -2264,7 +2268,7 @@ function viewWeekG(){
    gKpiCard('wg-risico','Locatie-dagen risico (&lt;75%)',(weekAvgs.length?risicoDagen:'–'),(risicoDagen?'var(--risk)':'var(--ok)'),'')+
   '</div>';
   var detail='';
-  if(gKpiSel==='wg-onder') detail=gKpiPanel('Locaties onder norm (&lt;100% weekgemiddelde)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · '+x.avg+'%';}) : ['Geen — alle locaties zitten op of boven norm deze week.']);
+  if(gKpiSel==='wg-onder') detail=gKpiPanel('Locaties onder contract (&lt;contracturen weekgemiddelde)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · '+x.avg+'%';}) : ['Geen — alle locaties zitten op of boven norm deze week.']);
   else if(gKpiSel==='wg-risico') detail=gKpiPanel('Locatie-dagen onder 75%', risicoCells.length? risicoCells.map(function(x){return '<strong>'+x.naam+'</strong> · '+x.dag+' · '+x.dek+'%';}) : ['Geen risicodagen deze week.']);
   else if(gKpiSel==='wg-laagste'&&laagste) detail=gKpiPanel('Laagste: '+laagste.naam+' — dag voor dag', laagste.days.map(function(dv){return WD[dv.d.getDay()]+' '+dv.d.getDate()+' · '+(dv.dek===null?(dv.wknd?'weekend':'–'):dv.dek+'%');}));
   return '<h2>Weekdashboard</h2><p class="sub">dekking per locatie per dag · oude regio-indeling · blader met ‹ › door de weken · klik een KPI voor detail · alleen-lezen</p>'+nav+kpis+detail+
@@ -2314,16 +2318,16 @@ function viewKwartaal(){
   var nav='<div class="ctrl" style="margin-bottom:10px"><button onclick="qNav(-1)">‹ kwartaal</button><span class="daylabel" style="min-width:130px">Q'+(q+1)+' '+qYear+'</span><button onclick="qNav(1)">kwartaal ›</button>'+(qOff!==0?' <button class="linkbtn" onclick="qOff=0;render()">naar nu</button>':'')+'</div>';
   return '<h2>Kwartaalrooster</h2><p class="sub">dekking per locatie per week · echte planningsdata · oude regio-indeling · alleen-lezen · klik op een week voor het dag-voor-dag Weekdashboard</p>'+nav+
    '<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> OK ≥100</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 75–99</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> risico &lt;75</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> contract gehaald</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op: 75–99% van contract</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> tekort: &lt;75% van contract</span>'+
    '<span>– = geen gegevens</span></div>'+
    '<div class="hm"><table class="hm-t"><tr>'+head+'</tr>'+body+'</table></div>'+
    '<div class="metrics" style="grid-template-columns:repeat(2,1fr)">'+
      gKpiCard('q-onder','Locatie-weken onder norm',(gemeten?onder+' / '+gemeten:'–'),(onder?'var(--risk)':'var(--ok)'),'')+
      gKpiCard(null,'Gevuld',(laden?'laden…':gemeten+' locatie-weken'),'','18px')+
    '</div>'+
-   (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder norm (&lt;100%)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '')+
+   (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder contract (&lt;contracturen)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '')+
    '<p class="sub" style="margin-top:6px">Huidige week zwart omkaderd. Blader met ‹ › naar eerdere of komende kwartalen. Weken zonder ingevoerde planning tonen –.</p>';
 }
 /* ---------- jaaroverzicht (Manager G): mini-trendlijn per locatie ---------- */
@@ -2480,16 +2484,16 @@ function viewJaar(){
      gKpiCard('q-onder','Locatie-weken onder norm',(gemeten?onder+' / '+gemeten:'–'),(onder?'var(--risk)':'var(--ok)'),'')+
      gKpiCard(null,'Gevuld',(laden?'laden…':gemeten+' locatie-weken'),'','18px')+
    '</div>'+
-   (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder norm (&lt;100%)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
+   (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder contract (&lt;contracturen)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
 
   var kop='<h2>Jaaroverzicht '+jaar+'</h2><p class="sub">dekking per locatie over '+weeks.length+' weken · oude regio-indeling · alleen-lezen · klik in een grafiek op een week voor het dag-voor-dag Weekdashboard</p>'+nav+wisselaar;
 
   if(jaarWeergave==='tabel'){
     return kop+
      '<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
-     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> OK ≥100</span>'+
-     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 75–99</span>'+
-     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> risico &lt;75</span>'+
+     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> contract gehaald</span>'+
+     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op: 75–99% van contract</span>'+
+     '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> tekort: &lt;75% van contract</span>'+
      '<span>– = geen gegevens</span></div>'+
      '<div class="hm"><table class="hm-t hm-jaar"><tr>'+qRow+'</tr><tr>'+head+'</tr>'+body+'</table></div>'+kpis+
      '<p class="sub" style="margin-top:6px">Huidige week zwart omkaderd · Q-scheidingen als lijn · scroll horizontaal voor de latere weken.</p>';
@@ -2510,15 +2514,15 @@ function viewJaar(){
       gKpiCard(null,'Zwakste week',(zwakW===null?'–':'wk '+isoWeek(weeks[zwakW])+' · '+tot[zwakW]+'%'),(zwakW===null?'':tone(tot[zwakW]).tx),'18px')+
       gKpiCard(null,'Zwakste locatie',(zwakL===null?'–':zwakL.naam+' · '+zwakL.gem+'%'),(zwakL===null?'':tone(zwakL.gem).tx),'18px')+
     '</div>'+
-    (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder norm (&lt;100%)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
+    (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder contract (&lt;contracturen)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
     var leg='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 6px;font-size:12px;color:var(--muted);align-items:center">'+
-      '<span><span class="jk-leg" style="background:var(--ok-bar)"></span> OK ≥100</span>'+
-      '<span><span class="jk-leg" style="background:var(--warn-bar)"></span> let op 75–99</span>'+
-      '<span><span class="jk-leg" style="background:var(--risk-bar)"></span> risico &lt;75</span>'+
+      '<span><span class="jk-leg" style="background:var(--ok-bar)"></span> contract gehaald</span>'+
+      '<span><span class="jk-leg" style="background:var(--warn-bar)"></span> let op: 75–99% van contract</span>'+
+      '<span><span class="jk-leg" style="background:var(--risk-bar)"></span> tekort: &lt;75% van contract</span>'+
       '<span><span class="jk-leg" style="background:var(--surface-1);border:0.5px solid var(--border-strong)"></span> geen gegevens</span></div>';
     return kop+kpiTop+
       '<h3 class="jk-kop">Verloop van de totale dekking</h3>'+
-      '<div class="jr-rij" style="border:none"><div class="jr-naam" style="font-size:11px;color:var(--muted)">alle locaties<br>gemiddeld</div><div class="jr-graf">'+jaarSpark(tot,weeks,curWkMon,'Alle locaties',96)+'</div><div class="jr-cijfer">norm 100% (contracturen)<br>gestippeld</div></div>'+
+      '<div class="jr-rij" style="border:none"><div class="jr-naam" style="font-size:11px;color:var(--muted)">alle locaties<br>gemiddeld</div><div class="jr-graf">'+jaarSpark(tot,weeks,curWkMon,'Alle locaties',96)+'</div><div class="jr-cijfer">contracturen<br>gestippeld</div></div>'+
       '<div class="jr-rij jr-as"><div class="jr-naam"></div><div class="jr-graf">'+jaarMaandAs(weeks)+'</div><div class="jr-cijfer"></div></div>'+
       '<h3 class="jk-kop">Welke locatie, welke week</h3>'+leg+jaarKaart(perLoc,weeks,curWkMon,laden)+
       '<p class="sub" style="margin-top:8px">Elk vlakje is één week. Wijs een vlakje aan voor het percentage, klik erop voor het dag-voor-dag Weekdashboard. De zwarte rand is de huidige week.</p>';
@@ -2538,7 +2542,7 @@ function viewJaar(){
   return kop+
    '<div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--muted);align-items:center">'+
      '<span><span style="display:inline-block;width:16px;height:2px;background:#185fa5;vertical-align:3px"></span> dekking per week</span>'+
-     '<span><span style="display:inline-block;width:16px;height:0;border-top:1.5px dashed var(--border-strong);vertical-align:3px"></span> norm 100% (contracturen)</span>'+
+     '<span><span style="display:inline-block;width:16px;height:0;border-top:1.5px dashed var(--border-strong);vertical-align:3px"></span> contracturen</span>'+
      '<span><span style="display:inline-block;width:12px;height:9px;background:var(--risk-bg,rgba(200,60,60,.13));vertical-align:-1px;border-radius:2px"></span> zone onder norm</span>'+
      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--risk-bar);vertical-align:-1px"></span> week onder norm</span>'+
    '</div>'+
@@ -2587,11 +2591,11 @@ function trendSvg(pts, opts){
   var grid='';
   for(var gv=0;gv<=top;gv+=50){
     grid+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>'+
-          '<text x="'+(pl-6)+'" y="'+(Y(gv)+3.5).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+gv+'%</text>';
+          '<text x="'+(pl-6)+'" y="'+(Y(gv)+3.5).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+(gv===NORM?'contract':gv+'%')+'</text>';
   }
   var zone='<rect x="'+pl+'" y="'+normY.toFixed(1)+'" width="'+plotW+'" height="'+(baseY-normY).toFixed(1)+'" fill="var(--risk-bar)" opacity="0.08"/>';
   var normLijn='<line x1="'+pl+'" y1="'+normY.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+normY.toFixed(1)+'" stroke="var(--border-strong)" stroke-width="1.2" stroke-dasharray="5 4"/>'+
-    '<text x="'+(W-pr-2)+'" y="'+(normY-4).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">norm 100% (contracturen)</text>';
+    '<text x="'+(W-pr-2)+'" y="'+(normY-4).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">contracturen</text>';
   var poly=pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p).toFixed(1);}).join(' ');
   var area='<polygon points="'+X(0).toFixed(1)+','+baseY.toFixed(1)+' '+poly+' '+X(n-1).toFixed(1)+','+baseY.toFixed(1)+'" fill="#185fa5" opacity="0.05"/>';
   // x-as: niet elk label als de lijn te vol wordt
@@ -2607,7 +2611,7 @@ function trendSvg(pts, opts){
     var isTod=hasTod&&i===todIdx, isSel=i===trendSelIdx&&!isTod, onder=p<NORM;
     var showLbl=isTod||isSel;
     var chip=labels?labels[i]:dChip(i);
-    var lbl=isTod?(chip+' · '+p+'% · vandaag'):(chip+' · '+p+'%');
+    var lbl=isTod?(chip+' · '+p+'% van contract · vandaag'):(chip+' · '+p+'% van contract');
     var dotR=(isTod||isSel)?4.5:(onder?3.2:2.4);
     var dotFill=isTod?'var(--risk-bar)':(onder?'var(--risk-bar)':'#185fa5');
     var rechts=(i>n/2);
@@ -2667,7 +2671,10 @@ function aggDayAvg(agg, cols, d){
 }
 // Gedeelde opbouw van de staven+labels+KPI's — hergebruikt door de dag/week/kwartaal-varianten.
 var BAR_MAX=150;
+function benVoorKey(key){var c=columns().filter(function(x){return x.key===key;})[0];if(c)return c.benodigd;return LOCMAP[key]?LOCMAP[key].benodigd:null;}
 function grafiekBarsBlock(vals, laden, klikOmschrijving){
+  // uren per balk: beschikbaar = dekking x contracturen; nodig = contracturen per werkdag
+  vals.forEach(function(x){var bn=benVoorKey(x.key);x.n=bn===null?null:bn*8;x.u=(x.d===null||bn===null)?null:x.d/100*bn*8;});
   var gemVals=vals.filter(function(x){return x.d!==null;});
   var gem=gemVals.length?Math.round(gemVals.reduce(function(a,b){return a+b.d;},0)/gemVals.length):null;
   var onder=gemVals.filter(function(x){return x.d<NORM;});
@@ -2680,12 +2687,13 @@ function grafiekBarsBlock(vals, laden, klikOmschrijving){
     }
     var t=tone(x.d);
     return '<div class="barc barc-click'+(sel?' barc-sel':'')+'" data-bar="'+x.key+'" title="Klik voor '+klikOmschrijving+' van '+x.naam+'">'+
-      '<span class="barv" style="color:'+t.tx+'">'+x.d+'</span>'+
+      '<span class="barv" style="color:'+t.tx+'" title="'+Math.round(x.u)+' van '+Math.round(x.n)+' contracturen">'+(x.u===null?x.d:Math.round(x.u)+' u')+'</span>'+
       '<div class="bar" style="height:'+Math.max(2,Math.min(100,x.d/BAR_MAX*100))+'%;background:'+t.bar+'"></div>'+
     '</div>';
   }).join('');
   var labs=vals.map(function(x){var sel=grafiekSel===x.key;return '<span style="'+(sel?'font-weight:700;color:var(--text)':'')+'">'+x.naam.replace('Regio ','')+'</span>';}).join('');
-  return {bars:bars,labs:labs,gem:gem,onder:onder,risk:risk,gemVals:gemVals};
+  var sumU=0,sumN=0;gemVals.forEach(function(x){if(x.u!==null){sumU+=x.u;sumN+=x.n;}});
+  return {bars:bars,labs:labs,gem:gem,onder:onder,risk:risk,gemVals:gemVals,sumU:sumU,sumN:sumN};
 }
 function viewManagerG(){
   /* Manager G kijkt altijd naar de oude regio-indeling (5 regio's), los van de RD-groepering */
@@ -2700,10 +2708,10 @@ function viewManagerG(){
     '<button class="'+(periode==='jaar'?'active':'')+'" onclick="grafiekSetPeriode(\'jaar\')">Jaar</button>'+
   '</div>';
   if(periode==='dag')toggle+='<div class="ctrl" style="margin:-2px 0 10px"><button onclick="grDagNav(-1)">‹ dag</button><span class="daylabel" style="min-width:130px">'+dLabel(curDay)+(curDay===TODAY?' · vandaag':'')+'</span><button onclick="grDagNav(1)">dag ›</button></div>';
-  if(periode==='week') return toggle+viewGrafiekWeek(regs)+totaalCapBlok();
+  if(periode==='week') return toggle+totaalCapBlok()+viewGrafiekWeek(regs);
   if(periode==='kwartaal') return toggle+viewGrafiekKwartaal(regs);
   if(periode==='jaar') return toggle+viewGrafiekJaar(regs);
-  return toggle+viewGrafiekDag(regs)+totaalCapBlok();
+  return toggle+totaalCapBlok()+viewGrafiekDag(regs);
 }
 /* ---- Jaar-niveau: één mini-trendlijn per regio/cluster over alle weken van het jaar ---- */
 function viewGrafiekJaar(cols){
@@ -2737,10 +2745,10 @@ function viewGrafiekJaar(cols){
       '<div class="jr-cijfer">'+(pl.gem===null?'<span style="color:var(--muted)">'+(laden?'laden…':'geen data')+'</span>':'gem. <strong>'+pl.gem+'%</strong>')+'<br>'+status+'</div>'+
     '</div>';
   }).join('');
-  return nav+'<h2>Jaarverloop '+jaar+' · per regio</h2><p class="sub">dekking per week over '+weeks.length+' weken · norm 100% (contracturen) · alleen-lezen · klik in een grafiek op een week voor het dag-voor-dag detail</p>'+
+  return nav+'<h2>Jaarverloop '+jaar+' · per regio</h2><p class="sub">dekking per week over '+weeks.length+' weken · contracturen · alleen-lezen · klik in een grafiek op een week voor het dag-voor-dag detail</p>'+
    '<div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--muted);align-items:center">'+
      '<span><span style="display:inline-block;width:16px;height:2px;background:#185fa5;vertical-align:3px"></span> dekking per week</span>'+
-     '<span><span style="display:inline-block;width:16px;height:0;border-top:1.5px dashed var(--border-strong);vertical-align:3px"></span> norm 100% (contracturen)</span>'+
+     '<span><span style="display:inline-block;width:16px;height:0;border-top:1.5px dashed var(--border-strong);vertical-align:3px"></span> contracturen</span>'+
      '<span><span style="display:inline-block;width:12px;height:9px;background:var(--risk-bar);opacity:.13;vertical-align:-1px;border-radius:2px"></span> zone onder norm</span>'+
      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--risk-bar);vertical-align:-1px"></span> week onder norm</span>'+
    '</div>'+
@@ -2779,12 +2787,12 @@ function viewGrafiekDag(regs){
       '</div>';
     }
   }
-  return '<h2>Beschikbare capaciteit per regio · dag</h2><p class="sub">'+dLabel(curDay)+' · norm 100% (contracturen) · alleen-lezen totaaloverzicht · klik op een staaf voor detail</p>'+
-   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>norm 100% (contracturen)</span></div><div class="bars">'+b.bars+'</div></div>'+
+  return '<h2>Beschikbare capaciteit per regio · dag</h2><p class="sub">'+dLabel(curDay)+' · contracturen · alleen-lezen totaaloverzicht · klik op een staaf voor detail</p>'+
+   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>contracturen</span></div><div class="bars">'+b.bars+'</div></div>'+
    '<div class="blab">'+b.labs+'</div>'+
-   '<div class="metrics"><div class="metric"><div class="l">Gem. dekking</div><div class="v">'+b.gem+'%</div></div>'+
-   '<div class="metric"><div class="l">Regio\'s onder norm</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+b.onder.length+' / '+regs.length+'</div></div>'+
-   '<div class="metric"><div class="l">Laagste deze dag</div><div class="v" style="font-size:18px">'+b.risk.naam.replace('Regio ','')+' · '+b.risk.d+'%</div></div></div>'+
+   '<div class="metrics"><div class="metric"><div class="l">Beschikbaar / contract</div><div class="v">'+Math.round(b.sumU)+' / '+Math.round(b.sumN)+' u</div></div>'+
+   '<div class="metric"><div class="l">Regio\'s onder contract</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+b.onder.length+' / '+regs.length+'</div></div>'+
+   '<div class="metric"><div class="l">Laagste deze dag</div><div class="v" style="font-size:18px">'+b.risk.naam.replace('Regio ','')+' · '+Math.round(b.risk.u)+' / '+Math.round(b.risk.n)+' u</div></div></div>'+
    detailHtml+
    '<h2 style="margin-top:14px">Trend totale dekking · 2 weken</h2>'+
    trendSvg(pts,{todIdx:curDay,dayIsos:dayIsos14});
@@ -2832,12 +2840,12 @@ function viewGrafiekWeek(regs){
    '<span class="daylabel" style="min-width:190px">week '+isoWeek(mon)+' · '+mon.getDate()+'/'+(mon.getMonth()+1)+' – '+end.getDate()+'/'+(end.getMonth()+1)+' '+end.getFullYear()+'</span>'+
    '<button onclick="grafiekPeriodeNav(1)">week ›</button>'+(wgOff!==0?' <button class="linkbtn" onclick="wgOff=0;render()">naar nu</button>':'')+'</div>';
 
-  return nav+'<h2>Gemiddelde capaciteit per regio · deze week</h2><p class="sub">week '+isoWeek(mon)+' · norm 100% (contracturen) · alleen-lezen · klik op een staaf voor dag-detail</p>'+
-   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>norm 100% (contracturen)</span></div><div class="bars">'+b.bars+'</div></div>'+
+  return nav+'<h2>Gemiddelde capaciteit per regio · deze week</h2><p class="sub">week '+isoWeek(mon)+' · contracturen · alleen-lezen · klik op een staaf voor dag-detail</p>'+
+   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>contracturen</span></div><div class="bars">'+b.bars+'</div></div>'+
    '<div class="blab">'+b.labs+'</div>'+
-   '<div class="metrics"><div class="metric"><div class="l">Gem. dekking (weekgem.)</div><div class="v">'+(b.gem===null?(laden?'…':'–'):b.gem+'%')+'</div></div>'+
-   '<div class="metric"><div class="l">Regio\'s onder norm</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+(b.gemVals.length?b.onder.length+' / '+b.gemVals.length:'–')+'</div></div>'+
-   '<div class="metric"><div class="l">Laagste deze week</div><div class="v" style="font-size:18px">'+(b.risk?b.risk.naam.replace('Regio ','')+' · '+b.risk.d+'%':'–')+'</div></div></div>'+
+   '<div class="metrics"><div class="metric"><div class="l">Beschikbaar / contract (per dag)</div><div class="v">'+(b.gem===null?(laden?'…':'–'):Math.round(b.sumU)+' / '+Math.round(b.sumN)+' u')+'</div></div>'+
+   '<div class="metric"><div class="l">Regio\'s onder contract</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+(b.gemVals.length?b.onder.length+' / '+b.gemVals.length:'–')+'</div></div>'+
+   '<div class="metric"><div class="l">Laagste deze week</div><div class="v" style="font-size:18px">'+(b.risk?b.risk.naam.replace('Regio ','')+' · '+Math.round(b.risk.u)+' / '+Math.round(b.risk.n)+' u':'–')+'</div></div></div>'+
    detailHtml+
    '<h2 style="margin-top:14px">Trend per dag · deze week</h2>'+
    trendSvg(dayPts,{labels:dayLabels,todIdx:todIdx,dayIsos:dayIsosWk});
@@ -2888,12 +2896,12 @@ function viewGrafiekKwartaal(regs){
    '<span class="daylabel" style="min-width:130px">Q'+(q+1)+' '+qYear+'</span>'+
    '<button onclick="grafiekPeriodeNav(1)">kwartaal ›</button>'+(qOff!==0?' <button class="linkbtn" onclick="qOff=0;render()">naar nu</button>':'')+'</div>';
 
-  return nav+'<h2>Gemiddelde capaciteit per regio · kwartaal</h2><p class="sub">Q'+(q+1)+' '+qYear+' · norm 100% (contracturen) · alleen-lezen · klik op een staaf voor week-detail</p>'+
-   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>norm 100% (contracturen)</span></div><div class="bars">'+b.bars+'</div></div>'+
+  return nav+'<h2>Gemiddelde capaciteit per regio · kwartaal</h2><p class="sub">Q'+(q+1)+' '+qYear+' · contracturen · alleen-lezen · klik op een staaf voor week-detail</p>'+
+   '<div class="chart"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>contracturen</span></div><div class="bars">'+b.bars+'</div></div>'+
    '<div class="blab">'+b.labs+'</div>'+
-   '<div class="metrics"><div class="metric"><div class="l">Gem. dekking (kwartaalgem.)</div><div class="v">'+(b.gem===null?(laden?'…':'–'):b.gem+'%')+'</div></div>'+
-   '<div class="metric"><div class="l">Regio\'s onder norm</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+(b.gemVals.length?b.onder.length+' / '+b.gemVals.length:'–')+'</div></div>'+
-   '<div class="metric"><div class="l">Laagste dit kwartaal</div><div class="v" style="font-size:18px">'+(b.risk?b.risk.naam.replace('Regio ','')+' · '+b.risk.d+'%':'–')+'</div></div></div>'+
+   '<div class="metrics"><div class="metric"><div class="l">Beschikbaar / contract (per dag)</div><div class="v">'+(b.gem===null?(laden?'…':'–'):Math.round(b.sumU)+' / '+Math.round(b.sumN)+' u')+'</div></div>'+
+   '<div class="metric"><div class="l">Regio\'s onder contract</div><div class="v" style="color:'+(b.onder.length?'var(--risk)':'var(--ok)')+'">'+(b.gemVals.length?b.onder.length+' / '+b.gemVals.length:'–')+'</div></div>'+
+   '<div class="metric"><div class="l">Laagste dit kwartaal</div><div class="v" style="font-size:18px">'+(b.risk?b.risk.naam.replace('Regio ','')+' · '+Math.round(b.risk.u)+' / '+Math.round(b.risk.n)+' u':'–')+'</div></div></div>'+
    detailHtml+
    '<h2 style="margin-top:14px">Trend per week · dit kwartaal</h2>'+
    trendSvg(weekPts,{labels:weekLabels,todIdx:todIdx});
@@ -3019,14 +3027,14 @@ function boardOutlook(cols){
       tds+='<td><button class="hm-cell hm-cell-click'+(h.sel?' hm-cell-sel':'')+'" style="background:'+t.bg+';color:'+t.tx+'" title="'+c.naam+' · '+v+'%'+(deel?' · rooster ingevoerd voor '+pd2.dagen.length+' van '+pd2.nAlle+' werkdagen':'')+' — klik om te openen" onclick="'+click(h,v)+'">'+v+(deel?'*':'')+'</button></td>';});
     rows+='<tr><td class="hm-lab">'+c.naam+'</td>'+tds+'</tr>';});
   var sw=function(bg,bar,txt){return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--'+bg+');border:1px solid var(--'+bar+');vertical-align:-1px"></i> '+txt+'</span>';};
-  var legenda='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px">'+sw('risk-bg','risk-bar','onder 75%')+sw('warn-bg','warn-bar','75&#8211;99%')+sw('ok-bg','ok-bar','100&#8211;119% (norm gehaald)')+sw('ruim-bg','ruim-bar','120% of meer')+'</div>';
+  var legenda='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px">'+sw('risk-bg','risk-bar','tekort (onder 75%)')+sw('warn-bg','warn-bar','75&#8211;99%')+sw('ok-bg','ok-bar','contract gehaald (100&#8211;119%)')+sw('ruim-bg','ruim-bar','120% of meer')+'</div>';
   return '<div class="hm" style="margin-bottom:14px">'+head+'<table class="hm-t"><tr><td class="hm-lab"></td>'+hrow+'</tr>'+rows+'</table>'+legenda+'<p class="sub" style="margin:6px 0 0">'+note+'</p></div>';
 }
 function viewBoard(){
   var cols=columns();
   var decide=canDecide();
   var html='<h2>Schuifbord</h2>';
-  html+='<p class="sub">'+dLabel(curDay)+' · &#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Jouw verschuiving komt als bespreekpunt in het overleg.')+' Kleur = dekking t.o.v. norm 100% (contracturen).</p>';
+  html+='<p class="sub">'+dLabel(curDay)+' · &#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Jouw verschuiving komt als bespreekpunt in het overleg.')+' Kleur = dekking t.o.v. contracturen.</p>';
   if(decide) html+=conceptBalk();
   html+=boardOutlook(cols);
   var cset=conceptSet();
@@ -3052,7 +3060,7 @@ function viewBoard(){
   html+='</div>';
   var under=cols.filter(function(c){return colDekking(c,curDay)<NORM && (decide||inScope(c));});
   if(under.length){
-    html+='<h2>AI-schuifadvies</h2><p class="sub">o.b.v. woonplaats monteur + dekking · donor blijft altijd ≥100%'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
+    html+='<h2>AI-schuifadvies</h2><p class="sub">o.b.v. woonplaats monteur + dekking · donor blijft altijd op of boven de contracturen'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
     under.forEach(function(c){
       var sug=suggestions(c,curDay).slice(0,3);
       html+='<div class="ai"><div class="hd"><span class="dot"></span>'+c.naam+' · '+colDekking(c,curDay)+'%</div>';
@@ -3073,7 +3081,7 @@ function viewBoard(){
   var onder100=cols.filter(function(c){var d=colDekking(c,curDay);return d>=NORM&&d<100&&(decide||inScope(c));});
   var extra=onder100.map(function(c){return {c:c,sug:suggestions(c,curDay,false,100).slice(0,2)};}).filter(function(x){return x.sug.length;});
   if(extra.length){
-    html+='<h2>AI-schuifadvies · boven de norm</h2><p class="sub">Deze locaties halen de norm van 100%, maar nog niet de volledige bezetting. Voorstellen komen alleen van locaties die na de verschuiving zelf op minstens 100% blijven'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
+    html+='<h2>AI-schuifadvies · boven de norm</h2><p class="sub">Deze locaties halen de contracturen, maar nog niet de volledige bezetting. Voorstellen komen alleen van locaties die na de verschuiving zelf op minstens 100% blijven'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
     extra.forEach(function(x){var c=x.c;
       html+='<div class="ai"><div class="hd"><span class="dot" style="background:var(--ruim-bar)"></span>'+c.naam+' · '+colDekking(c,curDay)+'% · '+uTxt(colBeschikbaar(c,curDay),c.benodigd)+'</div>';
       x.sug.forEach(function(s,i){var act=decide?'data-acc':'data-prop';
@@ -3352,7 +3360,7 @@ function balansRuimte(){
     dagen.forEach(function(d){
       var dek=colDekking(c,d);
       if(dek<100)return;
-      // wat je kunt weggeven zonder zelf onder de norm van 100% te zakken (in hele monteurs)
+      // wat je kunt weggeven zonder zelf onder de contracturen te zakken (in hele monteurs)
       var mistbaar=Math.floor(colBeschikbaar(c,d)-NORM/100*c.benodigd+1e-9);
       dagenOver.push({d:d,dek:dek,mistbaar:Math.max(0,mistbaar)});
       offerFromOver(c,d).forEach(function(o){
@@ -3397,7 +3405,7 @@ function viewBalansActies(){
     ? '<strong>'+totaal+' probleemdag'+(totaal===1?'':'en')+'</strong> deze week · '+r.acties.length+' actie'+(r.acties.length===1?'':'s')+
       '<br><span style="font-size:13px;color:var(--muted)">'+telling.join(' · ')+'</span>'
     : '<strong>Geen enkele locatie onder norm deze week.</strong>')+
-    '<div class="bl-uitleg">Een <em>probleemdag</em> is één locatie op één dag onder de norm van 100%. '+
+    '<div class="bl-uitleg">Een <em>probleemdag</em> is één locatie op één dag onder de contracturen. '+
     'Per probleemdag zoekt de tool de dichtstbijzijnde monteur die gemist kan worden: de eigen locatie van die monteur moet ná de verplaatsing zelf óók nog op 60% of hoger blijven. '+
     'Komt dezelfde monteur bij meerdere dagen als beste uit, dan worden die dagen samengevoegd tot één actie, zodat je niet vijf keer hetzelfde hoeft te doen. '+
     'Let op: niet elke verplaatsing brengt een locatie helemaal op norm — dat staat er per actie bij.</div>'+
@@ -3422,7 +3430,7 @@ function viewBalansActies(){
               : nHaalt===0 ? '<span style="color:var(--warn)">verbetert '+nOnder+' dag'+(nOnder===1?'':'en')+'</span>'
               : '<span style="color:var(--ok)">'+nHaalt+' op norm</span> · <span style="color:var(--warn)">'+nOnder+' vooruit</span>';
     var effect=a.col.naam+' gaat van '+voor+' naar '+na+' op '+(a.items.length===1?'die dag':'elk van deze '+a.items.length+' dagen');
-    if(nOnder)effect+=nHaalt? ' — niet elke dag haalt daarmee de norm van 100%.' : ' — dat is beter, maar nog steeds onder de norm van 100%.';
+    if(nOnder)effect+=nHaalt? ' — niet elke dag haalt daarmee de contracturen.' : ' — dat is beter, maar nog steeds onder de contracturen.';
     html+='<div class="bl-actie">'+
       '<span class="bl-nr">'+(i+1)+'</span>'+
       '<span class="bl-tekst"><strong>'+a.m.ini+' → '+a.col.naam+'</strong>'+
@@ -3565,7 +3573,7 @@ function wireBalans(){
 
 /* ---------- uren-grafieken ---------- */
 var GROEP_KLEUR={regio:'#2a78d6',zara:'#eb6834',techno:'#1baf7a'};
-function urenPerGroep(day){var r={regio:0,zara:0,techno:0};M.forEach(function(m){var l=LOCMAP[locOf(m,day)];if(l)r[l.type]+=mWeight(m,day)*8;});return r;}
+function urenPerGroep(day){var r={regio:0,zara:0,techno:0};M.forEach(function(m){var zg=zdGroep(m.roster[day]);if(zg){r[zg]+=mWeight(m,day)*8;return;}var l=LOCMAP[locOf(m,day)];if(l)r[l.type]+=mWeight(m,day)*8;});return r;}
 function nodigPerDag(type,day){return isWeekendIdx(day)?0:CONTRACT_UREN[type]/5;}
 // Totale capaciteit van heel Field Force (regio's + Zara + Techno) opgeteld, per dag van de week, tegen de contracturen.
 function totaalCapBlok(){
@@ -3628,6 +3636,8 @@ function weekUrenGrafiek(monteurs){
 function dienstStyle(st){
   if(st&&st.indexOf('comp:')===0)return ['#e1f5ee','#0f6e56'];
   if(st&&st.indexOf('verlof:')===0)return ['#fceceb','#a32d2d'];
+  if(st&&st.indexOf('zara:')===0)return ['#fdeee6','#b4421a'];
+  if(st&&st.indexOf('techno:')===0)return ['#e0f5f5','#0a5f66'];
   if(st&&st.indexOf('ziek:')===0)return ['#fdf0e6','#9a3412'];
   if(st&&st.indexOf('garage:')===0)return ['#e8eef7','#334e7a'];
   if(st&&st.indexOf('nb:')===0)return ['#ececec','#555555'];
@@ -3637,9 +3647,9 @@ function dienstStyle(st){
 }
 function miniWeekChart(locId){
   var c=(typeof locId==='string')?colFor(locId):locId;var days=[];for(var d=weekStart;d<weekStart+7;d++)days.push(d);
-  var bars=days.map(function(d){var dek=fDekking(c,d);var t=tone(dek);return '<div class="barc"><span class="barv" style="color:'+t.tx+'">'+dek+'</span><div class="bar" style="height:'+Math.max(2,Math.min(100,dek))+'%;background:'+t.bar+'"></div></div>';}).join('');
+  var bars=days.map(function(d){var dek=fDekking(c,d);var t=tone(dek);var du=Math.round(fBeschikbaar(c,d)*8);return '<div class="barc"><span class="barv" style="color:'+t.tx+'" title="'+du+' van '+Math.round(c.benodigd*8)+' contracturen">'+du+' u</span><div class="bar" style="height:'+Math.max(2,Math.min(100,dek/BAR_MAX*100))+'%;background:'+t.bar+'"></div></div>';}).join('');
   var labs=days.map(function(d){return '<span'+(d===TODAY?' style="color:var(--text);font-weight:500"':'')+'>'+dChip(d)+'</span>';}).join('');
-  return '<div class="chart" style="height:150px;margin-top:4px"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>norm 100% (contracturen)</span></div><div class="bars">'+bars+'</div></div><div class="blab">'+labs+'</div>';
+  return '<div class="chart" style="height:150px;margin-top:4px"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>contracturen</span></div><div class="bars">'+bars+'</div></div><div class="blab">'+labs+'</div>';
 }
 /* gebieden waaruit het weekrooster kiest: volgt de groepering bovenin (5 regio's / 3 clusters) */
 function weekCols(){return columns().filter(function(c){return c.members.some(inScopeId);});}
@@ -3686,6 +3696,11 @@ function viewWeek(){
     html+='</div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
     AFW.forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
+    html+='<span style="flex-basis:100%;height:0"></span><span style="font-size:13px;color:var(--muted)">Uren voor:</span>';
+    ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');html+='<button class="acc ghost" data-zd="'+g+'" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
+    html+='<label style="font-size:13px;color:var(--muted)">aantal uur <select id="zdU" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)">';
+    for(var zu=1;zu<=12;zu++)html+='<option value="'+zu+'"'+(zu===8?' selected':'')+'>'+zu+' uur</option>';
+    html+='</select></label><span style="flex-basis:100%;height:0"></span>';
     html+='<label style="font-size:13px;color:var(--muted);margin-left:6px">nog beschikbaar <select id="afwBeschU" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)">';
     for(var bu=0;bu<=7;bu++)html+='<option value="'+bu+'">'+bu+' uur</option>';
     html+='</select></label></div>';
@@ -3799,6 +3814,7 @@ function wireWeek(){
   }
 
   document.querySelectorAll('[data-set]').forEach(function(b){b.onclick=function(){var v=b.dataset.set;wkPasToe(function(m,day){m.roster[day]=v;});};});
+  document.querySelectorAll('[data-zd]').forEach(function(b){b.onclick=function(){var g=b.dataset.zd;var sel=document.getElementById('zdU');var u=Math.max(1,Math.min(12,parseInt(sel&&sel.value,10)||8));wkPasToe(function(m,day){m.roster[day]=g+':'+u;});};});
   document.querySelectorAll('[data-afw]').forEach(function(b){b.onclick=function(){var k=b.dataset.afw;var sel=document.getElementById('afwBeschU');var besch=Math.max(0,Math.min(7,parseInt(sel&&sel.value,10)||0));wkPasToe(function(m,day){m.roster[day]=k+':'+(8-besch);});};});
   document.querySelectorAll('[data-hset]').forEach(function(b){b.onclick=function(){var type=b.dataset.hset;var inp=document.getElementById(type==='comp'?'compU':'verlU');var u=Math.max(1,Math.min(8,parseInt(inp.value,10)||0));wkPasToe(function(m,day){m.roster[day]=type+':'+u;});};});
   var t=document.getElementById('wkTarget');if(t)t.onchange=function(){if(!t.value)return;var src=M.filter(function(x){return x.id===editCell.mid;})[0];var tgt=M.filter(function(x){return x.id===t.value;})[0];var day=editCell.day;if(!canDecide()){pushProposal(tgt.id,day,'st:'+src.roster[day]);pushProposal(src.id,day,'st:vrij');sbToast('Voorstel verstuurd naar Manager R/D.');editCell=null;editCells=[];render();return;}tgt.roster[day]=src.roster[day];src.roster[day]='vrij';sbSaveStatus(tgt,day);sbSaveStatus(src,day);editCell=null;editCells=[];render();};
@@ -3915,9 +3931,9 @@ function viewHeatmap(title){
   return '<h2>Weekheatmap</h2><p class="sub">'+title+' · dekking per locatie per dag · blader met ‹ week / week › verder terug of vooruit · geselecteerd: <strong>'+dLabel(curDay)+'</strong> — klik op een dag om te springen'+(live?', klik op een cel voor detail':'')+'</p>'+
    navHtml+
    '<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> OK ≥100</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 75–99</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> risico &lt;75</span></div>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> contract gehaald</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op: 75–99% van contract</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> tekort: &lt;75% van contract</span></div>'+
    (live?'':'<p class="sub" style="margin-bottom:8px">Buiten het huidige venster tonen cellen alleen een samenvattingspercentage — geen monteursdetail of dag-selectie op celniveau.</p>')+
    '<div class="hm"><table class="hm-t"><tr><td class="hm-lab"></td>'+wkRij+'</tr><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table></div>'+
    detailHtml;
@@ -3942,7 +3958,7 @@ function wireHeatmap(){
 /* ---------- Teamleider: eigen team ---------- */
 function viewTeam(){
   var ids=scopeIds();
-  var html='<h2>Mijn team · ZARA</h2><p class="sub">'+dLabel(curDay)+' · inzicht in je eigen datacenters · norm 100% (contracturen). Bij tekort haal je via een voorstel iemand uit een regio erbij.</p>';
+  var html='<h2>Mijn team · ZARA</h2><p class="sub">'+dLabel(curDay)+' · inzicht in je eigen datacenters · contracturen. Bij tekort haal je via een voorstel iemand uit een regio erbij.</p>';
   html+='<div class="board">';
   ids.forEach(function(id){
     var c={key:id,naam:LOCMAP[id].naam,members:[id],benodigd:LOCMAP[id].benodigd,lat:LOCMAP[id].lat,lng:LOCMAP[id].lng};
@@ -4079,9 +4095,9 @@ function viewTeamWeek(){
   var html='<h2>Mijn team · week</h2><p class="sub">'+label+' · dekking en rooster per dag · alleen-lezen</p>';
   html+='<div class="ctrl" style="margin-bottom:12px"><button id="tlPrev"'+(weekStart===0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+label+'</span><button id="tlNext"'+(weekStart===7?' disabled':'')+'>week ›</button></div>';
   var legend='<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> OK ≥100</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op 75–99</span>'+
-   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> risico &lt;75</span></div>';
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> contract gehaald</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op: 75–99% van contract</span>'+
+   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--risk-bar);vertical-align:-1px"></span> tekort: &lt;75% van contract</span></div>';
   var days='';for(var d=weekStart;d<weekStart+7;d++){days+='<td class="hm-day'+(d===TODAY?' hm-now':'')+'">'+dShort(d)+(d===TODAY?'<br><span style="font-size:9px">nu</span>':'')+'</td>';}
   var rows='';cols.forEach(function(c){var tds='';for(var d2=weekStart;d2<weekStart+7;d2++){var dek=fDekking(c,d2);var t=tone(dek);tds+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="hm-cell" style="background:'+t.bg+';color:'+t.tx+'">'+dek+'</div></td>';}rows+='<tr><td class="hm-lab">'+c.naam+'</td>'+tds+'</tr>';});
   html+='<h2 style="font-size:16px">Dekking per dag</h2>'+legend+'<div class="hm"><table class="hm-t"><tr><td class="hm-lab"></td>'+days+'</tr>'+rows+'</table></div>';
@@ -5703,7 +5719,8 @@ function isoOf(idx){var d=dateFor(idx);return d.getFullYear()+'-'+('0'+(d.getMon
 /* DB-type ↔ v18-status. hrs bij compensatie = nog-inzetbare uren. */
 function typeToStatus(type,hrs){
   if(type==='vroeg')return 'dagvroeg';
-  if(type==='dag'||type==='zara'||type==='techno')return 'dag';
+  if(type==='zara'||type==='techno'){var zh=Math.round(hrs||8);return zh===8?'dag':type+':'+Math.max(1,Math.min(12,zh));}
+  if(type==='dag')return 'dag';
   if(type==='laat')return 'waak';
   if(type==='verlof')return 'verlof:'+Math.max(1,Math.min(8,Math.round(hrs||8)));
   if(type==='ziek'||type==='cursus'||type==='garage'||type==='nb'){var hu=Math.max(1,Math.min(8,Math.round(hrs||8)));return (type==='cursus'&&hu===8)?'cursus':type+':'+hu;}
@@ -5716,6 +5733,7 @@ function statusToRow(m,st){
   if(st==='dagvroeg')return {type:'vroeg',hrs:8};
   if(st==='dag'){var b=m.base;var tp=(b==='ZAM'||b==='ZRO'||b==='ZAR'||b==='ZZW')?'zara':(b==='TCU'?'techno':'dag');return {type:tp,hrs:8};}
   if(st==='waak')return {type:'laat',hrs:8};
+  var zgp=zdGroep(st);if(zgp)return {type:zgp,hrs:zdUren(st)};
   if(st==='ziek')return {type:'ziek',hrs:8};
   var ak=afwSoort(st);if(ak&&ak!=='comp'&&st.indexOf(':')>0)return {type:ak,hrs:afwUren(st)};
   if(st==='cursus')return {type:'cursus',hrs:8};
@@ -5737,7 +5755,7 @@ function sbToast(msg){
    veld 'door' script laten draaien bij iedereen die de tool opent. */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 var ownWriteAt=0;
-function chk(res){ ownWriteAt=Date.now(); if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen — geen verbinding met de database.');} }
+function chk(res){ ownWriteAt=Date.now(); if(res&&res.error){console.error('[Supabase] opslaan faalde',res.error);sbToast('⚠️ Niet opgeslagen: '+String(res.error.message||res.error.code||'onbekende fout').slice(0,140)+(res.error.code==='23514'||/check|constraint|violat/i.test(String(res.error.message))?' — dit dienst-type staat nog niet in de database.':''));} }
 
 /* Handtekening van de gedeelde data, per onderdeel, om te zien of een collega iets heeft veranderd */
 function sbSig(){
@@ -6002,7 +6020,8 @@ var sbAgg={};
 function rowWeight(row){
   var t=row.type;
   if(t!=='nacht'&&!(t&&t.indexOf('c-')===0)){
-    var st=typeToStatus(t,row.hrs), dw=new Date(row.datum+'T12:00:00').getDay();
+    var st=typeToStatus(t,row.hrs), zu0=zdUren(st), dw=new Date(row.datum+'T12:00:00').getDay();
+    if(zu0!==null)return zu0/8;
     if(dw===0||dw===6)return (st==='waak'||st==='dag'||st==='dagvroeg')?1:0;
     return weight(st);
   }
