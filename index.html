@@ -2695,24 +2695,37 @@ function grafiekBarsBlock(vals, laden, klikOmschrijving){
   return {bars:bars,labs:labs,gem:gem,onder:onder,risk:risk,gemVals:gemVals,sumU:sumU,sumN:sumN};
 }
 function viewManagerG(){
-  /* Manager G kijkt altijd naar de oude regio-indeling (5 regio's), los van de RD-groepering */
-  var regs=LOC.filter(function(l){return l.type==='regio';}).map(function(l){return colFor(l.id);});
-  regs=columns().filter(function(c){return c.type==='cluster';});   // vast: 3 regio's (Noorden / Randstad / Zuiden)
-  LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});   // alle Zara-locaties los
-  if(role==='G') return weekStrip()+totaalCapBlokWeek()+viewGrafiekWeek(regs);
-  var periode=grafiekPeriode();
-  var toggle='<div class="ctrl" style="margin-bottom:10px">'+
-    '<button class="'+(periode==='dag'?'active':'')+'" onclick="grafiekSetPeriode(\'dag\')">Dag</button>'+
-    '<button class="'+(periode==='week'?'active':'')+'" onclick="grafiekSetPeriode(\'week\')">Week</button>'+
-    '<button class="'+(periode==='kwartaal'?'active':'')+'" onclick="grafiekSetPeriode(\'kwartaal\')">Kwartaal</button>'+
-    '<button class="'+(periode==='jaar'?'active':'')+'" onclick="grafiekSetPeriode(\'jaar\')">Jaar</button>'+
-  '</div>';
-  if(periode==='dag')toggle+='<div class="ctrl" style="margin:-2px 0 10px"><button onclick="grDagNav(-1)">‹ dag</button><span class="daylabel" style="min-width:130px">'+dLabel(curDay)+(curDay===TODAY?' · vandaag':'')+'</span><button onclick="grDagNav(1)">dag ›</button></div>';
-  var top=weekStrip()+totaalCapBlokWeek();   // weeknummers boven, totale capaciteit daaronder — bij elke periode zichtbaar
-  if(periode==='week') return top+toggle+viewGrafiekWeek(regs);
-  if(periode==='kwartaal') return top+toggle+viewGrafiekKwartaal(regs);
-  if(periode==='jaar') return top+toggle+viewGrafiekJaar(regs);
-  return top+toggle+viewGrafiekDag(regs);
+  /* Eén duidelijke indeling: weeknummers → totale capaciteit → lijst per regio/locatie → klik = monteurs */
+  var regs=columns().filter(function(c){return c.type==='cluster';});
+  LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});
+  return weekStrip()+totaalCapBlokWeek()+viewGrafiekLijst(regs);
+}
+function viewGrafiekLijst(regs){
+  var mon=mondayOf(new Date()); mon.setDate(mon.getDate()+wgOff*7);
+  var end=new Date(mon); end.setDate(mon.getDate()+6);
+  var workdays=[],alldays=[],i;
+  for(i=0;i<5;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);workdays.push(d);}
+  for(i=0;i<7;i++){var d2=new Date(mon);d2.setDate(mon.getDate()+i);alldays.push(d2);}
+  var agg=ensureRange('gweek_'+fmtIsoD(mon),fmtIsoD(mon),fmtIsoD(end));
+  var laden=!agg||!agg.loaded;
+  var detail='';
+  if(grafiekSel){
+    var selCol=regs.filter(function(c){return c.key===grafiekSel;})[0];
+    if(selCol){
+      var lab=alldays.map(function(dd){return WD[dd.getDay()]+' '+dd.getDate();});
+      detail='<div style="text-align:right"><button class="linkbtn" data-barclose="1">sluiten ✕</button></div>'+
+        monteurPaneel(selCol,alldays.map(function(dd,q){return {iso:fmtIsoD(dd),label:lab[q]};}));
+    }
+  }
+  var rows=regs.map(function(c){
+    var dk=laden?null:aggRangeAvg(agg,c,workdays),bn=benVoorKey(c.key),sel=grafiekSel===c.key;
+    var tx=dk===null?'–':Math.round(dk/100*bn*8)+' / '+Math.round(bn*8)+' u';
+    var t=dk===null?null:tone(dk);
+    return '<div data-bar="'+c.key+'" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-bottom:6px;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;'+(sel?'background:var(--surface-1);font-weight:700':'')+'">'+
+      '<span>'+(sel?'▾ ':'▸ ')+c.naam+'</span>'+
+      '<span style="color:'+(t?t.tx:'var(--muted)')+'">'+(laden?'laden…':tx+(dk===null?'':' · '+dk+'%'))+'</span></div>'+(sel?detail:'');
+  }).join('');
+  return '<h2 style="margin-top:18px">Per regio / locatie · week '+isoWeek(mon)+'</h2><p class="sub">Gemiddelde beschikbare uren per dag t.o.v. contract · klik op een regel om de monteurs te zien</p>'+rows;
 }
 /* ---- Jaar-niveau: één mini-trendlijn per regio/cluster over alle weken van het jaar ---- */
 function viewGrafiekJaar(cols){
@@ -4512,7 +4525,9 @@ function wdGapOk(k,lw,ls,isSch){
 function wdVleugel(ini){
   if(WD_COLLEGA.wing.noord.indexOf(ini)>=0)return 'noord';
   if(WD_COLLEGA.wing.zuid.indexOf(ini)>=0)return 'zuid';
-  var m=wdAlle().filter(function(x){return x.ini===ini;})[0];return m&&m.lat>=52.02?'noord':'zuid';
+  var m=wdAlle().filter(function(x){return x.ini===ini;})[0];if(!m)return 'zuid';
+  // zuidvleugel = Den Haag / Rotterdam / Delft / Zoetermeer / Gouda e.o.; noordvleugel = Amsterdam / Utrecht / Haarlem / Amersfoort e.o.
+  return (m.lat<52.0||(m.lng<4.8&&m.lat<52.17))?'zuid':'noord';
 }
 function wdPartner(ini){var p=[];WD_VERBODEN.forEach(function(v){if(v[0]===ini)p.push(v[1]);if(v[1]===ini)p.push(v[0]);});return p;}
 
