@@ -2709,10 +2709,11 @@ function viewManagerG(){
     '<button class="'+(periode==='jaar'?'active':'')+'" onclick="grafiekSetPeriode(\'jaar\')">Jaar</button>'+
   '</div>';
   if(periode==='dag')toggle+='<div class="ctrl" style="margin:-2px 0 10px"><button onclick="grDagNav(-1)">‹ dag</button><span class="daylabel" style="min-width:130px">'+dLabel(curDay)+(curDay===TODAY?' · vandaag':'')+'</span><button onclick="grDagNav(1)">dag ›</button></div>';
-  if(periode==='week') return toggle+totaalCapBlokWeek()+viewGrafiekWeek(regs);
-  if(periode==='kwartaal') return toggle+viewGrafiekKwartaal(regs);
-  if(periode==='jaar') return toggle+viewGrafiekJaar(regs);
-  return toggle+totaalCapBlok()+viewGrafiekDag(regs);
+  var top=weekStrip()+totaalCapBlokWeek();   // weeknummers boven, totale capaciteit daaronder — bij elke periode zichtbaar
+  if(periode==='week') return top+toggle+viewGrafiekWeek(regs);
+  if(periode==='kwartaal') return top+toggle+viewGrafiekKwartaal(regs);
+  if(periode==='jaar') return top+toggle+viewGrafiekJaar(regs);
+  return top+toggle+viewGrafiekDag(regs);
 }
 /* ---- Jaar-niveau: één mini-trendlijn per regio/cluster over alle weken van het jaar ---- */
 function viewGrafiekJaar(cols){
@@ -2837,7 +2838,7 @@ function viewGrafiekWeek(regs){
     }
   }
 
-  var nav=role==='G'?'':'<div class="ctrl" style="margin-bottom:10px"><button onclick="grafiekPeriodeNav(-1)">‹ week</button>'+
+  var nav='';var _oldnav='<div class="ctrl" style="margin-bottom:10px"><button onclick="grafiekPeriodeNav(-1)">‹ week</button>'+
    '<span class="daylabel" style="min-width:190px">week '+isoWeek(mon)+' · '+mon.getDate()+'/'+(mon.getMonth()+1)+' – '+end.getDate()+'/'+(end.getMonth()+1)+' '+end.getFullYear()+'</span>'+
    '<button onclick="grafiekPeriodeNav(1)">week ›</button>'+(wgOff!==0?' <button class="linkbtn" onclick="wgOff=0;render()">naar nu</button>':'')+'</div>';
 
