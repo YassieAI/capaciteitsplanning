@@ -1077,12 +1077,12 @@ function uTxt(b,n){return Math.round(b*8)+' / '+Math.round(n*8)+' u';}
 /* monteurs: fictieve code/naam + basislocatie + fictieve woonplaats. Echte woonplaatsen van de waakdienstpool
    staan NIET in deze code: die laad je lokaal in via Waakdienst > Echte gegevens inladen (waakdienst-echt.json). */
 var RAW=[
- ['MOBE02','Amsterdam-west','NW','MOBE02'],
+ ['MOBE02','Amsterdam-west','MI','MOBE02'],
  ['JADR01','Stekene','ZW','JADR01'],
- ['ASER01','Spijkenisse','ZW','ASER01'],
+ ['ASER01','Spijkenisse','MI','ASER01'],
  ['BJEU01','Almelo','NO','BJEU01'],
  ['LAGA01','Hoogeveen','NO','LAGA01'],
- ['JOMA02','Voorburg','ZW','JOMA02'],
+ ['JOMA02','Voorburg','MI','JOMA02'],
  ['ERMA01','Drunen','ZO','ERMA01'],
  ['ERMI01','Antwerpen','ZW','ERMI01'],
  ['HEMO01','Sint-Oedenrode','ZO','HEMO01'],
@@ -1093,17 +1093,17 @@ var RAW=[
  ['ERBR01','Amersfoort','MI','ERBR01'],
  ['EMMU01','Den Bosch','ZO','EMMU01'],
  ['JONI','Uffelte','NO','JONI'],
- ['BOHA01','Hoofddorp','NW','BOHA01'],
+ ['BOHA01','Hoofddorp','MI','BOHA01'],
  ['CEMA03','Arnhem','ZO','CEMA03'],
  ['JEJO05','Maarssen','MI','JEJO05'],
  ['RIFA01','Tilburg','ZW','RIFA01'],
- ['ARZW02','Nootdorp','ZW','ARZW02'],
+ ['ARZW02','Nootdorp','MI','ARZW02'],
  ['JOKO01','Assen','NO','JOKO01'],
  ['STGA02','Meppel','NO','STGA02'],
  ['ROKR02','Amsterdam-oost','MI','ROKR02'],
  ['MEAS01','Uithoorn','MI','MEAS01'],
  ['NGHU01','Eindhoven','ZO','NGHU01'],
- ['MUGO07','Rotterdam','ZW','MUGO07'],
+ ['MUGO07','Rotterdam','MI','MUGO07'],
  ['BASW01','Bergen (L)','ZO','BASW01'],
  ['Z01','Nieuwegein','ZAM','ZARA Ams Z01'],
  ['Z02','Haarlem','ZAM','ZARA Ams Z02'],
@@ -2700,6 +2700,8 @@ function viewManagerG(){
   LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});
   return weekStrip()+totaalCapBlokWeek()+viewGrafiekLijst(regs);
 }
+var grafiekDicht={};
+function lijstToggle(k){grafiekDicht[k]=!grafiekDicht[k];render();}
 function viewGrafiekLijst(regs){
   var mon=mondayOf(new Date()); mon.setDate(mon.getDate()+wgOff*7);
   var end=new Date(mon); end.setDate(mon.getDate()+6);
@@ -2708,24 +2710,17 @@ function viewGrafiekLijst(regs){
   for(i=0;i<7;i++){var d2=new Date(mon);d2.setDate(mon.getDate()+i);alldays.push(d2);}
   var agg=ensureRange('gweek_'+fmtIsoD(mon),fmtIsoD(mon),fmtIsoD(end));
   var laden=!agg||!agg.loaded;
-  var detail='';
-  if(grafiekSel){
-    var selCol=regs.filter(function(c){return c.key===grafiekSel;})[0];
-    if(selCol){
-      var lab=alldays.map(function(dd){return WD[dd.getDay()]+' '+dd.getDate();});
-      detail='<div style="text-align:right"><button class="linkbtn" data-barclose="1">sluiten ✕</button></div>'+
-        monteurPaneel(selCol,alldays.map(function(dd,q){return {iso:fmtIsoD(dd),label:lab[q]};}));
-    }
-  }
+  var lab=alldays.map(function(dd){return WD[dd.getDay()]+' '+dd.getDate();});
+  var dagenL=alldays.map(function(dd,q){return {iso:fmtIsoD(dd),label:lab[q]};});
   var rows=regs.map(function(c){
-    var dk=laden?null:aggRangeAvg(agg,c,workdays),bn=benVoorKey(c.key),sel=grafiekSel===c.key;
+    var dk=laden?null:aggRangeAvg(agg,c,workdays),bn=benVoorKey(c.key),open=!grafiekDicht[c.key];
     var tx=dk===null?'–':Math.round(dk/100*bn*8)+' / '+Math.round(bn*8)+' u';
     var t=dk===null?null:tone(dk);
-    return '<div data-bar="'+c.key+'" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-bottom:6px;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;'+(sel?'background:var(--surface-1);font-weight:700':'')+'">'+
-      '<span>'+(sel?'▾ ':'▸ ')+c.naam+'</span>'+
-      '<span style="color:'+(t?t.tx:'var(--muted)')+'">'+(laden?'laden…':tx+(dk===null?'':' · '+dk+'%'))+'</span></div>'+(sel?detail:'');
+    return '<div onclick="lijstToggle(\''+c.key+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin:14px 0 6px;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;background:var(--surface-1);font-weight:700">'+
+      '<span>'+(open?'▾ ':'▸ ')+c.naam+'</span>'+
+      '<span style="color:'+(t?t.tx:'var(--muted)')+'">'+(laden?'laden…':tx+(dk===null?'':' · '+dk+'%'))+'</span></div>'+(open?monteurPaneel(c,dagenL):'');
   }).join('');
-  return '<h2 style="margin-top:18px">Per regio / locatie · week '+isoWeek(mon)+'</h2><p class="sub">Gemiddelde beschikbare uren per dag t.o.v. contract · klik op een regel om de monteurs te zien</p>'+rows;
+  return '<h2 style="margin-top:18px">Per regio / locatie · week '+isoWeek(mon)+'</h2><p class="sub">Gemiddelde beschikbare uren per dag t.o.v. contract · klik op een regel om de monteurs in of uit te klappen</p>'+rows;
 }
 /* ---- Jaar-niveau: één mini-trendlijn per regio/cluster over alle weken van het jaar ---- */
 function viewGrafiekJaar(cols){
@@ -3730,13 +3725,7 @@ function totaalCapBlokWeek(){
       '</div><div style="font-size:12px;color:var(--muted);margin-top:4px">De zwarte streep is het contract van die regio (uren per week).</div></div>';
   }
   return '<h2 style="margin-top:6px">Totale capaciteit · Field Force, Zara en Techno</h2><p class="sub">week '+isoWeek(mon)+' · beschikbare uren van alle monteurs tegen de KPN-contracturen · klik op Field Force of Zara voor de verdeling</p>'+
-    tegels+detail+
-    '<div style="position:relative"><div style="display:flex;gap:8px;margin-bottom:4px">'+tot.join('')+'</div>'+
-    '<div style="position:relative"><div style="display:flex;gap:8px;border-bottom:0.5px solid var(--border)">'+chart+'</div>'+
-    '<div style="position:absolute;left:0;right:0;bottom:'+lijnY.toFixed(1)+'px;border-top:2.5px dashed var(--text);pointer-events:none"></div>'+
-    '<div style="position:absolute;right:0;bottom:'+(lijnY+4).toFixed(1)+'px;font-size:12px;font-weight:700;background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--text)">contract: '+Math.round(nodigDag)+' u per werkdag</div></div>'+
-    '<div style="display:flex;gap:8px;margin-top:4px">'+dl+'</div></div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)">'+types.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+'</span>';}).join('')+'</div>';
+    tegels+detail;
 }
 /* ---------- weekrooster (Manager R/D): diensten schuiven ---------- */
 function dienstStyle(st){
