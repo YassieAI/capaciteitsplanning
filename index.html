@@ -1020,8 +1020,8 @@ tr.wp-best td{background:var(--ok-bg)}
   <header class="bar">
     <span class="rolechip" id="roleChip"></span>
     <div class="ctrl" id="groupToggle">
-      <button data-g="regio5" class="active">5 regio's</button>
-      <button data-g="cluster3">3 clusters</button>
+      <button data-g="regio5" class="active">Regio's</button>
+      <button data-g="cluster3">3 gebieden</button>
     </div>
     <div class="ctrl" id="viewToggle"></div>
     <div class="ctrl" id="dayNav">
@@ -1051,11 +1051,9 @@ var WOON={
  Leiden:[52.16,4.49],Zoetermeer:[52.06,4.49],Gouda:[52.01,4.71],Delft:[52.01,4.36],Schiedam:[51.92,4.40],Middelburg:[51.50,3.61]
 };
 var LOC=[
- {id:'NW',naam:'Noordwest',type:'regio',cluster:'Noorden',lat:52.55,lng:4.80,benodigd:5},
- {id:'NO',naam:'Noordoost',type:'regio',cluster:'Noorden',lat:52.90,lng:6.20,benodigd:5},
- {id:'MI',naam:'Midden',type:'regio',cluster:'Randstad',lat:52.10,lng:5.20,benodigd:4},
- {id:'ZW',naam:'Zuidwest',type:'regio',cluster:'Zuiden',lat:51.60,lng:4.80,benodigd:4},
- {id:'ZO',naam:'Zuidoost',type:'regio',cluster:'Zuiden',lat:51.70,lng:5.90,benodigd:6},
+ {id:'NO',naam:'Noorden',type:'regio',cluster:'Noorden',lat:52.75,lng:5.90,benodigd:7},
+ {id:'MI',naam:'Randstad',type:'regio',cluster:'Randstad',lat:52.10,lng:4.90,benodigd:11},
+ {id:'ZO',naam:'Zuiden',type:'regio',cluster:'Zuiden',lat:51.60,lng:5.40,benodigd:10},
  {id:'ZAM',naam:'ZARA Amsterdam',type:'zara',cluster:'ZARA',lat:52.37,lng:4.90,benodigd:8},
  {id:'ZRO',naam:'ZARA Rotterdam',type:'zara',cluster:'ZARA',lat:51.92,lng:4.48,benodigd:4},
  {id:'ZAR',naam:'ZARA Arnhem',type:'zara',cluster:'ZARA',lat:51.98,lng:5.90,benodigd:2},
@@ -1063,7 +1061,7 @@ var LOC=[
  {id:'TCU',naam:'Technocenter Utrecht',type:'techno',cluster:'Techno',lat:52.09,lng:5.11,benodigd:4}
 ];
 var LOCMAP={}; LOC.forEach(function(l){LOCMAP[l.id]=l;});
-/* NORM = contracturen KPN per week. Field Force (de 5 regio's) 566 u, Zara 600 u, Techno 233 u.
+/* NORM = contracturen KPN per week. Field Force (3 gebieden) 566 u, Zara 600 u, Techno 233 u.
    De uren worden over de locaties verdeeld naar hun oude aandeel (benodigdBasis). benodigd = monteurs per werkdag
    (weekuren / 40), zodat dekking% = beschikbare uren / benodigde uren. Norm = 100%. */
 var CONTRACT_UREN={regio:566,zara:600,techno:233};
@@ -1078,15 +1076,15 @@ function uTxt(b,n){return Math.round(b*8)+' / '+Math.round(n*8)+' u';}
    staan NIET in deze code: die laad je lokaal in via Waakdienst > Echte gegevens inladen (waakdienst-echt.json). */
 var RAW=[
  ['MOBE02','Amsterdam-west','MI','MOBE02'],
- ['JADR01','Stekene','ZW','JADR01'],
+ ['JADR01','Stekene','ZO','JADR01'],
  ['ASER01','Spijkenisse','MI','ASER01'],
  ['BJEU01','Almelo','NO','BJEU01'],
  ['LAGA01','Hoogeveen','NO','LAGA01'],
  ['JOMA02','Voorburg','MI','JOMA02'],
  ['ERMA01','Drunen','ZO','ERMA01'],
- ['ERMI01','Antwerpen','ZW','ERMI01'],
+ ['ERMI01','Antwerpen','ZO','ERMI01'],
  ['HEMO01','Sint-Oedenrode','ZO','HEMO01'],
- ['ROMO01','IJmuiden','NW','ROMO01'],
+ ['ROMO01','IJmuiden','NO','ROMO01'],
  ['BOMU01','Deventer','NO','BOMU01'],
  ['JEZA01','Amsterdam-zuidoost','MI','JEZA01'],
  ['WIES01','Nuth','ZO','WIES01'],
@@ -1096,7 +1094,7 @@ var RAW=[
  ['BOHA01','Hoofddorp','MI','BOHA01'],
  ['CEMA03','Arnhem','ZO','CEMA03'],
  ['JEJO05','Maarssen','MI','JEJO05'],
- ['RIFA01','Tilburg','ZW','RIFA01'],
+ ['RIFA01','Tilburg','ZO','RIFA01'],
  ['ARZW02','Nootdorp','MI','ARZW02'],
  ['JOKO01','Assen','NO','JOKO01'],
  ['STGA02','Meppel','NO','STGA02'],
@@ -1187,8 +1185,8 @@ var proposals=[]; var propId=1; // zelfsturende voorstellen van teamleiders
 
 function scopeIds(){
   if(role==='TZ')return ['ZAM','ZRO','ZAR','ZZW','TCU'];
-  if(role==='TN')return ['NW','NO','MI'];
-  if(role==='TS')return ['ZW','ZO','MI'];
+  if(role==='TN')return ['NO','MI'];
+  if(role==='TS')return ['ZO','MI'];
   return LOC.map(function(l){return l.id;});
 }
 function inScopeId(id){return scopeIds().indexOf(id)>=0;}
@@ -1205,8 +1203,8 @@ var ROLES=[
  {id:'G', naam:'Manager G', desc:'Totaaloverzicht per regio · alleen-lezen', pin:'1111'},
  {id:'RD',naam:'Manager R / D', desc:'Operationeel sturen · schuifbord + AI', pin:'2222'},
  {id:'TZ',naam:'Teamleider Zara en Technocenter', desc:'Eigen team · bij tekort iemand uit een regio voorstellen', pin:'3333'},
- {id:'TN',naam:'Teamleider Noord', desc:'NW, NO en noordelijk Midden · voorstellen', pin:'4444'},
- {id:'TS',naam:'Teamleider Zuid', desc:'ZW, ZO en zuidelijk Midden · voorstellen', pin:'5555'},
+ {id:'TN',naam:'Teamleider Noord', desc:'Noorden en noordelijk Randstad · voorstellen', pin:'4444'},
+ {id:'TS',naam:'Teamleider Zuid', desc:'Zuiden en zuidelijk Randstad · voorstellen', pin:'5555'},
  {id:'PL',naam:'Planner', desc:'Alleen bekijken · met de nachtklus-pincode ook nachtklussen invullen', pin:'6666', pinNacht:'8888'},
  {id:'UV',naam:'Uitvoering', desc:'Eigen rooster bekijken', pin:'7777'}
 ];
@@ -2270,7 +2268,7 @@ function viewWeekG(){
   if(gKpiSel==='wg-onder') detail=gKpiPanel('Locaties onder contract (&lt;contracturen weekgemiddelde)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · '+x.avg+'%';}) : ['Geen — alle locaties zitten op of boven norm deze week.']);
   else if(gKpiSel==='wg-risico') detail=gKpiPanel('Locatie-dagen onder 75%', risicoCells.length? risicoCells.map(function(x){return '<strong>'+x.naam+'</strong> · '+x.dag+' · '+x.dek+'%';}) : ['Geen risicodagen deze week.']);
   else if(gKpiSel==='wg-laagste'&&laagste) detail=gKpiPanel('Laagste: '+laagste.naam+' — dag voor dag', laagste.days.map(function(dv){return WD[dv.d.getDay()]+' '+dv.d.getDate()+' · '+(dv.dek===null?(dv.wknd?'weekend':'–'):dv.dek+'%');}));
-  return '<h2>Weekdashboard</h2><p class="sub">dekking per locatie per dag · oude regio-indeling · blader met ‹ › door de weken · klik een KPI voor detail · alleen-lezen</p>'+nav+kpis+detail+
+  return '<h2>Weekdashboard</h2><p class="sub">dekking per locatie per dag · blader met ‹ › door de weken · klik een KPI voor detail · alleen-lezen</p>'+nav+kpis+detail+
    '<div class="hm"><table class="hm-t"><tr>'+head+'</tr>'+body+'</table></div>'+
    (laden?'<p class="sub" style="margin-top:8px">Gegevens laden…</p>':'<p class="sub" style="margin-top:8px">– = weekend of geen gegevens ingevoerd voor die dag.</p>');
 }
@@ -2315,7 +2313,7 @@ function viewKwartaal(){
     body+='<tr><td class="hm-lab">'+l.naam+'</td>'+tds+'</tr>';
   });
   var nav='<div class="ctrl" style="margin-bottom:10px"><button onclick="qNav(-1)">‹ kwartaal</button><span class="daylabel" style="min-width:130px">Q'+(q+1)+' '+qYear+'</span><button onclick="qNav(1)">kwartaal ›</button>'+(qOff!==0?' <button class="linkbtn" onclick="qOff=0;render()">naar nu</button>':'')+'</div>';
-  return '<h2>Kwartaalrooster</h2><p class="sub">dekking per locatie per week · echte planningsdata · oude regio-indeling · alleen-lezen · klik op een week voor het dag-voor-dag Weekdashboard</p>'+nav+
+  return '<h2>Kwartaalrooster</h2><p class="sub">dekking per locatie per week · echte planningsdata · alleen-lezen · klik op een week voor het dag-voor-dag Weekdashboard</p>'+nav+
    '<div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ok-bar);vertical-align:-1px"></span> contract gehaald</span>'+
    '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-bar);vertical-align:-1px"></span> let op: 75–99% van contract</span>'+
@@ -2485,7 +2483,7 @@ function viewJaar(){
    '</div>'+
    (gKpiSel==='q-onder'? gKpiPanel('Locatie-weken onder contract (&lt;contracturen)', onderList.length? onderList.map(function(x){return '<strong>'+x.naam+'</strong> · week '+x.weekNo+' · '+x.dek+'%';}) : ['Geen — alle locatie-weken op norm.']) : '');
 
-  var kop='<h2>Jaaroverzicht '+jaar+'</h2><p class="sub">dekking per locatie over '+weeks.length+' weken · oude regio-indeling · alleen-lezen · klik in een grafiek op een week voor het dag-voor-dag Weekdashboard</p>'+nav+wisselaar;
+  var kop='<h2>Jaaroverzicht '+jaar+'</h2><p class="sub">dekking per locatie over '+weeks.length+' weken · alleen-lezen · klik in een grafiek op een week voor het dag-voor-dag Weekdashboard</p>'+nav+wisselaar;
 
   if(jaarWeergave==='tabel'){
     return kop+
@@ -4107,8 +4105,8 @@ function wireTeam(){
 /* ---------- Teamleider Noord/Zuid: eigen team met Midden op woonplaats ---------- */
 function colFor(id){var l=LOCMAP[id];return {key:id,naam:l.naam,type:l.type,members:[id],benodigd:l.benodigd,lat:l.lat,lng:l.lng};}
 function teamOf(m){
-  if(m.base==='NW'||m.base==='NO')return 'Noord';
-  if(m.base==='ZW'||m.base==='ZO')return 'Zuid';
+  if(m.base==='NO')return 'Noord';
+  if(m.base==='ZO')return 'Zuid';
   if(m.base==='MI')return m.lat>=52.055?'Noord':'Zuid';
   if(m.base==='ZAM'||m.base==='ZRO'||m.base==='ZAR'||m.base==='ZZW')return 'ZARA';
   return 'Techno';
@@ -4118,10 +4116,10 @@ function fDekking(col,day){return Math.round(fBeschikbaar(col,day)/col.benodigd*
 function fMonteurs(col,day){var o=[];M.forEach(function(m){if(col.members.indexOf(locOf(m,day))>=0&&(!col.filt||col.filt(m)))o.push(m);});return o;}
 function midSplit(){var mids=M.filter(function(m){return m.base==='MI';});var tot=mids.length||1;var n=mids.filter(function(m){return teamOf(m)==='Noord';}).length;var benN=Math.max(1,Math.round(n/tot*LOCMAP.MI.benodigd));return {Noord:benN,Zuid:Math.max(1,LOCMAP.MI.benodigd-benN)};}
 function teamCols(team){
-  var regs=team==='Noord'?['NW','NO']:['ZW','ZO'];
+  var regs=team==='Noord'?['NO']:['ZO'];
   var cols=regs.map(function(id){return colFor(id);});
   var split=midSplit();
-  cols.push({key:'MI_'+team,naam:'Midden ('+team+')',type:'regio',members:['MI'],filt:function(m){return teamOf(m)===team;},benodigd:split[team],lat:LOCMAP.MI.lat,lng:LOCMAP.MI.lng});
+  cols.push({key:'MI_'+team,naam:'Randstad ('+team+')',type:'regio',members:['MI'],filt:function(m){return teamOf(m)===team;},benodigd:split[team],lat:LOCMAP.MI.lat,lng:LOCMAP.MI.lng});
   return cols;
 }
 function overNote(cols,day){
@@ -4131,7 +4129,7 @@ function overNote(cols,day){
 }
 function viewBuitenTeam(team){
   var cols=teamCols(team);
-  var html='<h2>Mijn team · Regio '+team+'</h2><p class="sub">'+dLabel(curDay)+' · '+(team==='Noord'?'NW, NO en het noordelijke deel van Midden':'ZW, ZO en het zuidelijke deel van Midden')+'. Midden is verdeeld op woonplaats. Bij tekort haal je iemand uit een andere regio en stel je dat voor aan R/D.</p>';
+  var html='<h2>Mijn team · Regio '+team+'</h2><p class="sub">'+dLabel(curDay)+' · '+(team==='Noord'?'Noorden en het noordelijke deel van Randstad':'Zuiden en het zuidelijke deel van Randstad')+'. Midden is verdeeld op woonplaats. Bij tekort haal je iemand uit een andere regio en stel je dat voor aan R/D.</p>';
   html+='<div class="board">';
   cols.forEach(function(c){var dek=fDekking(c,curDay);var t=tone(dek);
     html+='<div class="col '+(t.cls==='risk'?'risk':'')+'"><h3>'+c.naam+'</h3><span class="badge b-'+t.cls+'">'+dek+'% '+t.lb+'</span><div class="cap">'+uTxt(fBeschikbaar(c,curDay),c.benodigd)+' beschikbaar</div><div class="cards">';
