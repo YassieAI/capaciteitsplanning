@@ -1041,6 +1041,7 @@ tr.wp-best td{background:var(--ok-bg)}
 <script>
 /* ---------- data ---------- */
 var WOON={
+ 'Amsterdam-west':[52.38,4.80],'Amsterdam-zuidoost':[52.31,4.97],'Amsterdam-oost':[52.36,4.94],Stekene:[51.20,4.03],Spijkenisse:[51.85,4.33],Almelo:[52.36,6.66],Hoogeveen:[52.72,6.48],Voorburg:[52.07,4.36],Drunen:[51.69,5.14],Antwerpen:[51.22,4.40],'Sint-Oedenrode':[51.57,5.46],IJmuiden:[52.46,4.62],Nuth:[50.92,5.88],Uffelte:[52.78,6.28],Hoofddorp:[52.30,4.69],Maarssen:[52.14,5.04],Nootdorp:[52.05,4.39],Uithoorn:[52.24,4.83],'Den Bosch':[51.70,5.30],
  Amsterdam:[52.37,4.90],Haarlem:[52.38,4.64],Alkmaar:[52.63,4.75],Zaandam:[52.44,4.83],Purmerend:[52.51,4.96],Hoorn:[52.64,5.06],DenHelder:[52.96,4.76],
  Utrecht:[52.09,5.12],Amersfoort:[52.16,5.39],Nieuwegein:[52.03,5.08],Ede:[52.04,5.66],
  Zwolle:[52.51,6.09],Deventer:[52.25,6.16],Kampen:[52.55,5.91],Groningen:[53.22,6.57],Assen:[53.00,6.56],Meppel:[52.70,6.19],
@@ -1076,36 +1077,32 @@ function uTxt(b,n){return Math.round(b*8)+' / '+Math.round(n*8)+' u';}
 /* monteurs: fictieve code/naam + basislocatie + fictieve woonplaats. Echte woonplaatsen van de waakdienstpool
    staan NIET in deze code: die laad je lokaal in via Waakdienst > Echte gegevens inladen (waakdienst-echt.json). */
 var RAW=[
- ['M01','Utrecht','MI','Monteur M01'],
- ['M02','Zwolle','MI','Monteur M02'],
- ['M03','Amsterdam','MI','Monteur M03'],
- ['M04','Ede','MI','Monteur M04'],
- ['M05','Utrecht','MI','Monteur M05'],
- ['N01','Kampen','NO','Monteur N01'],
- ['N02','Groningen','NO','Monteur N02'],
- ['N03','Apeldoorn','NO','Monteur N03'],
- ['N04','Assen','NO','Monteur N04'],
- ['N05','Meppel','NO','Monteur N05'],
- ['N06','Deventer','NO','Monteur N06'],
- ['W01','Alkmaar','NW','Monteur W01'],
- ['W02','Hoorn','NW','Monteur W02'],
- ['W03','Purmerend','NW','Monteur W03'],
- ['W04','Zaandam','NW','Monteur W04'],
- ['W05','Haarlem','NW','Monteur W05'],
- ['W06','DenHelder','NW','Monteur W06'],
- ['O01','Breda','ZO','Monteur O01'],
- ['O02','Venlo','ZO','Monteur O02'],
- ['O03','Oss','ZO','Monteur O03'],
- ['O04','Nijmegen','ZO','Monteur O04'],
- ['O05','DenBosch','ZO','Monteur O05'],
- ['O06','Eindhoven','ZO','Monteur O06'],
- ['O07','Amersfoort','ZO','Monteur O07'],
- ['S01','Leiden','ZW','Monteur S01'],
- ['S02','Zoetermeer','ZW','Monteur S02'],
- ['S03','Gouda','ZW','Monteur S03'],
- ['S04','Delft','ZW','Monteur S04'],
- ['S05','Dordrecht','ZW','Monteur S05'],
- ['S06','Tilburg','ZW','Monteur S06'],
+ ['MOBE02','Amsterdam-west','NW','MOBE02'],
+ ['JADR01','Stekene','ZW','JADR01'],
+ ['ASER01','Spijkenisse','ZW','ASER01'],
+ ['BJEU01','Almelo','NO','BJEU01'],
+ ['LAGA01','Hoogeveen','NO','LAGA01'],
+ ['JOMA02','Voorburg','ZW','JOMA02'],
+ ['ERMA01','Drunen','ZO','ERMA01'],
+ ['ERMI01','Antwerpen','ZW','ERMI01'],
+ ['HEMO01','Sint-Oedenrode','ZO','HEMO01'],
+ ['ROMO01','IJmuiden','NW','ROMO01'],
+ ['BOMU01','Deventer','NO','BOMU01'],
+ ['JEZA01','Amsterdam-zuidoost','MI','JEZA01'],
+ ['WIES01','Nuth','ZO','WIES01'],
+ ['ERBR01','Amersfoort','MI','ERBR01'],
+ ['EMMU01','Den Bosch','ZO','EMMU01'],
+ ['JONI','Uffelte','NO','JONI'],
+ ['BOHA01','Hoofddorp','NW','BOHA01'],
+ ['CEMA03','Arnhem','ZO','CEMA03'],
+ ['JEJO05','Maarssen','MI','JEJO05'],
+ ['RIFA01','Tilburg','ZW','RIFA01'],
+ ['ARZW02','Nootdorp','ZW','ARZW02'],
+ ['JOKO01','Assen','NO','JOKO01'],
+ ['STGA02','Meppel','NO','STGA02'],
+ ['ROKR02','Amsterdam-oost','MI','ROKR02'],
+ ['MEAS01','Uithoorn','MI','MEAS01'],
+ ['NGHU01','Eindhoven','ZO','NGHU01'],
  ['Z01','Nieuwegein','ZAM','ZARA Ams Z01'],
  ['Z02','Haarlem','ZAM','ZARA Ams Z02'],
  ['Z03','Zaandam','ZAM','ZARA Ams Z03'],
@@ -2156,7 +2153,7 @@ function render(){
   if(!role)return;
   setCtrls();
   var v=document.getElementById('view');
-  if(startOn){v.innerHTML=viewStart();wireStart();document.getElementById('foot').innerHTML='Fictieve monteurnamen (privacy) · pincodes zijn demo.';return;}
+  if(startOn){v.innerHTML=viewStart();wireStart();document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + woonplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';return;}
   if(role==='G') v.innerHTML=(gView==='prognose'?pgView_():gView==='jaar'?viewJaar():gView==='kwartaal'?viewKwartaal():gView==='week'?viewWeekG():viewManagerG());
   else if(role==='RD'){
     if(boardView==='prognose') v.innerHTML=pgView_();
@@ -2195,7 +2192,7 @@ function render(){
   if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
   if(role==='RD'&&boardView==='log') wireLog();
-  document.getElementById('foot').innerHTML='Fictieve monteurnamen (privacy) · waakdienst: demowoonplaatsen (echte alleen lokaal in te laden) · pincodes zijn demo.';
+  document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + woonplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';
 }
 
 /* ---------- Manager G weekdashboard (alleen-lezen, echte data, bladerbaar) ---------- */
@@ -4328,45 +4325,11 @@ var GEO={"paths":{"GR":"M418.5,133.6L412.6,127.3L409.9,127.3L413.3,119.5L410.0,1
 var WD_COLLEGA={plan:null,home:null,wing:{noord:[],zuid:[]},centers:[{g:'RA',stad:'Alphen a/d Rijn',lat:52.129,lng:4.657,km:70},{g:'LN',stad:'Hoogeveen',lat:52.722,lng:6.476,km:130},{g:'LZ',stad:'Eindhoven',lat:51.441,lng:5.478,km:130}]};
 /* ================================================================
    WAAKDIENST 2027 — rooster-engine
-   Pool: fictieve codes uit de tool. In de code staan alleen DEMO-woonplaatsen en een fictieve
-   60+-verdeling (zelfde aantallen per woongebied als echt). Echte woonplaatsen en de 60+-indicatie
-   komen alleen lokaal binnen via wdLaadEcht() — nooit in git, nooit in een gedeeld bestand.
+   Pool: de regio-monteurs met IFS-code + woonplaats (in de code, op verzoek van de gebruiker).
+   De 60+-indicatie is nog niet bekend (factor 1) en kan lokaal binnenkomen via wdLaadEcht().
    ================================================================ */
-var WD_POOL=[ // DEMO: fictieve woonplaatsen en 60+-verdeling; echte gegevens alleen lokaal inladen
- // code, woonplaats, lat, lng, factor
- ['W01','Alkmaar',52.630,4.750,1],
- ['W02','Hoorn',52.640,5.060,1],
- ['W03','Purmerend',52.510,4.960,0.75],
- ['W04','Zaandam',52.440,4.830,1],
- ['W05','Haarlem',52.380,4.640,1],
- ['W06','DenHelder',52.960,4.760,1],
- ['M01','Utrecht',52.090,5.120,0.75],
- ['M05','Nieuwegein',52.030,5.080,0.75],
- ['M03','Amsterdam',52.370,4.900,1],
- ['S01','Leiden',52.160,4.490,1],
- ['S02','Zoetermeer',52.060,4.490,1],
- ['S03','Gouda',52.010,4.710,0.75],
- ['S04','Delft',52.010,4.360,0.75],
- ['S06','Schiedam',51.920,4.400,0.75],
- ['S05','Dordrecht',51.810,4.670,1],
- ['M04','Gorinchem',51.830,4.970,1],
- ['R01','Middelburg',51.500,3.610,1],
- ['R02','Rotterdam',51.920,4.480,1],
- ['M02','Zwolle',52.510,6.090,1],
- ['N01','Kampen',52.550,5.910,1],
- ['N02','Groningen',53.220,6.570,1],
- ['N03','Apeldoorn',52.210,5.970,0.75],
- ['N04','Assen',53.000,6.560,1],
- ['N05','Meppel',52.700,6.190,1],
- ['N06','Deventer',52.250,6.160,1],
- ['O07','Amersfoort',52.160,5.390,1],
- ['O01','Breda',51.590,4.780,0.75],
- ['O02','Venlo',51.370,6.170,0.75],
- ['O03','Oss',51.770,5.520,1],
- ['O04','Nijmegen',51.840,5.860,1],
- ['O05','DenBosch',51.700,5.300,1],
- ['O06','Eindhoven',51.440,5.480,0.75]
-].map(function(r){return {ini:r[0],woon:r[1],lat:r[2],lng:r[3],f:r[4]};});
+/* Pool = de regio-monteurs (IFS-code + woonplaats); 60+-factor 1 tot die bekend is */
+var WD_POOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='regio';}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1};});
 /* Zara heeft een eigen waakdienst, alleen voor de Zara-locaties, en het Technocenter heeft geen waakdienst.
    Monteurs van Zara en Technocenter draaien daarom niet mee in deze waakdienst (2× Randstad, Noord, Zuid + schaduw). */
 function wdIsZara(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&(LOCMAP[m.base].type==='zara'||LOCMAP[m.base].type==='techno'));}
@@ -4401,7 +4364,7 @@ function wdZaMaak(carry){
   return {za:za,c:c};
 }
 /* Combinaties die nooit in dezelfde week mogen (waak of schaduw) — op code */
-var WD_VERBODEN=[['W02','W06'],['N03','N05'],['O02','O05']]; // DEMO; echte combinaties alleen via het lokale bestand
+var WD_VERBODEN=[]; // DEMO; echte combinaties alleen via het lokale bestand
 
 /* Drie opzetten. assign(prov,lng,lat) → gebied-id. Provincie komt uit het kaartraster. */
 var WD_OPZET={
