@@ -2763,6 +2763,32 @@ function viewGrafiekJaar(cols){
    '<p class="sub" style="margin-top:6px">Elke lijn is één regio over heel '+jaar+'. De zwarte streep is de huidige week.</p>';
 }
 /* ---- Dag-niveau: bestaand gedrag (14-daagse trend rond curDay) ---- */
+/* ---- Monteurs achter een regio / Zara-locatie / Techno: wie staat er die dag(en) waar en hoeveel uur ---- */
+function monteurPaneel(col,dagen){   // dagen = [{iso,label}]; roster bestaat alleen voor het 2-wekenvenster
+  var idxs=dagen.map(function(d){return curDayIdxForIso(d.iso);});
+  if(idxs.every(function(i){return i===null;}))return '<h2 style="font-size:16px;margin-top:16px">Monteurs · '+col.naam+'</h2><p class="sub">Het rooster per monteur is alleen beschikbaar voor de weken in het huidige rooster-venster.</p>';
+  var rows=[];
+  M.forEach(function(m){
+    var hier=false;idxs.forEach(function(i){if(i!==null&&col.members.indexOf(locOf(m,i))>=0)hier=true;});
+    if(hier)rows.push(m);
+  });
+  rows.sort(function(a,b){return mLabel(a)<mLabel(b)?-1:1;});
+  var th='<th style="text-align:left;padding:4px 8px">Monteur</th>'+dagen.map(function(d){return '<th style="padding:4px 6px;font-weight:500;color:var(--muted);font-size:11px">'+d.label+'</th>';}).join('')+(dagen.length>1?'<th style="padding:4px 6px;font-size:11px">Totaal</th>':'');
+  var body=rows.map(function(m){
+    var tot=0;
+    var tds=idxs.map(function(i){
+      if(i===null)return '<td style="text-align:center;color:var(--muted)">–</td>';
+      var st=m.roster[i],inCol=col.members.indexOf(locOf(m,i))>=0,u=Math.round(mWeight(m,i)*80)/10;
+      if(inCol)tot+=u;
+      if(!inCol)return '<td style="text-align:center;color:var(--muted);font-size:11px" title="Staat die dag bij een andere locatie">elders</td>';
+      var c=dienstStyle(st||'');
+      return '<td style="text-align:center;padding:3px 4px"><span style="display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;background:'+c[0]+';color:'+c[1]+'" title="'+stLabel(st||'')+'">'+(stLabel(st||'')||'–')+(u?' · '+u+'u':'')+'</span></td>';
+    }).join('');
+    return '<tr><td style="padding:3px 8px;font-size:12px;white-space:nowrap">'+mLabel(m)+'</td>'+tds+(dagen.length>1?'<td style="text-align:center;font-weight:700;font-size:12px">'+Math.round(tot)+' u</td>':'')+'</tr>';
+  }).join('');
+  return '<h2 style="font-size:16px;margin-top:16px">Monteurs · '+col.naam+'</h2><p class="sub">'+rows.length+' monteurs · status en beschikbare uren per dag</p>'+
+    '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%"><thead><tr>'+th+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+}
 function viewGrafiekDag(regs){
   var vals=regs.map(function(c){return {key:c.key,naam:c.naam,d:colDekking(c,curDay)};});
   var b=grafiekBarsBlock(vals,false,'2-weken detail');
@@ -2786,6 +2812,7 @@ function viewGrafiekDag(regs){
         '<div class="metric"><div class="l">Beschikbaar</div><div class="v" style="font-size:16px">'+uTxt(colBeschikbaar(selCol,curDay),selCol.benodigd)+'</div></div>'+
         '<div class="metric"><div class="l">Gem. 2 weken</div><div class="v">'+Math.round(selPts.reduce(function(a,b){return a+b;},0)/selPts.length)+'%</div></div></div>'+
         trendSvg(selPts,{h:130,todIdx:curDay,dayIsos:dayIsos14})+
+        monteurPaneel(selCol,[{iso:fmtIsoD(dateForIdx(curDay)),label:dLabel(curDay)}])+
       '</div>';
     }
   }
@@ -2834,6 +2861,7 @@ function viewGrafiekWeek(regs){
         '<div class="metric"><div class="l">Weekgemiddelde</div><div class="v">'+(selGem===null?'–':selGem+'%')+'</div></div>'+
         '<div class="metric"><div class="l">Benodigd per dag</div><div class="v" style="font-size:16px">'+Math.round(selCol.benodigd*8)+' u</div></div></div>'+
         trendSvg(selDayPts,{h:130,labels:dayLabels,todIdx:todIdx,dayIsos:dayIsosWk})+
+        monteurPaneel(selCol,alldays.map(function(dd,q){return {iso:fmtIsoD(dd),label:dayLabels[q]};}))+
       '</div>';
     }
   }
