@@ -3772,13 +3772,14 @@ function viewWeek(){
   var combo={key:'wk',naam:selNaam,members:memberIds,benodigd:benTot};
   var monteurs=M.filter(function(m){return memberIds.indexOf(m.base)>=0;});
   var wkLabel=weekTxt(weekStart);
+  var alleMonteurs=monteurs;monteurs=rZoekLijst(monteurs,wcols);
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
   var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0&&winShift<=0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7&&winShift>=12?' disabled':'')+'>week ›</button>'+(winShift>0||weekStart===0?'<button id="wkNu">deze week</button>':'')+'</div>';
   html+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){html+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
-  html+='</div></div><p class="sub" style="margin:-4px 0 10px">Klik meerdere gebieden aan om ze samen te zien, of &#8220;Alles&#8221; voor het hele land. De keuze volgt de groepering bovenin (5 regio\'s of 3 clusters).</p>';
+  html+='</div>'+rZoekHtml()+'</div><p class="sub" style="margin:-4px 0 10px">Klik meerdere gebieden aan om ze samen te zien, of &#8220;Alles&#8221; voor het hele land. De keuze volgt de groepering bovenin (5 regio\'s of 3 clusters).</p>';
   var paneel='',paneelNa=null;
   if(editCell){
     var html0=html;html='';
@@ -3873,6 +3874,14 @@ function wkPasToe(fn){
 }
 /* ---------- Rooster per maand (alleen kijken) ---------- */
 var rMode='maand', rMaandOff=0, RMND={};
+var rZoek='';
+function rZoekSet(v){rZoek=v;render();var el=document.getElementById('rZoek');if(el){el.focus();try{el.setSelectionRange(v.length,v.length);}catch(e){}}}
+function rZoekHtml(){return '<input id="rZoek" type="search" placeholder="Zoek monteur (code of woonplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;min-width:230px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
+function rZoekLijst(monteurs,wcols){
+  var q=rZoek.trim().toLowerCase();if(!q)return monteurs;
+  var ids=[];wcols.forEach(function(c){c.members.forEach(function(id){if(ids.indexOf(id)<0)ids.push(id);});});
+  return M.filter(function(m){return ids.indexOf(m.base)>=0&&(mLabel(m).toLowerCase().indexOf(q)>=0||String(m.naam).toLowerCase().indexOf(q)>=0||String(m.woonNaam).toLowerCase().indexOf(q)>=0);});
+}
 var mSel=[], rMonLijst=[], rMonDagen=[];
 function mKies(mid,iso){var i=-1;mSel.forEach(function(c,k){if(c.mid===mid&&c.iso===iso)i=k;});if(i>=0)mSel.splice(i,1);else mSel.push({mid:mid,iso:iso});render();}
 function mKiesKolom(iso){var all=rMonLijst.every(function(id){return mSel.some(function(c){return c.mid===id&&c.iso===iso;});});mSel=mSel.filter(function(c){return c.iso!==iso;});if(!all)rMonLijst.forEach(function(id){mSel.push({mid:id,iso:iso});});render();}
@@ -3968,7 +3977,8 @@ function viewRoosterMaand(wcols,alles,monteurs){
   h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><div class="ctrl"><button onclick="rMaandNav(-1)">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button onclick="rMaandNav(1)">maand ›</button>'+(rMaandOff?'<button onclick="rMaandNav(0)">deze maand</button>':'')+'</div>';
   h+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){h+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
-  h+='</div></div>';
+  h+='</div>'+rZoekHtml()+'</div>';
+  if(rZoek.trim())h+='<p class="sub" style="margin:-6px 0 8px">Zoeken in alle gebieden: '+monteurs.length+' monteur'+(monteurs.length===1?'':'s')+' gevonden.</p>';
   if(!data.loaded)h+='<p class="sub">Rooster van '+mnL[mo]+' wordt geladen…</p>';
   var kort={dagvroeg:'dv',dag:'d',waak:'w',sw:'sw',nacht:'n',cursus:'o'};var afwK={ziek:'z',verlof:'v',nb:'nb',garage:'g',comp:'c',cursus:'o'};
   h+='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:3px 8px;position:sticky;left:0;background:var(--bg,#fff)">Monteur</th>';
