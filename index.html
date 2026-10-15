@@ -5945,7 +5945,7 @@ function isoOf(idx){var d=dateFor(idx);return d.getFullYear()+'-'+('0'+(d.getMon
 /* DB-type ↔ v18-status. hrs bij compensatie = nog-inzetbare uren. */
 function typeToStatus(type,hrs){
   if(type==='vroeg')return 'dagvroeg';
-  if(type==='zara'||type==='techno'){var zh=Math.round(hrs||8);return zh===8?'dag':type+':'+Math.max(1,Math.min(12,zh));}
+  if(type==='zara'||type==='techno'){var zh=Math.round(hrs||8);return type+':'+Math.max(1,Math.min(12,zh));}   // ook 8 uur blijft een Zara-/Techno-dienst
   if(type==='dag')return 'dag';
   if(type==='laat')return 'waak';
   if(type==='sw')return 'sw';
