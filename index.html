@@ -1175,7 +1175,7 @@ var role=null;
 var boardView='bord', startOn=true;   // iedereen landt op dezelfde startpagina
 var pick=null; // {mid, day}
 var weekStart=7, weekLoc='ZO', weekSel=[], editCell=null; // weekrooster state
-var plNacht=false, plView='dag'; // planner: met nachtklus-pincode mag hij nachtklussen invullen
+var plNacht=false, plView='heat'; // planner: met nachtklus-pincode mag hij nachtklussen invullen
 var editCells=[];  // alle cellen van de huidige (sleep)selectie; editCell = de ankercel
 var wkDrag={bezig:false,anker:null,verplaatst:false,gekoppeld:false}; // sleepstatus weekrooster
 var gView='dag'; // manager G: dag / week / kwartaal
@@ -1336,7 +1336,7 @@ function setCtrls(){
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='log' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && !(boardView==='balans' && balansPeriode==='week');
   var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && (tlMode==='dag'||tlMode==='schuif');
   var uvDayNav = false;
-  var dnOn=!startOn&&(rdBoardNav || tlDayNav || uvDayNav || role==='PL');
+  var dnOn=!startOn&&(rdBoardNav || tlDayNav || uvDayNav || (role==='PL'&&!plNacht));
   var dnRes=(role==='RD'||role==='TZ'||role==='TN'||role==='TS');   // vaste plek: de rij blijft staan, ook als de dagknoppen niet nodig zijn
   show('dayNav', dnOn||dnRes);
   document.getElementById('dayNav').classList.toggle('dn-leeg',!dnOn&&dnRes);
@@ -1370,7 +1370,7 @@ function setCtrls(){
   } else if(role==='UV'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button><button data-uv="rooster">Mijn rooster</button>';
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;uvView=b.dataset.uv;setCtrls();render();};});
-  } else if(role==='PL'){vt.classList.remove('hidden');vt.innerHTML='<button data-start="1">Start</button><button data-pl="dag">Dag</button><button data-pl="week">Rooster</button><button data-pl="heat">Heatmap</button>';
+  } else if(role==='PL'){vt.classList.remove('hidden');vt.innerHTML='<button data-start="1">Start</button>'+(plNacht?'<button data-pl="grafiek">Grafiek</button><button data-pl="week">Rooster</button>':'<button data-pl="heat">Heatmap</button>');
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){startOn=!b.dataset.start?false:true;if(b.dataset.pl){plView=b.dataset.pl;if(plView==='week'){weekStart=curDay>=7?7:0;rMode='maand';rMaandOff=0;}}editCell=null;editCells=[];mSel=[];setCtrls();render();};});
   } else {vt.classList.add('hidden');vt.innerHTML='';}
   if(vt&&role){var allen=vt.querySelectorAll('button');
@@ -2169,7 +2169,7 @@ function render(){
   else if(role==='TZ') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewTeam()));
   else if(role==='TN') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewBuitenTeam('Noord')));
   else if(role==='TS') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewBuitenTeam('Zuid')));
-  else if(role==='PL') v.innerHTML=(plView==='week'?viewWeek():plView==='heat'?viewHeatmap('Alle locaties'):viewPlannerDag());
+  else if(role==='PL') v.innerHTML=!plNacht?viewHeatmap('Planner · alleen-lezen'):(plView==='week'?viewWeek():viewManagerG());
   else if(role==='UV') v.innerHTML=viewUitvoering();
   if(winShift!==0&&(role==='RD'||role==='TZ'||role==='TN'||role==='TS')){v.insertAdjacentHTML('afterbegin','<div class="ai" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span><span class="dot"></span>Je werkt in <b>week '+isoWeek(dateForIdx(7))+'</b> ('+dLabel(7)+' t/m '+dLabel(13)+'), niet in de huidige week.</span><button class="acc ghost" onclick="shiftWindow(0,realToday())">terug naar vandaag</button></div>');}
   if(role==='RD'&&boardView==='bord') wireBoard();
@@ -2182,7 +2182,7 @@ function render(){
   if(role==='G'&&gView==='dag') wireManagerG();
   if(role==='G'&&(gView==='kwartaal'||gView==='jaar')) wireKwartaal();
   if(role==='G'&&gView!=='prognose') gKpiWire();
-  if(role==='PL'){if(plView==='week')wireWeek();else if(plView==='heat')wireHeatmap();}
+  if(role==='PL'){if(!plNacht)wireHeatmap();else if(plView==='week')wireWeek();else wireManagerG();}
   if(role==='UV'){
     document.querySelectorAll('[data-uvkies]').forEach(function(b){b.onclick=function(){uvKies(b.dataset.uvkies);};});
     document.querySelectorAll('[data-uvwk]').forEach(function(b){b.onclick=function(){var d=+b.dataset.uvwk;if(d===0)shiftWindow(1,realToday()-7);else uvWeek(d);};});
@@ -4009,7 +4009,7 @@ function rMaandLaad(key,namen,van,tot){
       if(!r.data||r.data.length<stap)break;from+=stap;
     }
   }catch(e){console.error('[Rooster] maand laden faalde',e);}
-  o.loaded=true;if((role==='RD'&&boardView==='week')||tlMode==='week'||(role==='PL'&&plView==='week'))render();})();
+  o.loaded=true;if((role==='RD'&&boardView==='week')||tlMode==='week'||(role==='PL'&&plNacht&&plView==='week'))render();})();
   return o;
 }
 function viewRoosterMaand(wcols,alles,monteurs){
@@ -6031,7 +6031,7 @@ function doLogin(){
   var r=ROLES.find(function(x){return x.id===selRole;});
   var pinIn=document.getElementById('pin').value, nachtPin=!!(r.pinNacht&&pinIn===r.pinNacht);
   if(pinIn!==r.pin&&!nachtPin){err.textContent='Onjuiste pincode.';return;}
-  plNacht=nachtPin; plView='dag';
+  plNacht=nachtPin; plView=nachtPin?'grafiek':'heat';
   winShift=0;TODAY=realToday();role=selRole;boardView='bord';startOn=true;curDay=TODAY;pick=null;weekStart=7;weekLoc='ZO';weekSel=[];editCell=null;editCells=[];gView='dag';tlMode='dag';uvView='rooster';
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
@@ -6043,7 +6043,7 @@ function doLogin(){
 /* ---------- events ---------- */
 document.getElementById('loginBtn').onclick=doLogin;
 document.getElementById('pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
-document.getElementById('logout').onclick=function(){plNacht=false;plView='dag';role=null;selRole=null;document.getElementById('pin').value='';document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('pinHint').textContent='';document.querySelectorAll('.role-btn').forEach(function(x){x.classList.remove('sel');});};
+document.getElementById('logout').onclick=function(){plNacht=false;plView='heat';role=null;selRole=null;document.getElementById('pin').value='';document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('pinHint').textContent='';document.querySelectorAll('.role-btn').forEach(function(x){x.classList.remove('sel');});};
 document.getElementById('prevDay').onclick=function(){if(curDay>0){curDay--;pick=null;render();}else shiftWindow(winShift-1,6);};
 document.getElementById('nextDay').onclick=function(){if(curDay<13){curDay++;pick=null;render();}else shiftWindow(winShift+1,7);};
 document.getElementById('todayBtn').onclick=function(){if(winShift!==0)shiftWindow(0,realToday());else{curDay=TODAY;pick=null;render();}};
@@ -6321,7 +6321,7 @@ function viewStart(){
     TZ:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     TN:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     TS:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
-    PL:[['pl:dag','Bezetting vandaag'],['pl:week','Rooster'],['pl:heat','Heatmap']],UV:[['uv:rooster','Mijn rooster']]}[role]||[];
+    PL:(plNacht?[['pl:grafiek','Grafiek'],['pl:week','Rooster']]:[['pl:heat','Heatmap']]),UV:[['uv:rooster','Mijn rooster']]}[role]||[];
   h+='<div class="wd-card"><div class="wd-ct">Ga naar</div><div class="ctrl" style="flex-wrap:wrap;gap:6px">'+acties.map(function(a){return '<button data-go="'+a[0]+'">'+a[1]+'</button>';}).join('')+'</div></div>';
   return h;
 }
