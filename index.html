@@ -6002,7 +6002,13 @@ async function sbLoad(opts){
     var van=isoOf(0), tot=isoOf(13);
     sbAgg={};   // week/kwartaal/jaar-aggregaten zijn na een wijziging (eigen of via realtime) verouderd
     var idxByIso={}; for(var i=0;i<14;i++)idxByIso[isoOf(i)]=i;
-    var r=await sb.from('rooster_entries').select('datum,monteur,type,hrs').gte('datum',van).lte('datum',tot).limit(2000);
+    var r={data:[],error:null};
+    for(var pf=0;;pf+=1000){   // Supabase geeft max 1000 rijen per verzoek: pagineer, anders vallen diensten weg
+      var pr0=await sb.from('rooster_entries').select('datum,monteur,type,hrs').gte('datum',van).lte('datum',tot).order('id').range(pf,pf+999);
+      if(pr0.error){r.error=pr0.error;break;}
+      r.data=r.data.concat(pr0.data||[]);
+      if(!pr0.data||pr0.data.length<1000)break;
+    }
     if(r.error)throw r.error;
     M.forEach(function(m){for(var d=0;d<14;d++)m.roster[d]='vrij';m.uren={};});
     (r.data||[]).forEach(function(row){var m=MNAAM[row.monteur];var idx=idxByIso[row.datum];
