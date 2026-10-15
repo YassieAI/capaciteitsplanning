@@ -3999,7 +3999,7 @@ function rMaandLaad(key,namen,van,tot){
       if(!r.data||r.data.length<stap)break;from+=stap;
     }
   }catch(e){console.error('[Rooster] maand laden faalde',e);}
-  o.loaded=true;if((role==='RD'&&boardView==='week')||tlMode==='week')render();})();
+  o.loaded=true;if((role==='RD'&&boardView==='week')||tlMode==='week'||(role==='PL'&&plNacht&&plView==='nacht'))render();})();
   return o;
 }
 function viewRoosterMaand(wcols,alles,monteurs){
@@ -4111,9 +4111,15 @@ function wireWeek(){
 
 /* ---------- planner: nachtklussen invullen (alleen met de nachtklus-pincode) ---------- */
 var nachtVoor={}; // m.id+':'+dag -> dienst vóór de nachtklus, zodat weghalen hem terugzet
+var nkMode='week', nkKlik=false, nkMaandOff=0;   // week of maand · klikken pas na bewust aanzetten, zodat een losse klik nooit een nachtklus zet
+function nkKnoppen(){
+  return '<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><button id="nkModeW" class="'+(nkMode==='week'?'active':'')+'">Week</button><button id="nkModeM" class="'+(nkMode==='maand'?'active':'')+'">Maand</button>'+
+    '<button id="nkKlik" class="'+(nkKlik?'active':'')+'" title="Zet klikken aan om nachtklussen te zetten of weg te halen">'+(nkKlik?'&#9679; Klikken staat aan: klik op een dag voor een nachtklus':'&#9675; Alleen bekijken (klik hier om nachtklussen te zetten)')+'</button></div>';
+}
 function viewNacht(){
   var ms=M.slice().sort(function(a,b){return (a.base+a.ini).localeCompare(b.base+b.ini);});
-  var h='<h2>Nachtklussen invullen</h2><p class="sub">Klik op een dag om een nachtklus te zetten, klik nog eens om hem weg te halen. Een nachtklus telt als hele dag compensatie en de middag ervoor als halve dag; dekking en grafieken passen direct mee aan.</p>';
+  var h='<h2>Nachtklussen invullen</h2><p class="sub">'+(nkKlik?'Klik op een dag om een nachtklus te zetten, klik nog eens om hem weg te halen. ':'Je bekijkt nu alleen het rooster. Zet &#8220;klikken&#8221; aan om nachtklussen te zetten of weg te halen. ')+'Een nachtklus telt als hele dag compensatie en de middag ervoor als halve dag; dekking en grafieken passen direct mee aan.</p>'+nkKnoppen();
+  if(nkMode==='maand')return h+viewNachtMaand(ms);
   h+='<div class="ctrl" style="margin-bottom:10px"><button id="nkPrev">‹ week</button><span class="daylabel" style="min-width:150px">week '+isoWeek(dateFor(weekStart))+' · '+dChip(weekStart)+' – '+dChip(weekStart+6)+'</span><button id="nkNext">week ›</button></div>';
   h+='<div class="hm"><table class="hm-t" style="font-size:12px"><tr><td class="hm-lab"></td>';
   for(var d=weekStart;d<weekStart+7;d++)h+='<td class="hm-day'+(d===TODAY?' hm-now':'')+'">'+dShort(d)+'</td>';
@@ -4123,15 +4129,72 @@ function viewNacht(){
     if(m.base!==vorige){h+='<tr><td colspan="8" style="padding:8px 0 2px;font-size:11px;color:var(--muted);font-weight:600">'+(LOCMAP[m.base]?LOCMAP[m.base].naam:m.base)+'</td></tr>';vorige=m.base;}
     h+='<tr><td class="hm-lab" style="color:var(--text)" title="'+mLabel(m)+'">'+mLabel(m)+'</td>';
     for(var d2=weekStart;d2<weekStart+7;d2++){var st=m.roster[d2],cs=dienstStyle(st);
-      h+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="wkcell" data-nk="'+m.id+'|'+d2+'" title="'+(st==='nacht'?'nachtklus weghalen':'nachtklus zetten')+'" style="cursor:pointer;text-align:center;padding:5px 2px;border-radius:5px;font-weight:500;background:'+cs[0]+';color:'+cs[1]+'">'+(celLabel(st,d2)||'–')+'</div></td>';}
+      h+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="wkcell" '+(nkKlik?'data-nk="'+m.id+'|'+d2+'" title="'+(st==='nacht'?'nachtklus weghalen':'nachtklus zetten')+'"':'title="alleen bekijken"')+' style="'+(nkKlik?'cursor:pointer;':'cursor:default;')+'text-align:center;padding:5px 2px;border-radius:5px;font-weight:500;background:'+cs[0]+';color:'+cs[1]+'">'+(celLabel(st,d2)||'–')+'</div></td>';}
     h+='</tr>';
   });
   return h+'</table></div>';
 }
+function viewNachtMaand(ms){
+  var nu=new Date(),eerste=new Date(nu.getFullYear(),nu.getMonth()+nkMaandOff,1),j=eerste.getFullYear(),mo=eerste.getMonth();
+  var mnL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  var wk=['zo','ma','di','wo','do','vr','za'];
+  var nd=new Date(j,mo+1,0).getDate(),van=fmtIsoD(new Date(j,mo,1)),tot=fmtIsoD(new Date(j,mo,nd));
+  var namen=ms.map(function(m){return m.naam;});
+  var data=rMaandLaad(namen.join(',')+'|'+van,namen,van,tot);
+  var kort={dagvroeg:'dv',dag:'d',waak:'w',sw:'sw',nacht:'n',cursus:'o'};var afwK={ziek:'z',verlof:'v',nb:'nb',garage:'g',comp:'c',cursus:'o'};
+  var h='<div class="ctrl" style="margin-bottom:10px"><button id="nkMPrev">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button id="nkMNext">maand ›</button>'+(nkMaandOff?'<button id="nkMNu">deze maand</button>':'')+'</div>';
+  if(!data.loaded)h+='<p class="sub">Rooster van '+mnL[mo]+' wordt geladen…</p>';
+  h+='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:3px 8px;position:sticky;left:0;background:var(--bg,#fff)">Monteur</th>';
+  for(var d=1;d<=nd;d++){var dt0=new Date(j,mo,d),we=(dt0.getDay()===0||dt0.getDay()===6),isNu=fmtIsoD(dt0)===fmtIsoD(nu);
+    h+='<th style="padding:2px 1px;min-width:26px;font-weight:'+(isNu?'700':'400')+';color:'+(we?'var(--muted)':'var(--text)')+'">'+d+'<div style="font-size:9px;color:var(--muted)">'+wk[dt0.getDay()]+'</div></th>';}
+  h+='</tr></thead><tbody>';
+  var vorige=null;
+  ms.forEach(function(m){
+    if(m.base!==vorige){h+='<tr><td colspan="'+(nd+1)+'" style="padding:8px 8px 2px;font-size:11px;color:var(--muted);font-weight:600">'+(LOCMAP[m.base]?LOCMAP[m.base].naam:m.base)+'</td></tr>';vorige=m.base;}
+    h+='<tr><td style="padding:2px 8px;white-space:nowrap;position:sticky;left:0;background:var(--bg,#fff)">'+mLabel(m)+'</td>';
+    for(var d3=1;d3<=nd;d3++){
+      var dt=new Date(j,mo,d3),iso=fmtIsoD(dt),idx=uvIdxVan(dt),live=idx>=0&&idx<=13&&m.roster[idx]!==undefined;
+      var st,u;
+      if(live){st=m.roster[idx];u=m.uren&&m.uren[idx]||0;}
+      else{var e=(data.d[m.naam]||{})[iso];st=e?e.st:'vrij';u=e?e.u:0;}
+      var cs=dienstStyle(st),tx='',zg=zdGroep(st);
+      if(zg)tx=(zg==='zara'?'Z':zg==='techno'?'T':'d')+zdUren(st);
+      else if(kort[st])tx=kort[st]+(u?'<span style="font-size:8px">'+u+'</span>':'');
+      else{var ak=afwSoort(st);if(ak)tx=afwK[ak]||ak.slice(0,2);}
+      var vrij=!tx;
+      h+='<td style="padding:1px"><div '+(nkKlik?'data-nkm="'+m.id+'|'+iso+'" ':'')+'title="'+(stLabel(st)||'vrij')+' · '+d3+' '+mnL[mo]+(nkKlik?(st==='nacht'?' · klik om nachtklus weg te halen':' · klik om nachtklus te zetten'):'')+'" style="text-align:center;border-radius:4px;padding:3px 0;'+(nkKlik?'cursor:pointer;':'')+'background:'+(vrij?'transparent':cs[0])+';color:'+cs[1]+';'+(vrij?'opacity:.35;':'')+'">'+(tx||'·')+'</div></td>';
+    }
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp.</p>';
+}
+function nkZet(m,iso,idx){
+  var live=idx>=0&&idx<=13&&m.roster[idx]!==undefined;
+  var data=null,cur;
+  if(live)cur=m.roster[idx];
+  else{var nm=Object.keys(RMND).filter(function(k){return RMND[k].d&&k.split('|')[1]===iso.slice(0,8)+'01';})[0];cur=nm&&RMND[nm].d[m.naam]&&RMND[nm].d[m.naam][iso]?RMND[nm].d[m.naam][iso].st:'vrij';}
+  var key=m.id+':'+iso,we=(new Date(iso+'T12:00:00').getDay()%6===0),nieuw;
+  if(cur==='nacht'){nieuw=nachtVoor[key]||(we?'vrij':'dag');delete nachtVoor[key];}
+  else{nachtVoor[key]=cur;nieuw='nacht';}
+  if(live){m.roster[idx]=nieuw;sbSaveStatus(m,idx);}
+  else sbSaveDatum(m,iso,nieuw,0);
+  render();
+}
 function wireNacht(){
+  function zetMode(x){nkMode=x;render();}
+  var mw=document.getElementById('nkModeW');if(mw)mw.onclick=function(){zetMode('week');};
+  var mm=document.getElementById('nkModeM');if(mm)mm.onclick=function(){zetMode('maand');};
+  var kk=document.getElementById('nkKlik');if(kk)kk.onclick=function(){nkKlik=!nkKlik;render();};
+  var mp=document.getElementById('nkMPrev');if(mp)mp.onclick=function(){nkMaandOff--;render();};
+  var mn=document.getElementById('nkMNext');if(mn)mn.onclick=function(){nkMaandOff++;render();};
+  var mu=document.getElementById('nkMNu');if(mu)mu.onclick=function(){nkMaandOff=0;render();};
+  document.querySelectorAll('[data-nkm]').forEach(function(c){c.onclick=function(){
+    if(!nkKlik)return;var x=c.dataset.nkm.split('|'),m=M.filter(function(q){return q.id===x[0];})[0];if(!m)return;
+    var p=x[1].split('-');nkZet(m,x[1],uvIdxVan(new Date(+p[0],+p[1]-1,+p[2])));};});
   var p=document.getElementById('nkPrev');if(p)p.onclick=function(){if(weekStart===7){weekStart=0;render();}else if(winShift>0){shiftWindow(winShift-1,0);}};
   var n=document.getElementById('nkNext');if(n)n.onclick=function(){if(weekStart===0){weekStart=7;render();}else{shiftWindow(winShift+1,7);}};
   document.querySelectorAll('[data-nk]').forEach(function(c){c.onclick=function(){
+    if(!nkKlik)return;
     var x=c.dataset.nk.split('|'),m=M.filter(function(q){return q.id===x[0];})[0],d=+x[1];if(!m)return;
     var key=m.id+':'+d;
     if(m.roster[d]==='nacht'){m.roster[d]=nachtVoor[key]||(isWeekendIdx(d)?'vrij':'dag');delete nachtVoor[key];}
