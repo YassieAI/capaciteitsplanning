@@ -1048,6 +1048,7 @@ var WOON={
  Nijmegen:[51.84,5.86],Arnhem:[51.98,5.90],Apeldoorn:[52.21,5.97],Doetinchem:[51.97,6.29],
  Rotterdam:[51.92,4.48],Breda:[51.59,4.78],Tilburg:[51.56,5.09],Dordrecht:[51.81,4.67],Gorinchem:[51.83,4.97],
  Eindhoven:[51.44,5.48],Venlo:[51.37,6.17],DenBosch:[51.70,5.30],Oss:[51.77,5.52],
+ Zeist:[52.09,5.23],Leidschendam:[52.08,4.39],Biddinghuizen:[52.45,5.69],Oosterbeek:[51.99,5.85],Almere:[52.37,5.22],Noordwolde:[52.85,6.07],Rijswijk:[52.04,4.32],
  Leiden:[52.16,4.49],Zoetermeer:[52.06,4.49],Gouda:[52.01,4.71],Delft:[52.01,4.36],Schiedam:[51.92,4.40],Middelburg:[51.50,3.61]
 };
 var LOC=[
@@ -1103,28 +1104,27 @@ var RAW=[
  ['NGHU01','Eindhoven','ZO','NGHU01'],
  ['MUGO07','Rotterdam','MI','MUGO07'],
  ['BASW01','Bergen (L)','ZO','BASW01'],
- ['Z01','Nieuwegein','ZAM','ZARA Ams Z01'],
- ['Z02','Haarlem','ZAM','ZARA Ams Z02'],
- ['Z03','Zaandam','ZAM','ZARA Ams Z03'],
- ['Z04','Amsterdam','ZAM','ZARA Ams Z04'],
- ['Z05','Purmerend','ZAM','ZARA Ams Z05'],
- ['Z06','Amsterdam','ZAM','ZARA Ams Z06'],
- ['Z07','Haarlem','ZAM','ZARA Ams Z07'],
- ['Z08','Zaandam','ZAM','ZARA Ams Z08'],
- ['Z09','Amsterdam','ZAM','ZARA Ams Z09'],
- ['Z10','Alkmaar','ZAM','ZARA Ams Z10'],
- ['Z11','Amsterdam','ZAM','ZARA Ams Z11'],
- ['Z21','Amsterdam','ZAM','ZARA Ams Z21'],
- ['Z22','Haarlem','ZAM','ZARA Ams Z22'],
- ['Z12','Schiedam','ZRO','ZARA Ams Z12'],
- ['Z13','Gorinchem','ZRO','ZARA Ams Z13'],
- ['Z14','Gorinchem','ZRO','ZARA Ams Z14'],
- ['Z15','Middelburg','ZRO','ZARA Ams Z15'],
- ['Z16','Rotterdam','ZRO','ZARA Ams Z16'],
- ['Z17','Arnhem','ZAR','ZARA Ams Z17'],
- ['Z18','Doetinchem','ZAR','ZARA Ams Z18'],
- ['Z19','Ede','ZAR','ZARA Ams Z19'],
- ['Z20','Zwolle','ZZW','ZARA Ams Z20'],
+ ['STAR01','Almere','ZAM','STAR01'],
+ ['REGR01','Purmerend','ZAM','REGR01'],
+ ['DAPR04','Zoetermeer','ZAM','DAPR04'],
+ ['HEVI01','Amersfoort','ZAM','HEVI01'],
+ ['KHA02','Zeist','ZAM','KHA02'],
+ ['ADKH01','Leidschendam','ZAM','ADKH01'],
+ ['ERMI03','Amsterdam','ZAM','ERMI03'],
+ ['MESE','Kampen','ZAM','MESE'],
+ ['THTE02','Biddinghuizen','ZAM','THTE02'],
+ ['Z01','Amsterdam','ZAM','ZARA Ams Z01'],
+ ['Z02','Amsterdam','ZAM','ZARA Ams Z02'],
+ ['Z03','Rotterdam','ZRO','ZARA Ams Z03'],
+ ['JUGR01','Leidschendam','ZRO','JUGR01'],
+ ['FRSC02','Rotterdam','ZRO','FRSC02'],
+ ['RESO02','Rijswijk','ZRO','RESO02'],
+ ['PAVE01','Schiedam','ZRO','PAVE01'],
+ ['ROMS','Noordwolde','ZZW','ROMS'],
+ ['Z04','Arnhem','ZAR','ZARA Ams Z04'],
+ ['LAHA02','Oosterbeek','ZAR','LAHA02'],
+ ['PAVO02','Oss','ZAR','PAVO02'],
+ ['ARBR01','Arnhem','ZAR','ARBR01'],
  ['T01','Utrecht','TCU','Techno monteur T01'],
  ['T02','Amersfoort','TCU','Techno monteur T02'],
  ['T03','Nieuwegein','TCU','Techno monteur T03'],
@@ -3875,8 +3875,17 @@ function wkPasToe(fn){
 /* ---------- Rooster per maand (alleen kijken) ---------- */
 var rMode='maand', rMaandOff=0, RMND={};
 var rZoek='';
-function rZoekSet(v){rZoek=v;render();var el=document.getElementById('rZoek');if(el){el.focus();try{el.setSelectionRange(v.length,v.length);}catch(e){}}}
-function rZoekHtml(){return '<input id="rZoek" type="search" placeholder="Zoek monteur (code of woonplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;min-width:230px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
+var rZoekT=null;
+function rZoekSet(v){
+  rZoek=v;clearTimeout(rZoekT);
+  rZoekT=setTimeout(function(){
+    var y=window.scrollX,x=window.scrollY;var el0=document.getElementById('rZoek');var pos=el0?el0.selectionStart:v.length;
+    render();
+    var el=document.getElementById('rZoek');if(el){el.focus({preventScroll:true});try{el.setSelectionRange(pos,pos);}catch(e){}}
+    window.scrollTo(y,x);
+  },350);
+}
+function rZoekHtml(){return '<input id="rZoek" type="text" autocomplete="off" placeholder="Zoek monteur (code of woonplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;width:260px;flex:none;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
 function rZoekLijst(monteurs,wcols){
   var q=rZoek.trim().toLowerCase();if(!q)return monteurs;
   var ids=[];wcols.forEach(function(c){c.members.forEach(function(id){if(ids.indexOf(id)<0)ids.push(id);});});
