@@ -1196,7 +1196,7 @@ function isOperational(){return role==='RD'||role==='TZ'||role==='TB';}
 function tlKleur(naam){naam=String(naam||'');if(/zara|techno/i.test(naam))return '#8e5bd1';if(/noord/i.test(naam))return '#1f7fd6';if(/zuid/i.test(naam))return '#e0731f';return '#6b6a63';}
 function tlBadge(naam){var c=tlKleur(naam);return '<span class="badge" style="background:'+c+'1f;color:'+c+';border:1px solid '+c+'66"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+c+';margin-right:5px"></i>'+esc(naam)+'</span>';}
 function isDienstProp(p){return typeof p.tgt==='string'&&p.tgt.indexOf('st:')===0;}
-function propNaam(p){if(isDienstProp(p)){var v=p.tgt.slice(3);return 'dienst: '+(dienstShow(v,p.day)||(afwSoort(v)?stLabel(v):'vrij'));}return LOCMAP[p.tgt]?LOCMAP[p.tgt].naam:p.tgt;}
+function propNaam(p){if(isDienstProp(p)){var v=p.tgt.slice(3).split('@')[0],vu=p.tgt.split('@')[1];return 'dienst: '+(vu?vu+' u ':'')+(dienstShow(v,p.day)||(afwSoort(v)?stLabel(v):'vrij'));}return LOCMAP[p.tgt]?LOCMAP[p.tgt].naam:p.tgt;}
 function pushProposal(mid,day,tgt){var p={id:propId++,mid:mid,day:day,tgt:tgt,by:ROLES.filter(function(r){return r.id===role;})[0].naam,status:'open'};proposals.push(p);sbSaveProposal(p);}
 
 var ROLES=[
@@ -1236,8 +1236,8 @@ function weight(st,day){
   var zu=zdUren(st); if(zu!==null) return zu/8;
   // In het weekend telt alleen wat expliciet is ingeroosterd (waak/dag/dagvroeg).
   // 'vrij' telt nooit mee, en compensatie-restuur telt in het weekend niet als capaciteit.
-  if(day!==undefined && isWeekendIdx(day)) return (st==='waak'||st==='dag'||st==='dagvroeg') ? 1 : 0;
-  if(st==='dag'||st==='dagvroeg'||st==='waak')return 1;
+  if(day!==undefined && isWeekendIdx(day)) return (st==='waak'||st==='dag'||st==='dagvroeg'||st==='sw') ? 1 : 0;
+  if(st==='dag'||st==='dagvroeg'||st==='waak'||st==='sw')return 1;
   if(st&&st.indexOf(':')>=0){var u=parseInt(st.split(':')[1],10)||0;return Math.max(0,(8-u)/8);}
   return 0;
 }
@@ -1250,8 +1250,8 @@ function afwUren(st){if(!st)return 0;if(st.indexOf(':')<0)return AFW.indexOf(st)
 function stLabel(st){var k=afwSoort(st);if(k){var u=afwUren(st);return AFW_LABEL[k]+(u<8?' · nog '+(8-u)+'u':'');}return st;}
 /* tekst in een roostercel: dienst, of afwezigheid met resterende uren */
 function celLabel(st,d){var w=dienstShow(st,d);if(w)return w;var k=afwSoort(st);if(!k)return '';var u=afwUren(st);return AFW_KORT[k]+(u<8&&k!=='comp'?'<span style="font-size:9px;display:block;opacity:.85">nog '+(8-u)+'u</span>':(k==='comp'?' '+u+'u':''));}
-function dienstShow(st,d){var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA ':zg==='techno'?'Techno ':'FF ')+zdUren(st)+'u';return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='cursus'||st==='nacht')?st:'';}
-var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',cursus:'opleiding (hele dag)',nacht:'nachtklus (comp. hele dag + middag ervoor)',vrij:'vrij'};
+function dienstShow(st,d){var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA ':zg==='techno'?'Techno ':'FF ')+zdUren(st)+'u';return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='sw'||st==='cursus'||st==='nacht')?st:'';}
+var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',sw:'schaduw waak (sw) 10:30–19:00',cursus:'opleiding (hele dag)',nacht:'nachtklus (comp. hele dag + middag ervoor)',vrij:'vrij'};
 /* capaciteit van één monteur op één dag. Nachtklus: de dag zelf is hele dag compensatie (telt 0),
    de middag van de dag ervoor ook (die dag telt een halve dag minder). */
 function mWeight(m,day){var w=weight(m.roster[day],day);var uo=m.uren&&m.uren[day];if(uo&&w>0){var s0=m.roster[day];if(s0==='dag'||s0==='dagvroeg'||s0==='waak')w=w*uo/8;}if(w>0&&m.roster[day+1]==='nacht')w=Math.max(0,w-0.5);return w;}
@@ -1352,7 +1352,7 @@ function setCtrls(){
       '<button data-v="bord" class="'+(boardView==='bord'?'active':'')+'">Schuifbord</button>'+
       '<button data-v="balans" class="'+(boardView==='balans'?'active':'')+'">Balans</button>'+
       '<button data-v="voorstellen" class="'+(boardView==='voorstellen'?'active':'')+'">Te bespreken'+(openCount?' ('+openCount+')':'')+'</button>'+'<button data-v="waak" class="'+(boardView==='waak'?'active':'')+'">Waakdienst</button>'+'<button data-v="log" class="'+(boardView==='log'?'active':'')+'">Wijzigingen</button>';
-    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;boardView=b.dataset.v;pick=null;editCell=null;editCells=[];setCtrls();render();};});
+    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;boardView=b.dataset.v;if(boardView==='week'){rMode='maand';rMaandOff=0;}pick=null;editCell=null;editCells=[];setCtrls();render();};});
   } else if(role==='G'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button>'+
     '<button data-gv="dag" class="'+(gView==='dag'?'active':'')+'">Dashboard</button>'+
@@ -1366,7 +1366,7 @@ function setCtrls(){
     '<button data-tl="week" class="'+(tlMode==='week'?'active':'')+'">Rooster</button>'+
     '<button data-tl="schuif" class="'+(tlMode==='schuif'?'active':'')+'">Schuifbord</button>'+
     '<button data-tl="waak" class="'+(tlMode==='waak'?'active':'')+'">Waakdienst</button>';
-    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;tlMode=b.dataset.tl;if(tlMode==='week'){weekStart=curDay>=7?7:0;}setCtrls();render();};});
+    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;tlMode=b.dataset.tl;if(tlMode==='week'){weekStart=curDay>=7?7:0;rMode='maand';rMaandOff=0;}setCtrls();render();};});
   } else if(role==='UV'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button><button data-uv="rooster">Mijn rooster</button>';
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;uvView=b.dataset.uv;setCtrls();render();};});
@@ -3329,7 +3329,7 @@ function wireVoorstellen(){
   document.querySelectorAll('[data-vwdnee]').forEach(function(b){b.onclick=function(){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.vwdnee;})[0];if(!r)return;r.status='nee';removeProposal(r.id,'gesloten');render();};});
   document.querySelectorAll('[data-vwvok]').forEach(function(b){b.onclick=function(){var v=wdVerpl.filter(function(x){return x.id===+b.dataset.vwvok;})[0];if(!v)return;v.status='goed';if(v.t==='w'){wdC();wdWeekPas(v);}else wdVerpPas(v);removeProposal(v.id,'doorgevoerd');render();};});
   document.querySelectorAll('[data-vwvnee]').forEach(function(b){b.onclick=function(){var v=wdVerpl.filter(function(x){return x.id===+b.dataset.vwvnee;})[0];if(!v)return;v.status='nee';removeProposal(v.id,'gesloten');render();};});
-  document.querySelectorAll('[data-vacc]').forEach(function(b){b.onclick=function(){var id=+b.dataset.vacc;var p=proposals.filter(function(x){return x.id===id;})[0];if(isDienstProp(p)){var pm=M.filter(function(x){return x.id===p.mid;})[0];pm.roster[p.day]=p.tgt.slice(3);sbSaveStatus(pm,p.day);}else applyMove(p.mid,p.day,p.tgt);removeProposal(id,'doorgevoerd');render();};});
+  document.querySelectorAll('[data-vacc]').forEach(function(b){b.onclick=function(){var id=+b.dataset.vacc;var p=proposals.filter(function(x){return x.id===id;})[0];if(isDienstProp(p)){var pm=M.filter(function(x){return x.id===p.mid;})[0];var tp=p.tgt.slice(3).split('@'),tst=tp[0],tu=tp[1]?parseInt(tp[1],10):0;if(p.day>=0&&p.day<=13){if(pm.uren)delete pm.uren[p.day];pm.roster[p.day]=tst;if(tu)pm.uren[p.day]=tu;sbSaveStatus(pm,p.day);}else sbSaveDatum(pm,isoOf(p.day),tst,tu);}else applyMove(p.mid,p.day,p.tgt);removeProposal(id,'doorgevoerd');render();};});
   document.querySelectorAll('[data-vrej]').forEach(function(b){b.onclick=function(){removeProposal(+b.dataset.vrej,'gesloten');render();};});
 }
 
@@ -3749,7 +3749,7 @@ function dienstStyle(st){
   if(st&&st.indexOf('garage:')===0)return ['#e8eef7','#334e7a'];
   if(st&&st.indexOf('nb:')===0)return ['#ececec','#555555'];
   if(st&&st.indexOf('cursus:')===0)return ['#fbe7f3','#9d174d'];
-  var map={dag:['var(--accent-bg)','var(--accent)'],dagvroeg:['#faeeda','#854f0b'],waak:['#eeedfe','#3c3489'],cursus:['#fbe7f3','#9d174d'],nacht:['#24324a','#e6ecf5'],ziek:['#fceceb','#a32d2d'],vrij:['var(--surface-1)','var(--muted)']};
+  var map={sw:['#eeedfe','#6b5fd0'],dag:['var(--accent-bg)','var(--accent)'],dagvroeg:['#faeeda','#854f0b'],waak:['#eeedfe','#3c3489'],cursus:['#fbe7f3','#9d174d'],nacht:['#24324a','#e6ecf5'],ziek:['#fceceb','#a32d2d'],vrij:['var(--surface-1)','var(--muted)']};
   return map[st]||['var(--surface-1)','var(--muted)'];
 }
 function miniWeekChart(locId){
@@ -3803,7 +3803,7 @@ function viewWeek(){
     html+='</select></label><span style="font-size:12px;color:var(--muted)">(8 of minder, geldt voor dagvroeg, dag, waak, ZARA en Techno)</span></div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">';
     // zelfde keuzes op elke dag — ook in het weekend kun je een gewone dienst inroosteren
-    ['dagvroeg','dag','waak','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);html+='<button class="acc ghost" data-set="'+d+'" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
+    ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);html+='<button class="acc ghost" data-set="'+d+'" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
     html+='</div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
     AFW.forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
@@ -3838,7 +3838,7 @@ function viewWeek(){
       var st=m.roster[d2];var cs=dienstStyle(st);
       var sel=editCells.some(function(c){return c.mid===m.id&&c.day===d2;});
       var vp=proposals.filter(function(p){return p.mid===m.id&&p.day===d2&&isDienstProp(p)&&p.status==='open';})[0];
-      html+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="wkcell'+(sel?' wkcell-sel':'')+'" data-mid="'+m.id+'" data-day="'+d2+'" style="text-align:center;padding:5px 2px;border-radius:5px;font-weight:500;background:'+cs[0]+';color:'+cs[1]+(vp?';outline:1.5px dashed var(--accent);outline-offset:-2px':'')+'"'+(vp?' title="Voorstel: '+propNaam(vp)+'"':'')+'>'+(celLabel(st,d2)||'–')+(m.uren&&m.uren[d2]&&weight(st,d2)>0?'<span style="font-size:9px;display:block;opacity:.85">'+m.uren[d2]+'u</span>':'')+(m.roster[d2+1]==='nacht'&&weight(st,d2)>0?'<span style="font-size:9px;display:block;opacity:.85">middag comp.</span>':'')+(vp?'<span style="font-size:9px;display:block;opacity:.8">→ '+(dienstShow(vp.tgt.slice(3),d2)||'vrij')+'</span>':'')+'</div></td>';
+      html+='<td class="'+(d2===TODAY?'hm-now':'')+'"><div class="wkcell'+(sel?' wkcell-sel':'')+'" data-mid="'+m.id+'" data-day="'+d2+'" style="text-align:center;padding:5px 2px;border-radius:5px;font-weight:500;background:'+cs[0]+';color:'+cs[1]+(vp?';outline:1.5px dashed var(--accent);outline-offset:-2px':'')+'"'+(vp?' title="Voorstel: '+propNaam(vp)+'"':'')+'>'+(celLabel(st,d2)||'–')+(m.uren&&m.uren[d2]&&weight(st,d2)>0?'<span style="font-size:9px;display:block;opacity:.85">'+m.uren[d2]+'u</span>':'')+(m.roster[d2+1]==='nacht'&&weight(st,d2)>0?'<span style="font-size:9px;display:block;opacity:.85">middag comp.</span>':'')+(vp?'<span style="font-size:9px;display:block;opacity:.8">→ '+(dienstShow(vp.tgt.slice(3).split('@')[0],d2)||'vrij')+'</span>':'')+'</div></td>';
     }
     html+='</tr>';
     if(paneel&&m.id===paneelNa)html+='<tr class="wk-paneelrij"><td colspan="8" style="padding:6px 0 12px;font-size:14px">'+paneel+'</td></tr>';
@@ -3853,14 +3853,14 @@ function viewWeek(){
 // Zet een dienst op elke cel van de selectie en schrijft ze allemaal weg.
 /* afwezig vanaf een tijdstip: beschikbare uren = tijd - begin van de dienst (dagvroeg 07:00, anders 08:00) */
 function vanafOpties(id){var h='<label style="font-size:13px;color:var(--muted);margin-left:6px">of afwezig vanaf <select id="'+id+'" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)"><option value="">–</option>';for(var t=7;t<=16;t++)h+='<option value="'+t+'">'+('0'+t).slice(-2)+':00</option>';return h+'</select></label>';}
-function vanafBesch(oudSt,id,terug){var el=document.getElementById(id),v=el&&el.value?parseInt(el.value,10):NaN;if(isNaN(v))return terug;var start=oudSt==='dagvroeg'?7:8;return Math.max(0,Math.min(7,v-start));}
+function vanafBesch(oudSt,id,terug){var el=document.getElementById(id),v=el&&el.value?parseInt(el.value,10):NaN;if(isNaN(v))return terug;var start=oudSt==='dagvroeg'?7:(oudSt==='sw'?10.5:8);return Math.max(0,Math.min(7,Math.round(v-start)));}
 function wkPasToe(fn){
   var raak=editCells.length?editCells:(editCell?[editCell]:[]);var nVoor=0;
   raak.forEach(function(c){
     var m=M.filter(function(x){return x.id===c.mid;})[0];
     if(!m)return;
     if(!canDecide()){
-      var oud=m.roster[c.day];fn(m,c.day);var nieuw=m.roster[c.day];m.roster[c.day]=oud;
+      var oud=m.roster[c.day],oudU=m.uren[c.day];delete m.uren[c.day];fn(m,c.day);var nieuw=m.roster[c.day];var nwU=m.uren[c.day];if(nwU)nieuw+='@'+nwU;delete m.uren[c.day];if(oudU)m.uren[c.day]=oudU;m.roster[c.day]=oud;
       if(nieuw!==oud){proposals=proposals.filter(function(p){return !(p.mid===m.id&&p.day===c.day&&isDienstProp(p)&&p.status==='open'&&p.by===ROLES.filter(function(r){return r.id===role;})[0].naam);});pushProposal(m.id,c.day,'st:'+nieuw);nVoor++;}
       return;
     }
@@ -3872,21 +3872,21 @@ function wkPasToe(fn){
   editCell=null;editCells=[];render();
 }
 /* ---------- Rooster per maand (alleen kijken) ---------- */
-var rMode='week', rMaandOff=0, RMND={};
+var rMode='maand', rMaandOff=0, RMND={};
 var mSel=[], rMonLijst=[], rMonDagen=[];
 function mKies(mid,iso){var i=-1;mSel.forEach(function(c,k){if(c.mid===mid&&c.iso===iso)i=k;});if(i>=0)mSel.splice(i,1);else mSel.push({mid:mid,iso:iso});render();}
 function mKiesKolom(iso){var all=rMonLijst.every(function(id){return mSel.some(function(c){return c.mid===id&&c.iso===iso;});});mSel=mSel.filter(function(c){return c.iso!==iso;});if(!all)rMonLijst.forEach(function(id){mSel.push({mid:id,iso:iso});});render();}
 function mKiesRij(mid){var all=rMonDagen.every(function(iso){return mSel.some(function(c){return c.mid===mid&&c.iso===iso;});});mSel=mSel.filter(function(c){return c.mid!==mid;});if(!all)rMonDagen.forEach(function(iso){mSel.push({mid:mid,iso:iso});});render();}
 function mLeeg(){mSel=[];render();}
 function mPaneel(){
-  if(!canDecide()||!mSel.length)return '';
+  if(!mSel.length||!(role==='RD'||role==='TN'||role==='TS'||role==='TZ'))return '';
   var st0='height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)';
   var h='<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSel.length+' cel'+(mSel.length===1?'':'len')+' geselecteerd</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><label style="font-size:13px;color:var(--muted)">aantal uur <select id="mU" style="'+st0+'">';
   for(var u=8;u>=1;u--)h+='<option value="'+u+'">'+u+' uur</option>';
   h+='</select></label><span style="font-size:12px;color:var(--muted)">(8 of minder)</span></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">';
-  ['dagvroeg','dag','waak','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);h+='<button class="acc ghost" onclick="mToepas(\'set\',\''+d+'\')" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
+  ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);h+='<button class="acc ghost" onclick="mToepas(\'set\',\''+d+'\')" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
   ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');h+='<button class="acc ghost" onclick="mToepas(\'zd\',\''+g+'\')" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
   h+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
   AFW.forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
@@ -3895,10 +3895,21 @@ function mPaneel(){
   h+='</select></label>'+vanafOpties('mVanaf')+'</div></div>';
   return h;
 }
+function sbSaveDatum(m,iso,st,uo){
+  var tmp={base:m.base,uren:{}};if(uo)tmp.uren[0]=uo;
+  var row=statusToRow(tmp,st,0);
+  ownWriteAt=Date.now();sbAgg={};
+  if(sb){
+    if(row.del)sb.from('rooster_entries').delete().eq('datum',iso).eq('monteur',m.naam).then(chk);
+    else sb.from('rooster_entries').upsert({datum:iso,monteur:m.naam,type:row.type,hrs:row.hrs,updated_by_role:'stuurtool-'+(role||'?'),updated_at:new Date().toISOString()},{onConflict:'datum,monteur'}).then(chk);
+  }
+  try{logW('Rooster','Rooster · '+iso,m.ini+' ('+m.naam+'): '+(row.del?'dienst verwijderd':'dienst op '+row.type+(row.hrs?' ('+row.hrs+' u)':'')));}catch(e){}
+  Object.keys(RMND).forEach(function(k){var o=RMND[k];o.d[m.naam]=o.d[m.naam]||{};if(st==='vrij')delete o.d[m.naam][iso];else o.d[m.naam][iso]={st:st,u:uo};});
+}
 function mToepas(soort,arg){
   var us=document.getElementById('mU'),u=Math.max(1,Math.min(8,parseInt(us&&us.value,10)||8));
   var bs=document.getElementById('mBesch'),besch=Math.max(0,Math.min(7,parseInt(bs&&bs.value,10)||0));
-  var n=0;
+  var n=0,nV=0;
   mSel.forEach(function(c){
     var m=logMon(c.mid);if(!m)return;
     var st,uo=0;
@@ -3906,24 +3917,23 @@ function mToepas(soort,arg){
     else if(soort==='zd'){st=arg+':'+u;}
     else{var oud='vrij',pq=c.iso.split('-'),i0=uvIdxVan(new Date(+pq[0],+pq[1]-1,+pq[2]));if(i0>=0&&i0<=13)oud=m.roster[i0];else Object.keys(RMND).forEach(function(k){var e0=(RMND[k].d[m.naam]||{})[c.iso];if(e0)oud=e0.st;});st=arg+':'+(8-vanafBesch(oud,'mVanaf',besch));}
     var pp=c.iso.split('-'),dt=new Date(+pp[0],+pp[1]-1,+pp[2]),idx=uvIdxVan(dt);
+    if(!canDecide()){
+      // teamleider: voorstel naar Manager R/D (ook voor dagen buiten de twee weken)
+      var tgt='st:'+st+(uo?'@'+uo:'');
+      proposals=proposals.filter(function(p){return !(p.mid===m.id&&p.day===idx&&isDienstProp(p)&&p.status==='open'&&p.by===ROLES.filter(function(r){return r.id===role;})[0].naam);});
+      pushProposal(m.id,idx,tgt);nV++;n++;return;
+    }
     if(idx>=0&&idx<=13){
       if(m.uren)delete m.uren[idx];
       m.roster[idx]=st;if(uo)m.uren[idx]=uo;
       sbSaveStatus(m,idx);
+      Object.keys(RMND).forEach(function(k){var o=RMND[k];o.d[m.naam]=o.d[m.naam]||{};if(st==='vrij')delete o.d[m.naam][c.iso];else o.d[m.naam][c.iso]={st:st,u:uo};});
     }else{
-      var tmp={base:m.base,uren:{}};if(uo)tmp.uren[0]=uo;
-      var row=statusToRow(tmp,st,0);
-      ownWriteAt=Date.now();sbAgg={};
-      if(sb){
-        if(row.del)sb.from('rooster_entries').delete().eq('datum',c.iso).eq('monteur',m.naam).then(chk);
-        else sb.from('rooster_entries').upsert({datum:c.iso,monteur:m.naam,type:row.type,hrs:row.hrs,updated_by_role:'stuurtool-'+(role||'?'),updated_at:new Date().toISOString()},{onConflict:'datum,monteur'}).then(chk);
-      }
-      try{logW('Rooster','Rooster · '+c.iso,m.ini+' ('+m.naam+'): '+(row.del?'dienst verwijderd':'dienst op '+row.type+(row.hrs?' ('+row.hrs+' u)':'')));}catch(e){}
+      sbSaveDatum(m,c.iso,st,uo);
     }
-    Object.keys(RMND).forEach(function(k){var o=RMND[k];o.d[m.naam]=o.d[m.naam]||{};if(st==='vrij')delete o.d[m.naam][c.iso];else o.d[m.naam][c.iso]={st:st,u:uo};});
     n++;
   });
-  sbToast(n+' cel'+(n===1?'':'len')+' aangepast.');
+  sbToast(nV?'Voorstel'+(nV>1?'ten':'')+' ('+nV+') verstuurd naar Manager R/D.':n+' cel'+(n===1?'':'len')+' aangepast.');
   mSel=[];render();
 }
 function rSetMode(m){rMode=m;editCell=null;editCells=[];render();}
@@ -3952,7 +3962,7 @@ function viewRoosterMaand(wcols,alles,monteurs){
   var namen=monteurs.map(function(m){return m.naam;});
   var data=rMaandLaad(namen.join(',')+'|'+van,namen,van,tot);
   var wk=['zo','ma','di','wo','do','vr','za'];
-  var kanEd=canDecide();
+  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ');
   rMonLijst=monteurs.map(function(m){return m.id;});rMonDagen=[];for(var q=1;q<=nd;q++)rMonDagen.push(fmtIsoD(new Date(j,mo,q)));
   var h='<h2>Rooster</h2>'+rModeKnoppen();
   h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><div class="ctrl"><button onclick="rMaandNav(-1)">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button onclick="rMaandNav(1)">maand ›</button>'+(rMaandOff?'<button onclick="rMaandNav(0)">deze maand</button>':'')+'</div>';
@@ -3960,7 +3970,7 @@ function viewRoosterMaand(wcols,alles,monteurs){
   wcols.forEach(function(c){h+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
   h+='</div></div>';
   if(!data.loaded)h+='<p class="sub">Rooster van '+mnL[mo]+' wordt geladen…</p>';
-  var kort={dagvroeg:'vr',dag:'d',waak:'w',nacht:'n',cursus:'o'};
+  var kort={dagvroeg:'dv',dag:'d',waak:'w',sw:'sw',nacht:'n',cursus:'o'};var afwK={ziek:'z',verlof:'v',nb:'nb',garage:'g',comp:'c',cursus:'o'};
   h+='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:3px 8px;position:sticky;left:0;background:var(--bg,#fff)">Monteur</th>';
   for(var d=1;d<=nd;d++){var dt=new Date(j,mo,d),we=(dt.getDay()===0||dt.getDay()===6),isNu=fmtIsoD(dt)===fmtIsoD(nu);
     h+='<th '+(kanEd?'onclick="mKiesKolom(\''+fmtIsoD(dt)+'\')" title="hele dag selecteren" ':'')+'style="padding:2px 1px;min-width:26px;cursor:'+(kanEd?'pointer':'default')+';font-weight:'+(isNu?'700':'400')+';color:'+(we?'var(--muted)':'var(--text)')+'">'+d+'<div style="font-size:9px;color:var(--muted)">'+wk[dt.getDay()]+'</div></th>';}
@@ -3976,14 +3986,14 @@ function viewRoosterMaand(wcols,alles,monteurs){
       var zg=zdGroep(st);
       if(zg)tx=(zg==='zara'?'Z':zg==='techno'?'T':'d')+zdUren(st);
       else if(kort[st])tx=kort[st]+(u?'<span style="font-size:8px">'+u+'</span>':'');
-      else{var ak=afwSoort(st);if(ak){tx=(AFW_KORT[ak]||ak).slice(0,2);}}
+      else{var ak=afwSoort(st);if(ak){tx=afwK[ak]||ak.slice(0,2);}}
       var vrij=!tx;
-      var mk=mSel.some(function(c){return c.mid===m.id&&c.iso===iso;});
-      h+='<td style="padding:1px"><div '+(kanEd?'onclick="mKies(\''+m.id+'\',\''+iso+'\')" ':'')+'title="'+(stLabel(st)||'vrij')+' · '+d+' '+mnL[mo]+(u?' · '+u+' u':'')+'" style="text-align:center;border-radius:4px;padding:3px 0;'+(kanEd?'cursor:pointer;':'')+'background:'+(vrij?'transparent':cs[0])+';color:'+cs[1]+';'+(vrij&&!mk?'opacity:.35;':'')+(mk?'outline:2px solid var(--text);outline-offset:-1px;background:'+(vrij?'var(--surface-1)':cs[0])+';':'')+'">'+(tx||'·')+'</div></td>';
+      var mk=mSel.some(function(c){return c.mid===m.id&&c.iso===iso;});var vp=proposals.filter(function(p){return p.mid===m.id&&p.day===idx&&isDienstProp(p)&&p.status==='open';})[0];
+      h+='<td style="padding:1px"><div '+(kanEd?'onclick="mKies(\''+m.id+'\',\''+iso+'\')" ':'')+'title="'+(stLabel(st)||'vrij')+' · '+d+' '+mnL[mo]+(u?' · '+u+' u':'')+(vp?' · voorstel: '+propNaam(vp):'')+'" style="text-align:center;border-radius:4px;padding:3px 0;'+(kanEd?'cursor:pointer;':'')+'background:'+(vrij?'transparent':cs[0])+';color:'+cs[1]+';'+(vrij&&!mk?'opacity:.35;':'')+(mk?'outline:2px solid var(--text);outline-offset:-1px;background:'+(vrij?'var(--surface-1)':cs[0])+';':'')+(vp?'outline:1.5px dashed var(--accent);outline-offset:-2px;':'')+'">'+(tx||'·')+'</div></td>';
     }
     h+='</tr>';
   });
-  h+='</tbody></table></div><p class="sub" style="margin-top:8px">vr = dagvroeg · d = dag · w = waak · n = nachtklus · o = opleiding · Z/T = Zara/Techno met uren · afwezig in kleur (ziek, verlof, garage, n.b., comp). Een cijfer erachter = aantal uur.'+(kanEd?' Klik op cellen om te selecteren (klik op een datum of monteur voor een hele kolom of rij) en kies dan een dienst.':' Aanpassen via de weekweergave (als voorstel).')+'</p>'+mPaneel();
+  h+='</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp. Een cijfer erachter = aantal uur.'+(kanEd?' Klik op cellen om te selecteren (klik op een datum of monteur voor een hele kolom of rij) en kies dan een dienst.'+(canDecide()?'':' Je wijzigingen gaan als voorstel naar Manager R/D (stippellijn = voorstel open).'):'')+'</p>'+mPaneel();
   return h;
 }
 
@@ -5919,6 +5929,7 @@ function typeToStatus(type,hrs){
   if(type==='zara'||type==='techno'){var zh=Math.round(hrs||8);return zh===8?'dag':type+':'+Math.max(1,Math.min(12,zh));}
   if(type==='dag')return 'dag';
   if(type==='laat')return 'waak';
+  if(type==='sw')return 'sw';
   if(type==='verlof')return 'verlof:'+Math.max(1,Math.min(8,Math.round(hrs||8)));
   if(type==='ziek'||type==='cursus'||type==='garage'||type==='nb'){var hu=Math.max(1,Math.min(8,Math.round(hrs||8)));return (type==='cursus'&&hu===8)?'cursus':type+':'+hu;}
   if(type==='nacht')return 'nacht';
@@ -5931,6 +5942,7 @@ function statusToRow(m,st,idx){
   if(st==='dagvroeg')return {type:'vroeg',hrs:uo};
   if(st==='dag'){var b=m.base;var tp=(b==='ZAM'||b==='ZRO'||b==='ZAR'||b==='ZZW')?'zara':(b==='TCU'?'techno':'dag');return {type:tp,hrs:uo};}
   if(st==='waak')return {type:'laat',hrs:uo};
+  if(st==='sw')return {type:'sw',hrs:8};
   var zgp=zdGroep(st);if(zgp)return {type:(zgp==='regio'?'dag':zgp),hrs:zdUren(st)};
   if(st==='ziek')return {type:'ziek',hrs:8};
   var ak=afwSoort(st);if(ak&&ak!=='comp'&&st.indexOf(':')>0)return {type:ak,hrs:afwUren(st)};
@@ -6001,6 +6013,7 @@ async function sbLoad(opts){
     if(!pr.error){proposals=[];(pr.data||[]).forEach(function(row){var m=MNAAM[row.monteur];var idx=idxByIso[row.datum];
       if(String(row.doel).indexOf('wd:')===0)return;
       var dienstP=String(row.doel).indexOf('st:')===0;
+      if(idx===undefined&&dienstP&&/^\d{4}-\d{2}-\d{2}$/.test(String(row.datum))){var pq=String(row.datum).split('-');idx=uvIdxVan(new Date(+pq[0],+pq[1]-1,+pq[2]));}
       if(!m||idx===undefined||(!dienstP&&!LOCMAP[row.doel]))return;   // onbekende doellocatie zou het tabblad laten crashen
       proposals.push({id:Number(row.id),mid:m.id,day:idx,tgt:row.doel,by:String(row.door||'').slice(0,40),status:'open'});
       if(Number(row.id)>=propId)propId=Number(row.id)+1;});}
@@ -6228,10 +6241,10 @@ function rowWeight(row){
     var st=typeToStatus(t,row.hrs), zu0=zdUren(st), dw=new Date(row.datum+'T12:00:00').getDay();
     var fu=((t==='vroeg'||t==='laat'||t==='dag')&&row.hrs>0&&row.hrs<8)?row.hrs/8:1;
     if(zu0!==null)return zu0/8;
-    if(dw===0||dw===6)return ((st==='waak'||st==='dag'||st==='dagvroeg')?1:0)*fu;
+    if(dw===0||dw===6)return ((st==='waak'||st==='dag'||st==='dagvroeg'||st==='sw')?1:0)*fu;
     return weight(st)*fu;
   }
-  if(t==='vroeg'||t==='dag'||t==='zara'||t==='techno'||t==='laat')return 1;
+  if(t==='vroeg'||t==='dag'||t==='zara'||t==='techno'||t==='laat'||t==='sw')return 1;
 if(t==='nacht')return 0; // nachtklus-dag = hele dag compensatie
   if(t&&t.indexOf('c-')===0)return Math.max(0,Math.min(1,(Number(row.hrs)||0)/8));
   return 0; // verlof / cursus / ziek
