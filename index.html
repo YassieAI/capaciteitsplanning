@@ -3812,7 +3812,7 @@ function viewWeek(){
     html+='<span style="flex-basis:100%;height:0"></span>';
     html+='<label style="font-size:13px;color:var(--muted);margin-left:6px">nog beschikbaar <select id="afwBeschU" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)">';
     for(var bu=0;bu<=7;bu++)html+='<option value="'+bu+'">'+bu+' uur</option>';
-    html+='</select></label></div>';
+    html+='</select></label>'+vanafOpties('afwVanaf')+'</div>';
     if(meerdere){
       html+='<div style="margin-top:10px;font-size:13px;color:var(--muted)">De gekozen dienst wordt op alle '+editCells.length+' cellen gezet. <button class="linkbtn" id="wkCancel">annuleer</button></div></div>';
     } else {
@@ -3851,6 +3851,9 @@ function viewWeek(){
   return html;
 }
 // Zet een dienst op elke cel van de selectie en schrijft ze allemaal weg.
+/* afwezig vanaf een tijdstip: beschikbare uren = tijd - begin van de dienst (dagvroeg 07:00, anders 08:00) */
+function vanafOpties(id){var h='<label style="font-size:13px;color:var(--muted);margin-left:6px">of afwezig vanaf <select id="'+id+'" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)"><option value="">–</option>';for(var t=7;t<=16;t++)h+='<option value="'+t+'">'+('0'+t).slice(-2)+':00</option>';return h+'</select></label>';}
+function vanafBesch(oudSt,id,terug){var el=document.getElementById(id),v=el&&el.value?parseInt(el.value,10):NaN;if(isNaN(v))return terug;var start=oudSt==='dagvroeg'?7:8;return Math.max(0,Math.min(7,v-start));}
 function wkPasToe(fn){
   var raak=editCells.length?editCells:(editCell?[editCell]:[]);var nVoor=0;
   raak.forEach(function(c){
@@ -3889,7 +3892,7 @@ function mPaneel(){
   AFW.forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
   h+='<label style="font-size:13px;color:var(--muted);margin-left:6px">nog beschikbaar <select id="mBesch" style="'+st0+'">';
   for(var b=0;b<=7;b++)h+='<option value="'+b+'">'+b+' uur</option>';
-  h+='</select></label></div></div>';
+  h+='</select></label>'+vanafOpties('mVanaf')+'</div></div>';
   return h;
 }
 function mToepas(soort,arg){
@@ -3901,7 +3904,7 @@ function mToepas(soort,arg){
     var st,uo=0;
     if(soort==='set'){st=arg;if(u<8&&(arg==='dag'||arg==='dagvroeg'||arg==='waak'))uo=u;}
     else if(soort==='zd'){st=arg+':'+u;}
-    else{st=arg+':'+(8-besch);}
+    else{var oud='vrij',pq=c.iso.split('-'),i0=uvIdxVan(new Date(+pq[0],+pq[1]-1,+pq[2]));if(i0>=0&&i0<=13)oud=m.roster[i0];else Object.keys(RMND).forEach(function(k){var e0=(RMND[k].d[m.naam]||{})[c.iso];if(e0)oud=e0.st;});st=arg+':'+(8-vanafBesch(oud,'mVanaf',besch));}
     var pp=c.iso.split('-'),dt=new Date(+pp[0],+pp[1]-1,+pp[2]),idx=uvIdxVan(dt);
     if(idx>=0&&idx<=13){
       if(m.uren)delete m.uren[idx];
@@ -4041,7 +4044,7 @@ function wireWeek(){
 
   document.querySelectorAll('[data-set]').forEach(function(b){b.onclick=function(){var v=b.dataset.set;var sel=document.getElementById('zdU');var u=Math.max(1,Math.min(8,parseInt(sel&&sel.value,10)||8));wkPasToe(function(m,day){m.roster[day]=v;if(u<8&&(v==='dag'||v==='dagvroeg'||v==='waak'))m.uren[day]=u;});};});
   document.querySelectorAll('[data-zd]').forEach(function(b){b.onclick=function(){var g=b.dataset.zd;var sel=document.getElementById('zdU');var u=Math.max(1,Math.min(8,parseInt(sel&&sel.value,10)||8));wkPasToe(function(m,day){m.roster[day]=g+':'+u;});};});
-  document.querySelectorAll('[data-afw]').forEach(function(b){b.onclick=function(){var k=b.dataset.afw;var sel=document.getElementById('afwBeschU');var besch=Math.max(0,Math.min(7,parseInt(sel&&sel.value,10)||0));wkPasToe(function(m,day){m.roster[day]=k+':'+(8-besch);});};});
+  document.querySelectorAll('[data-afw]').forEach(function(b){b.onclick=function(){var k=b.dataset.afw;var sel=document.getElementById('afwBeschU');var besch=Math.max(0,Math.min(7,parseInt(sel&&sel.value,10)||0));wkPasToe(function(m,day){var b2=vanafBesch(m.roster[day],'afwVanaf',besch);m.roster[day]=k+':'+(8-b2);});};});
   document.querySelectorAll('[data-hset]').forEach(function(b){b.onclick=function(){var type=b.dataset.hset;var inp=document.getElementById(type==='comp'?'compU':'verlU');var u=Math.max(1,Math.min(8,parseInt(inp.value,10)||0));wkPasToe(function(m,day){m.roster[day]=type+':'+u;});};});
   var t=document.getElementById('wkTarget');if(t)t.onchange=function(){if(!t.value)return;var src=M.filter(function(x){return x.id===editCell.mid;})[0];var tgt=M.filter(function(x){return x.id===t.value;})[0];var day=editCell.day;if(!canDecide()){pushProposal(tgt.id,day,'st:'+src.roster[day]);pushProposal(src.id,day,'st:vrij');sbToast('Voorstel verstuurd naar Manager R/D.');editCell=null;editCells=[];render();return;}tgt.roster[day]=src.roster[day];src.roster[day]='vrij';sbSaveStatus(tgt,day);sbSaveStatus(src,day);editCell=null;editCells=[];render();};
   var c=document.getElementById('wkCancel');if(c)c.onclick=function(){editCell=null;editCells=[];render();};
