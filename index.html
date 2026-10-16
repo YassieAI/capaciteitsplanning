@@ -6287,7 +6287,8 @@ function viewStart(){
   var rolN=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||'';
   var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct" style="font-size:18px">'+hoi+' · '+DG[nu.getDay()]+' '+nu.getDate()+' '+MN[nu.getMonth()]+'</div><div class="sub" style="margin:0">'+esc(rolN)+' · dit is het gezamenlijke overzicht van vandaag. Via de knoppen erboven ga je naar je eigen werkplek.</div></div>';
-  // dekking
+  // dekking (niet voor Uitvoering)
+  var hvA=h.length;
   var cols=columns().filter(function(c){return c.type==='cluster';});
   LOC.filter(function(l){return l.type==='zara'||l.type==='techno';}).forEach(function(l){cols.push(colFor(l.id));});
   var d0=TODAY,d1=TODAY+1<=13?TODAY+1:null;
@@ -6296,6 +6297,7 @@ function viewStart(){
   cols.forEach(function(c){var p0=colDekking(c,d0),b0=colBeschikbaar(c,d0);if(p0<NORM)laag.push(c.naam);
     h+='<tr><td>'+esc(c.naam)+'</td><td>'+startBadge(p0)+'</td><td>'+uTxt(b0,c.benodigd)+'</td>'+(d1!==null?'<td>'+startBadge(colDekking(c,d1))+'</td>':'')+'</tr>';});
   h+='</tbody></table></div>'+(laag.length?'<p class="wd-uitleg" style="margin:8px 0 0"><b>Aandacht:</b> vandaag onder 60% bij '+laag.map(esc).join(', ')+'.</p>':'<p class="wd-uitleg" style="margin:8px 0 0">Alle regio\'s en locaties zitten vandaag boven 60%.</p>')+'</div>';
+  if(role==='UV')h=h.slice(0,hvA);
   // te bespreken + waakdienst
   var open=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal();
   var toonOpen=role!=='PL'&&role!=='UV';
@@ -6307,14 +6309,16 @@ function viewStart(){
       var zi=rj.za&&rj.za[xj.k];t+='<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara</span><b>'+esc(zi||'leeg')+'</b></div>';return t;});
   }catch(e){}}
   h+='<div class="wd-card"><div class="wd-ct">Waakdienst deze week'+(xj&&xj.j<WD_BASISJAAR?' <span class="badge b-ruim">demo-indeling</span>':'')+'</div>'+wh+'</div></div>';
-  // laatste wijzigingen
-  if(LOG_RIJEN===null)logLaad();
+  // laatste wijzigingen (niet voor Uitvoering)
+  var hvB=h.length;
+  if(LOG_RIJEN===null&&role!=='UV')logLaad();
   var lr=(LOG_RIJEN||[]).slice(0,6);
   h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Laatste wijzigingen</div>';
   if(LOG_RIJEN===null)h+='<div class="sub" style="margin:0">Laden…</div>';
   else if(!lr.length)h+='<div class="sub" style="margin:0">Nog geen wijzigingen vastgelegd.</div>';
   lr.forEach(function(r){var d=new Date(r.t);h+='<div class="wd-kv"><span>'+(isNaN(d)?'':d.getDate()+' '+MN[d.getMonth()]+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2))+' · '+tlBadge(r.door)+' · '+esc(r.waar)+'</span><b style="font-weight:500">'+esc(r.wat)+'</b></div>';});
   h+=(role==='RD'?'<button class="linkbtn" data-go="rd:log" style="margin-top:6px">Alle wijzigingen ›</button>':'')+'</div>';
+  if(role==='UV')h=h.slice(0,hvB);
   // acties per rol
   var acties={RD:[['rd:bord','Schuifbord'],['rd:voorstellen','Te bespreken'],['rd:week','Rooster'],['rd:grafiek','Grafiek'],['rd:waak','Waakdienst'],['rd:log','Wijzigingen']],
     G:[['g:dag','Dashboard'],['g:week','Week'],['g:kwartaal','Kwartaal'],['g:jaar','Jaar']],
