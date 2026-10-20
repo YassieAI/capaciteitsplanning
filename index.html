@@ -907,7 +907,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-rooster th{position:sticky;top:0;z-index:2}
 .wd-rooster td.wd-wk{white-space:nowrap;font-size:12px}
 .wd-wk span{color:var(--muted);margin-left:4px}
+.wd-vk{display:inline-block;font-size:10.5px;font-weight:500;border-radius:10px;padding:1px 8px;margin:2px 4px 0 0;border:0.5px solid;white-space:nowrap}
+.wd-vkN{background:#e6f1fb;color:#0c447c;border-color:#378add} .wd-vkM{background:#eeedfe;color:#3c3489;border-color:#7f77dd} .wd-vkZ{background:#faece7;color:#712b13;border-color:#d85a30} .wd-vkA{background:#f1efe8;color:#444441;border-color:#888780}
+.wd-vkrN td{background:#e6f1fb} .wd-vkrM td{background:#eeedfe} .wd-vkrZ td{background:#faece7} .wd-vkrA td{background:#f1efe8}
 .wd-feestrij td{background:var(--warn-bg)}
+.wd-vkbox{margin:8px 0 6px;padding:8px 12px;border:0.5px solid var(--border);border-radius:10px;background:var(--surface);font-size:12.5px}
+.wd-vkbox summary{cursor:pointer;color:var(--accent);margin-top:4px}
+.wd-vkbox .wd-vkg{margin-top:5px;color:var(--text)}
+.wd-vknote{font-size:12px;color:var(--muted);margin:6px 0}
 .wd-nurij td{box-shadow:inset 0 2px 0 var(--text),inset 0 -2px 0 var(--text)} .wd-nurij td:first-child{box-shadow:inset 3px 0 0 var(--text),inset 0 2px 0 var(--text),inset 0 -2px 0 var(--text)}
 .wd-fb{display:inline-block;font-size:10.5px;background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:500}
 .wd-feestrij .wd-fb{background:var(--surface)}
@@ -5004,6 +5011,51 @@ function wdIsMine(ini){var s=wdTeamSet();return !s||!!s[ini]||WD_FLEX.some(funct
 var WD_MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 function wdD(d){return d.getDate()+' '+WD_MND[d.getMonth()];}
 function wdWeekLabel(k){return wdD(wdWeekStart(k))+' – '+wdD(wdWeekEnd(k));}
+
+/* ---------- schoolvakanties (Rijksoverheid, regio Noord / Midden / Zuid) ----------
+   Alleen vastgestelde data. Bekend t/m de zomervakantie van 2030 (schooljaar 2029-2030).
+   Aanvullen: voeg een regel toe [soort,van,tot,regios]. k=kerst v=voorjaar m=mei z=zomer h=herfst. */
+var WD_VAK_NAAM={k:'Kerstvakantie',v:'Voorjaarsvakantie',m:'Meivakantie',z:'Zomervakantie',h:'Herfstvakantie'};
+var WD_VAK_REGIO={N:'Noord',M:'Midden',Z:'Zuid'};
+var WD_VAK_TOT='2030-09-01'; // laatste dag waarvoor de data vaststaat
+var WD_VAK_RAW=[
+['k','2025-12-20','2026-01-04','NMZ'],['k','2026-12-19','2027-01-03','NMZ'],['k','2027-12-25','2028-01-09','NMZ'],['k','2028-12-23','2029-01-07','NMZ'],['k','2029-12-22','2030-01-06','NMZ'],
+['v','2026-02-21','2026-03-01','N'],['v','2026-02-14','2026-02-22','MZ'],['v','2027-02-20','2027-02-28','NM'],['v','2027-02-13','2027-02-21','Z'],['v','2028-02-19','2028-02-27','N'],['v','2028-02-26','2028-03-05','MZ'],['v','2029-02-17','2029-02-25','NM'],['v','2029-02-10','2029-02-18','Z'],['v','2030-02-16','2030-02-24','N'],['v','2030-02-23','2030-03-03','MZ'],
+['m','2026-04-25','2026-05-03','NMZ'],['m','2027-04-24','2027-05-02','NMZ'],['m','2028-04-29','2028-05-07','NMZ'],['m','2029-04-28','2029-05-06','NMZ'],['m','2030-04-27','2030-05-05','NMZ'],
+['z','2026-07-04','2026-08-16','N'],['z','2026-07-18','2026-08-30','M'],['z','2026-07-11','2026-08-23','Z'],
+['z','2027-07-10','2027-08-22','N'],['z','2027-07-17','2027-08-29','M'],['z','2027-07-24','2027-09-05','Z'],
+['z','2028-07-15','2028-08-27','N'],['z','2028-07-08','2028-08-20','M'],['z','2028-07-22','2028-09-03','Z'],
+['z','2029-07-21','2029-09-02','N'],['z','2029-07-07','2029-08-19','M'],['z','2029-07-14','2029-08-26','Z'],
+['z','2030-07-20','2030-09-01','N'],['z','2030-07-13','2030-08-25','M'],['z','2030-07-06','2030-08-18','Z'],
+['h','2026-10-10','2026-10-18','N'],['h','2026-10-17','2026-10-25','MZ'],['h','2027-10-16','2027-10-24','NM'],['h','2027-10-23','2027-10-31','Z'],
+['h','2028-10-14','2028-10-22','N'],['h','2028-10-21','2028-10-29','MZ'],['h','2029-10-20','2029-10-28','NM'],['h','2029-10-13','2029-10-21','Z']];
+var WD_VAK_GEM={N:'Groningen, Friesland, Drenthe, Overijssel, Flevoland (behalve Zeewolde), heel Noord-Holland (incl. Amsterdam), Hattem, Eemnes en Abcoude',
+ M:'Utrecht (behalve Eemnes en Abcoude), heel Zuid-Holland, Zeewolde, Noord- en Oost-Gelderland (o.a. Apeldoorn, Ede, Zutphen, Tiel) en Altena',
+ Z:'Noord-Brabant, Limburg, Zeeland en Zuid-Gelderland (o.a. Nijmegen, Arnhem, Betuwe, Zaltbommel)'};
+var WD_VAK=null;
+function wdVakIv(){if(WD_VAK)return WD_VAK;WD_VAK=[];
+  function t(x){var a=x.split('-');return new Date(+a[0],+a[1]-1,+a[2]).getTime();}
+  WD_VAK_RAW.forEach(function(r){r[3].split('').forEach(function(g){WD_VAK.push({g:g,n:WD_VAK_NAAM[r[0]],a:t(r[1]),b:t(r[2])});});});
+  WD_VAK.tot=t(WD_VAK_TOT);return WD_VAK;}
+/* vakanties in week k: [{t:'Zomervakantie Noord',g:'N'}], alleen vastgestelde data */
+function wdVakWeek(k){var iv=wdVakIv(),s=wdWeekStart(k).getTime(),e=wdWeekEnd(k).getTime();
+  if(s>iv.tot)return [];
+  var by={},ord=[];iv.forEach(function(x){if(s<=x.b&&e>=x.a){if(!by[x.n]){by[x.n]=[];ord.push(x.n);}by[x.n].push(x.g);}});
+  var out=[];ord.forEach(function(n){var gs=by[n];if(gs.length===3)out.push({t:n+' \u00b7 alle regio\u2019s',g:'A'});else gs.forEach(function(g){out.push({t:n+' '+WD_VAK_REGIO[g],g:g});});});
+  return out;}
+function wdVakPills(v){return v.map(function(x){return '<span class="wd-vk wd-vk'+x.g+'">'+x.t+'</span>';}).join('');}
+function wdVakRij(v){if(!v.length)return '';var gs={};v.forEach(function(x){gs[x.g]=1;});var k=Object.keys(gs);return k.length===1?k[0]:'A';}
+/* tekst boven het rooster als het jaar (deels) buiten de vastgestelde data valt */
+function wdVakNote(){var iv=wdVakIv(),s=wdWeekStart(0).getTime(),e=wdWeekEnd(WD_N-1).getTime();
+  if(s>iv.tot)return 'Schoolvakanties voor dit roosterjaar zijn nog niet vastgesteld door de Rijksoverheid.';
+  if(e>iv.tot)return 'Schoolvakanties zijn bekend t/m de zomer van '+new Date(iv.tot).getFullYear()+'. De rest van dit jaar is nog niet vastgesteld door de Rijksoverheid.';
+  return '';}
+/* uitleg bij de kaart: welke regio\u2019s hebben vakantie en welke gemeentes horen erbij */
+function wdVakKaart(k){var iv=wdVakIv(),v=wdVakWeek(k);
+  if(wdWeekStart(k).getTime()>iv.tot)return '<div class="wd-vkbox"><span style="color:var(--muted)">Schoolvakanties voor deze week zijn nog niet vastgesteld</span></div>';
+  if(!v.length)return '<div class="wd-vkbox"><span style="color:var(--muted)">Geen schoolvakantie in deze week</span></div>';
+  var gs={};v.forEach(function(x){if(x.g==='A'){gs.N=gs.M=gs.Z=1;}else gs[x.g]=1;});
+  return '<div class="wd-vkbox"><div>'+wdVakPills(v)+'</div><details><summary>Welke gemeentes?</summary>'+['N','M','Z'].filter(function(g){return gs[g];}).map(function(g){return '<div class="wd-vkg"><b>'+WD_VAK_REGIO[g]+':</b> '+WD_VAK_GEM[g]+'</div>';}).join('')+'</details></div>';}
 function wdGNaam(c,g){if(g==='SCH')return 'Schaduw';if(g==='ZA')return 'Zara';if(c.prep.slotDef[g]&&c.prep.slotDef[g].g!==g)return c.prep.slotDef[g].naam;var x=c.prep.o.gebieden.filter(function(y){return y.id===g;})[0];return x?x.naam:g;}
 function wdKleur(key,g){if(g==='SCH')return '#6b6a63';if(g==='ZA')return '#8e5bd1';var c=wdCache[key];if(c&&c.prep.slotDef[g])g=c.prep.slotDef[g].g;return WD_OPZET[key].kleur[g]||'#888';}
 function wdMagG(prep,ini,g){return prep.slots.some(function(x){return x.g===g&&wdMag(prep,ini,x.id);});}
@@ -5344,7 +5396,7 @@ function wdVoorstelPaneel(c,k,ini){
 function wdViewKaart(){
   if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=Math.max(0,wdNuWeek());if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';}
   var c=wdC(),t=wdTel(c.prep,c.plan);
-  var wkNav='<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span><button data-wdwk="'+(wdKaartWk==null?0:Math.max(0,wdKaartWk-1))+'" aria-label="vorige week">‹</button><span class="wd-wklab">'+(wdKaartWk==null?'geen week':'wk '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk)+(wdKaartWk===wdNuWeek()?' · <b style="color:var(--accent)">nu</b>':''))+'</span><button data-wdwk="'+(wdKaartWk==null?0:Math.min(WD_N-1,wdKaartWk+1))+'" aria-label="volgende week">›</button>'+(wdNuWeek()>=0&&wdKaartWk!==wdNuWeek()?'<button data-wdwk="'+wdNuWeek()+'">naar nu</button>':'')+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>';
+  var wkNav='<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span><button data-wdwk="'+(wdKaartWk==null?0:Math.max(0,wdKaartWk-1))+'" aria-label="vorige week">‹</button><span class="wd-wklab">'+(wdKaartWk==null?'geen week':'wk '+(wdKaartWk+1)+' · '+wdWeekLabel(wdKaartWk)+(wdKaartWk===wdNuWeek()?' · <b style="color:var(--accent)">nu</b>':''))+'</span><button data-wdwk="'+(wdKaartWk==null?0:Math.min(WD_N-1,wdKaartWk+1))+'" aria-label="volgende week">›</button>'+(wdNuWeek()>=0&&wdKaartWk!==wdNuWeek()?'<button data-wdwk="'+wdNuWeek()+'">naar nu</button>':'')+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>'+(wdKaartWk!=null?wdVakKaart(wdKaartWk):'');
   var h='<div class="wd-layout"><div class="wd-card wd-mapcard">'+wkNav+'<div class="wd-lwrap"><div id="wdLmap" class="wd-lmap" role="application" aria-label="Kaart van Nederland met waakdienstgebieden"></div></div>'+
     '<div class="wd-legend" style="margin-top:8px">'+c.prep.gIds.map(function(g){return '<button class="wd-lg'+(wdKaartG===g?' on':'')+'" data-wdg="'+g+'"><i style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</button>';}).join('')+
     '<div class="ctrl" style="flex-wrap:wrap;margin-right:8px"><span class="wd-lbl" style="margin-right:4px">Team</span>'+[null,'Noord','Zuid','Zara'].map(function(t){return '<button data-wdteam="'+(t||'')+'" class="'+(wdTeamF===t?'active':'')+'">'+(t||'Alle')+'</button>';}).join('')+'</div>'+
@@ -5440,12 +5492,13 @@ function wdViewRooster(){
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+(wdNuWeek()+1)+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
-  else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag.</p>';
+  else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
   h+='<div class="wd-scroll"><table class="wd-tbl wd-rooster"><thead><tr><th>Week</th>'+slots.map(function(s){return '<th><i class="wd-sw" style="background:'+wdKleur(wdKey,s)+'"></i>'+wdGNaam(c,s)+'</th>';}).join('')+'<th><i class="wd-sw" style="background:#8e5bd1"></i>Zara</th></tr></thead><tbody>';
   c.plan.forEach(function(wk,k){
     var f=WD_FEEST[k];
     var isNu=k===wdNuWeek();
-    h+='<tr'+(f||isNu?' class="'+(f?'wd-feestrij':'')+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk"><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+(k+1)+'</button> <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+'</td>';
+    var vk=wdVakWeek(k),vr=wdVakRij(vk);
+    h+='<tr'+(f||isNu||vr?' class="'+(f?'wd-feestrij':(vr?'wd-vkr'+vr:''))+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk"><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+(k+1)+'</button> <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+(vk.length?'<div>'+wdVakPills(vk)+'</div>':'')+'</td>';
     slots.forEach(function(s){var i=wk[s];
       var cls='wd-chip'+(team&&wdAlleen&&i&&team[i]?' mine':'')+(team&&wdAlleen&&i&&!team[i]?' dim':'')+(wdSel&&wdSel.k===k&&wdSel.s===s?' sel':'');
       h+='<td>'+(i?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'">'+i+'</button>':'<span class="wd-bad">leeg</span>')+'</td>';});
