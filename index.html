@@ -3819,7 +3819,7 @@ function viewWeek(){
   var multi=selCols.length>1, alles=selCols.length===wcols.length&&multi;
   var selNaam=alles?'alle gebieden':selCols.map(function(c){return c.naam;}).join(' + ');
   var combo={key:'wk',naam:selNaam,members:memberIds,benodigd:benTot};
-  var monteurs=M.filter(function(m){return memberIds.indexOf(m.base)>=0;});
+  var monteurs=rTeamFilter(M.filter(function(m){return memberIds.indexOf(m.base)>=0;}));
   var wkLabel=weekTxt(weekStart);
   var alleMonteurs=monteurs;monteurs=rZoekLijst(monteurs,wcols);
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
@@ -3951,10 +3951,12 @@ function rZoekSet(v){
   },350);
 }
 function rZoekHtml(){return '<input id="rZoek" type="text" autocomplete="off" placeholder="Zoek monteur (code of woonplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;width:260px;flex:none;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
+/* teamleiders zien in het Rooster alleen hun eigen Randstad-monteurs (indeling op team, niet de hele Randstad) */
+function rTeamFilter(lijst){if(role!=='TN'&&role!=='TS')return lijst;var t=role==='TN'?'Noord':'Zuid';return lijst.filter(function(m){return m.base!=='MI'||teamOf(m)===t;});}
 function rZoekLijst(monteurs,wcols){
   var q=rZoek.trim().toLowerCase();if(!q)return monteurs;
   var ids=[];wcols.forEach(function(c){c.members.forEach(function(id){if(ids.indexOf(id)<0)ids.push(id);});});
-  return M.filter(function(m){return ids.indexOf(m.base)>=0&&(mLabel(m).toLowerCase().indexOf(q)>=0||String(m.naam).toLowerCase().indexOf(q)>=0||String(m.woonNaam).toLowerCase().indexOf(q)>=0);});
+  return rTeamFilter(M.filter(function(m){return ids.indexOf(m.base)>=0&&(mLabel(m).toLowerCase().indexOf(q)>=0||String(m.naam).toLowerCase().indexOf(q)>=0||String(m.woonNaam).toLowerCase().indexOf(q)>=0);}));
 }
 var mSel=[], rMonLijst=[], rMonDagen=[];
 var mPend=null; // gekozen dienst/afwezigheid, pas toegepast na klik op Toepassen
