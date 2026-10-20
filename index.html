@@ -4817,7 +4817,7 @@ function wdPrep(key,cells){
 }
 
 /* ---------- regels ---------- */
-var WD_REGELS={grens:60,tussen:3,fac60:0.75,seeds:40,schTelt:true,geenSch60:false};
+var WD_REGELS={grens:60,tussen:4,fac60:0.75,seeds:40,schTelt:true,geenSch60:false};
 function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s);}
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
@@ -5720,7 +5720,7 @@ function wdViewRegels(){
     '<li>Je ziet altijd wie er die week nog meer dienst heeft.</li>'+
     '<li>De teamleider stelt voor, Manager R/D keurt goed in het weekoverleg. Pas dan verandert het rooster.</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Nog te beslissen</div><ul class="wd-ul">'+
-    '<li>Telt de schaduwdienst mee voor de 3 weken, en draait 60+ schaduw? (hierboven)</li>'+
+    '<li>Telt de schaduwdienst mee voor de '+WD_REGELS.tussen+' weken, en draait 60+ schaduw? (hierboven)</li>'+
     '<li>Reistijdgrens: 60 min, of strenger/ruimer?</li>'+
     '<li>Moet de schaduwdienst centraal wonen (bijv. binnen 60 min van Utrecht)?</li>'+
     '<li>Maximaal aantal ruilen per persoon per kwartaal?</li>'+
