@@ -4409,7 +4409,10 @@ function wireTeam(){
 
 /* ---------- Teamleider Noord/Zuid: eigen team met Midden op woonplaats ---------- */
 function colFor(id){var l=LOCMAP[id];return {key:id,naam:l.naam,type:l.type,members:[id],benodigd:l.benodigd,lat:l.lat,lng:l.lng};}
+/* vaste indeling: deze monteurs horen bij teamleider Zuid, ongeacht woonplaats */
+var TEAM_VAST={ASER01:'Zuid',ARZW02:'Zuid',JOMA02:'Zuid',MUGO07:'Zuid'};
 function teamOf(m){
+  if(TEAM_VAST[m.ini])return TEAM_VAST[m.ini];
   if(m.base==='NO')return 'Noord';
   if(m.base==='ZO')return 'Zuid';
   if(m.base==='MI')return m.lat>=52.055?'Noord':'Zuid';
