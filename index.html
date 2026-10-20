@@ -1252,7 +1252,7 @@ function weight(st,day){
 /* Afwezigheid met uren: status = '<soort>:<uren afwezig>'. De rest van de dag (8 - uren) telt als beschikbaar. */
 var AFW=['cursus','garage','nb','ziek','verlof'];
 var AFW_LABEL={cursus:'opleiding',garage:'auto garage',nb:'niet beschikbaar',ziek:'ziek',verlof:'verlof',comp:'comp'};
-var AFW_COMP_LABEL='Comp (gebeld waak)';
+var AFW_COMP_LABEL='Compensatie';
 var AFW_KORT={cursus:'opl.',garage:'garage',nb:'n.b.',ziek:'ziek',verlof:'verlof',comp:'comp'};
 function afwSoort(st){if(!st)return null;var k=st.indexOf(':')>=0?st.split(':')[0]:st;return (AFW.indexOf(k)>=0||k==='comp')?k:null;}
 function afwUren(st){if(!st)return 0;if(st.indexOf(':')<0)return AFW.indexOf(st)>=0?8:0;return Math.max(0,Math.min(8,parseInt(st.split(':')[1],10)||0));}
@@ -3862,7 +3862,7 @@ function viewWeek(){
     ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);html+='<button class="acc ghost" data-set="'+d+'" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
     html+='</div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
-    AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" title="'+(k==='comp'?'Comp: monteur is gebeld tijdens zijn waakdienst':'')+'" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
+    AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
     html+='<span style="flex-basis:100%;height:0"></span><span style="font-size:13px;color:var(--muted)">Uren voor:</span>';
     ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');html+='<button class="acc ghost" data-zd="'+g+'" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
     html+='<span style="flex-basis:100%;height:0"></span>';
@@ -3963,7 +3963,7 @@ function mPaneel(){
   ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);h+='<button class="acc ghost" onclick="mToepas(\'set\',\''+d+'\')" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
   ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');h+='<button class="acc ghost" onclick="mToepas(\'zd\',\''+g+'\')" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
   h+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
-  AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" title="'+(k==='comp'?'Comp: monteur is gebeld tijdens zijn waakdienst':'')+'" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
+  AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
   h+='<label style="font-size:13px;color:var(--muted);margin-left:6px">nog beschikbaar <select id="mBesch" style="'+st0+'">';
   for(var b=0;b<=7;b++)h+='<option value="'+b+'">'+b+' uur</option>';
   h+='</select></label>'+vanafOpties('mVanaf')+'</div></div>';
