@@ -1252,6 +1252,7 @@ function weight(st,day){
 /* Afwezigheid met uren: status = '<soort>:<uren afwezig>'. De rest van de dag (8 - uren) telt als beschikbaar. */
 var AFW=['cursus','garage','nb','ziek','verlof'];
 var AFW_LABEL={cursus:'opleiding',garage:'auto garage',nb:'niet beschikbaar',ziek:'ziek',verlof:'verlof',comp:'comp'};
+var AFW_COMP_LABEL='Comp (gebeld waak)';
 var AFW_KORT={cursus:'opl.',garage:'garage',nb:'n.b.',ziek:'ziek',verlof:'verlof',comp:'comp'};
 function afwSoort(st){if(!st)return null;var k=st.indexOf(':')>=0?st.split(':')[0]:st;return (AFW.indexOf(k)>=0||k==='comp')?k:null;}
 function afwUren(st){if(!st)return 0;if(st.indexOf(':')<0)return AFW.indexOf(st)>=0?8:0;return Math.max(0,Math.min(8,parseInt(st.split(':')[1],10)||0));}
@@ -1266,7 +1267,7 @@ function celBg(st,cs,werk){var k=afwSoort(st);if(!k)return cs[0];var u=afwUren(s
 /* middag compensatie: de dag voor een Nachtklus is de middag (rechterhelft) compensatie */
 var MC_KLEUR='#a9b6cf'; // lichte tint van de Nachtklus-kleur (#24324a), zodat de tekst leesbaar blijft
 function mcMidag(st,volgend){return volgend==='nacht'&&!!st&&st!=='nacht'&&weight(st)>0;}
-function mcBg(base,mc){return mc?'linear-gradient(90deg,transparent 50%,'+MC_KLEUR+' 50%),'+base:base;}
+function mcBg(base,mc){return mc?'linear-gradient(135deg,transparent 50%,'+MC_KLEUR+' 50%),'+base:base;}
 function dienstShow(st,d){var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA ':zg==='techno'?'Techno ':'FF ')+zdUren(st)+'u';return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='sw'||st==='cursus'||st==='nacht')?st:'';}
 var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',sw:'schaduw waak (sw) 10:30–19:00',cursus:'opleiding (hele dag)',nacht:'Nachtklus (comp. hele dag + middag ervoor)',vrij:'vrij'};
 /* capaciteit van één monteur op één dag. Nachtklus: de dag zelf is hele dag compensatie (telt 0),
@@ -3861,7 +3862,7 @@ function viewWeek(){
     ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);html+='<button class="acc ghost" data-set="'+d+'" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
     html+='</div>';
     html+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
-    AFW.forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
+    AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');html+='<button class="acc ghost" data-afw="'+k+'" title="'+(k==='comp'?'Comp: monteur is gebeld tijdens zijn waakdienst':'')+'" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
     html+='<span style="flex-basis:100%;height:0"></span><span style="font-size:13px;color:var(--muted)">Uren voor:</span>';
     ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');html+='<button class="acc ghost" data-zd="'+g+'" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
     html+='<span style="flex-basis:100%;height:0"></span>';
@@ -3962,7 +3963,7 @@ function mPaneel(){
   ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);h+='<button class="acc ghost" onclick="mToepas(\'set\',\''+d+'\')" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
   ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');h+='<button class="acc ghost" onclick="mToepas(\'zd\',\''+g+'\')" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
   h+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Afwezig:</span>';
-  AFW.forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" style="border-left:6px solid '+cs[1]+'">'+AFW_LABEL[k]+'</button>';});
+  AFW.concat(['comp']).forEach(function(k){var cs=dienstStyle(k+':8');h+='<button class="acc ghost" onclick="mToepas(\'afw\',\''+k+'\')" title="'+(k==='comp'?'Comp: monteur is gebeld tijdens zijn waakdienst':'')+'" style="border-left:6px solid '+cs[1]+'">'+(k==='comp'?AFW_COMP_LABEL:AFW_LABEL[k])+'</button>';});
   h+='<label style="font-size:13px;color:var(--muted);margin-left:6px">nog beschikbaar <select id="mBesch" style="'+st0+'">';
   for(var b=0;b<=7;b++)h+='<option value="'+b+'">'+b+' uur</option>';
   h+='</select></label>'+vanafOpties('mVanaf')+'</div></div>';
@@ -4067,7 +4068,7 @@ function viewRoosterMaand(wcols,alles,monteurs){
     }
     h+='</tr>';
   });
-  h+='</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = Nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp · rechterhelft in lichte Nachtklus-kleur (mc) = middag compensatie voor een Nachtklus. Een cijfer erachter = aantal uur. Diagonaal gesplitste cel = deeldag afwezig: de letter is de dienst die de monteur dan draait, het cijfer het aantal uur dat die er nog is.'+(kanEd?' Klik op cellen om te selecteren (klik op een datum of monteur voor een hele kolom of rij) en kies dan een dienst.'+(canDecide()?'':' Je wijzigingen gaan als voorstel naar Manager R/D (stippellijn = voorstel open).'):'')+'</p>'+mPaneel();
+  h+='</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = Nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp · diagonaal rechtsonder in lichte Nachtklus-kleur (mc) = middag compensatie voor een Nachtklus. Een cijfer erachter = aantal uur. Diagonaal gesplitste cel = deeldag afwezig: de letter is de dienst die de monteur dan draait, het cijfer het aantal uur dat die er nog is.'+(kanEd?' Klik op cellen om te selecteren (klik op een datum of monteur voor een hele kolom of rij) en kies dan een dienst.'+(canDecide()?'':' Je wijzigingen gaan als voorstel naar Manager R/D (stippellijn = voorstel open).'):'')+'</p>'+mPaneel();
   return h;
 }
 
@@ -4210,7 +4211,7 @@ function viewNachtMaand(ms){
     }
     h+='</tr>';
   });
-  return h+'</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = Nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp · rechterhelft in lichte Nachtklus-kleur = middag compensatie voor een Nachtklus.</p>';
+  return h+'</tbody></table></div><p class="sub" style="margin-top:8px">dv = dagvroeg · d = dag · w = waak · sw = schaduw waak · n = Nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp · diagonaal rechtsonder in lichte Nachtklus-kleur = middag compensatie voor een Nachtklus.</p>';
 }
 function nkZet(m,iso,idx){
   var live=idx>=0&&idx<=13&&m.roster[idx]!==undefined;
@@ -4804,7 +4805,7 @@ function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
   var sl=prep.slotDef[s];
   if(sl&&sl.wing){ // Randstad 1/2: alleen wie in de Randstad hoort, uit de juiste vleugel
     if(prep.home[ini]!==sl.g)return false;
-    return wdVleugel(ini)===(sl.id==='RA1'?'noord':'zuid');
+    return wdVleugels(ini).indexOf(sl.id==='RA1'?'noord':'zuid')>=0;
   }
   var g=wdG(prep,s);
   return prep.home[ini]===g||prep.tijd[ini][g]<=WD_REGELS.grens;
@@ -4816,6 +4817,9 @@ function wdGapOk(k,lw,ls,isSch){
   if(!isSch)return k-lw>T&&k-ls>=2;
   return k-lw>=2&&k-ls>=2;
 }
+/* uitzonderingen: deze monteurs mogen naast hun eigen vleugel ook de andere Randstad-vleugel draaien */
+var WD_EXTRA_VLEUGEL={JOMA02:['zuid']};
+function wdVleugels(ini){var v=[wdVleugel(ini)];(WD_EXTRA_VLEUGEL[ini]||[]).forEach(function(x){if(v.indexOf(x)<0)v.push(x);});return v;}
 function wdVleugel(ini){
   if(WD_COLLEGA.wing.noord.indexOf(ini)>=0)return 'noord';
   if(WD_COLLEGA.wing.zuid.indexOf(ini)>=0)return 'zuid';
@@ -5684,7 +5688,7 @@ function wdViewRegels(){
     '<li>Feestdagen eerlijk verdelen: wie al een feestdagweek heeft, komt pas weer aan de beurt als de rest er ook een heeft gehad.</li>'+
     '<li>Kerst, oud & nieuw en nieuwjaar: maximaal één per persoon per rooster, en wie ze vorig jaar had krijgt ze dit jaar niet. Vanaf '+(WD_BASISJAAR+1)+' rekent de tool dat zelf door. Het saldo over de jaren heen telt mee: wie meer draaide dan gemiddeld, krijgt het volgende jaar iets minder.</li>'+
     '<li>Schaduwdienst telt mee voor het totaal aantal diensten per jaar.</li>'+
-    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega).</li></ol></div>'+
+    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). Uitzondering: JOMA02 mag ook Randstad 2 (zuid) draaien.</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Ruilen: wat mag <span class="badge b-warn">voorstel</span></div><ol class="wd-ol">'+
     '<li>Ruilen gaat één-op-één: jij neemt zijn week, hij neemt de jouwe. Een dienst weggeven zonder terugdienst kan niet.</li>'+
     '<li>Je ruilt alleen met iemand die het gebied ook mag draaien (eigen gebied of binnen de reistijdgrens).</li>'+
