@@ -4897,7 +4897,7 @@ function wdTry(prep,seed){
         if(wdIsFeest(k))sc+=(x.feest+x.fdev)*12;
         if(o.s!=='SCH'&&prep.home[m.ini]!==wdG(prep,o.s))sc+=2+prep.tijd[m.ini][wdG(prep,o.s)]/20;
         // wie maar in weinig gebieden mag, sparen voor dat gebied
-        if(o.s==='SCH')sc+=0;
+        if(o.s==='SCH'&&x.sch===0)sc-=60;   // iedereen draait minimaal 1 schaduwdienst: wie er nog geen had gaat voor
         sc+=R()*1.5;
         if(sc<bs){bs=sc;best=m;}});
       wk[o.s]=best.ini;bezet[best.ini]=1;var x=st[best.ini];x.n++;if(o.s==='SCH'){x.ls=k;x.sch++;}else x.lw=k;if(wdIsFeest(k))x.feest++;if(wdIsKerstNj(k))x.kn++;
@@ -4949,6 +4949,7 @@ function wdCheck(prep,plan){
     inWk.forEach(function(i){inWk.forEach(function(j){if(i<j&&wdPartner(i).indexOf(j)>=0)add('vast',i,'week '+(k+1)+': '+i+' en '+j+' samen');});});
     Object.keys(wk).forEach(function(s){var i=wk[s];if(!i)return;if(s==='SCH')ls[i]=k;else lw[i]=k;});
   });
+  WD_POOL.forEach(function(m){if(!nsch[m.ini]&&wdMag(prep,m.ini,'SCH'))add('regel',m.ini,m.ini+' heeft dit jaar geen schaduwdienst (minimaal 1)');});
   return fout;
 }
 
@@ -5731,7 +5732,7 @@ function wdViewRegels(){
     '<li>Een dienst is één week, vrijdag t/m donderdag. Elk roosterjaar start op de eerste vrijdag van januari en loopt tot de eerste vrijdag van het jaar erna (52 of 53 weken). '+WD_JAAR+': vr '+wdD(WD_START)+' t/m do '+wdD(wdWeekEnd(WD_N-1))+' '+wdWeekEnd(WD_N-1).getFullYear()+'.</li>'+
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ heeft factor '+String(WD_REGELS.fac60).replace('.',',')+' en draait naar verhouding minder; jonger factor 1.</li>'+
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
-    '<li>Maximaal '+WD_REGELS.maxSch+' schaduwdiensten per monteur per jaar.</li>'+
+    '<li>Elke monteur draait minimaal 1 en maximaal '+WD_REGELS.maxSch+' schaduwdiensten per jaar.</li>'+
     '<li>Drie vaste combinaties nooit in dezelfde week (waak of schaduw): '+WD_VERBODEN.map(function(v){return v[0]+' & '+v[1];}).join(', ')+'.</li>'+
     '<li>Per week één waakdienst per gebied en één landelijke schaduwdienst.</li>'+
     '<li>Zara heeft daarnaast elke week een eigen waakdienst met één Zara-monteur, ongeacht waar die woont. Technocenter heeft geen waakdienst.</li></ol></div>'+
