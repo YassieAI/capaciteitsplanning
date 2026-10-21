@@ -4674,6 +4674,8 @@ var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch me
 /* vaste flex-monteurs (code = 2 letters voornaam + 2 letters achternaam; allemaal onder 60 = factor 1) */
 var WD_FLEX_VAST=[{ini:'NABE',woon:'Den Haag',lat:52.0705,lng:4.3007},{ini:'SEBU',woon:'Haarlem',lat:52.3874,lng:4.6462},{ini:'MUUN',woon:'Rotterdam',lat:51.9244,lng:4.4777},{ini:'ROMA',woon:'Rotterdam',lat:51.9244,lng:4.4777}];
 function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(!WD_FLEX.some(function(x){return x.ini===v.ini;})&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_FLEX.push({id:9000001+i,ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1,flex:1});});}
+/* de inleners draaien vanaf 2027 gewoon mee in de waakdienst (vaste pool, factor 1) */
+WD_FLEX_VAST.forEach(function(v){if(!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_POOL.push({ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1});});
 wdFlexVast();
 function wdAlle(){return WD_POOL.concat(WD_FLEX);}
 var WD_ZTUSSEN=8; // minimaal aantal weken tussen twee Zara-diensten van dezelfde persoon
