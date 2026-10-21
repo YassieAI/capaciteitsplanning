@@ -5697,7 +5697,7 @@ function wdFlexWeg(id){
   WD_FLEX=WD_FLEX.filter(function(x){return x.id!==id;});wdCache={};
   wdOpslaan(id,'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].join('|'),wdRoleNaam(),'ingetrokken');
 }
-var wdMonQ='';
+var wdMonQ=''; // zoekterm Per monteur
 function wdMonFilter(q){wdMonQ=q||'';var v=wdMonQ.trim().toLowerCase(),tb=document.getElementById('wdMonTbl');if(!tb)return;
   var zicht={};tb.querySelectorAll('tr[data-z]').forEach(function(r){var ok=!v||r.dataset.z.indexOf(v)>=0;r.style.display=ok?'':'none';if(ok)zicht[r.dataset.g]=1;});
   tb.querySelectorAll('tr[data-grp]').forEach(function(r){r.style.display=zicht[r.dataset.grp]?'':'none';});}
