@@ -4831,7 +4831,7 @@ function wdPrep(key,cells){
 }
 
 /* ---------- regels ---------- */
-var WD_REGELS={grens:60,tussen:4,fac60:0.75,seeds:40,schTelt:true,geenSch60:false};
+var WD_REGELS={grens:60,tussen:4,maxSch:3,fac60:0.75,seeds:40,schTelt:true,geenSch60:false};
 function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s);}
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
@@ -4871,7 +4871,7 @@ function wdRng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math
 function wdTry(prep,seed){
   var R=wdRng(seed),slots=prep.sIds.concat(['SCH']);
   var cy=prep.carry; // overloop uit vorig jaar: laatste diensten, kerst, saldo diensten en feestdagen
-  var st={};WD_POOL.forEach(function(m){var i=m.ini;st[i]={n:0,feest:0,kn:cy&&cy.kerst[i]?1:0,lw:cy&&cy.lw[i]!=null?cy.lw[i]:-99,ls:cy&&cy.ls[i]!=null?cy.ls[i]:-99,f:wdFactor(m),dev:cy?(cy.dev[i]||0):0,fdev:cy?(cy.fdev[i]||0):0};});
+  var st={};WD_POOL.forEach(function(m){var i=m.ini;st[i]={n:0,sch:0,feest:0,kn:cy&&cy.kerst[i]?1:0,lw:cy&&cy.lw[i]!=null?cy.lw[i]:-99,ls:cy&&cy.ls[i]!=null?cy.ls[i]:-99,f:wdFactor(m),dev:cy?(cy.dev[i]||0):0,fdev:cy?(cy.fdev[i]||0):0};});
   var plan=[];var leeg=0;
   for(var k=0;k<WD_N;k++){
     var wk={},bezet={},todo=slots.slice();
@@ -4881,6 +4881,7 @@ function wdTry(prep,seed){
         var c=WD_POOL.filter(function(m){var x=st[m.ini];
           if(bezet[m.ini])return false;
           if(!wdGapOk(k,x.lw,x.ls,s==='SCH'))return false;
+          if(s==='SCH'&&x.sch>=WD_REGELS.maxSch)return false;   // maximaal 3 schaduwdiensten per monteur per jaar
           if(prep.nx&&prep.nx[m.ini]!==undefined&&(WD_N-k)+prep.nx[m.ini]<=WD_REGELS.tussen)return false;
           if(!wdMag(prep,m.ini,s))return false;
           if(wdPartner(m.ini).some(function(p){return bezet[p];}))return false;
@@ -4899,7 +4900,7 @@ function wdTry(prep,seed){
         if(o.s==='SCH')sc+=0;
         sc+=R()*1.5;
         if(sc<bs){bs=sc;best=m;}});
-      wk[o.s]=best.ini;bezet[best.ini]=1;var x=st[best.ini];x.n++;if(o.s==='SCH')x.ls=k;else x.lw=k;if(wdIsFeest(k))x.feest++;if(wdIsKerstNj(k))x.kn++;
+      wk[o.s]=best.ini;bezet[best.ini]=1;var x=st[best.ini];x.n++;if(o.s==='SCH'){x.ls=k;x.sch++;}else x.lw=k;if(wdIsFeest(k))x.feest++;if(wdIsKerstNj(k))x.kn++;
     }
     plan.push(wk);
   }
@@ -4929,7 +4930,7 @@ function wdMaak(prep,eigen){
 /* Controle van een volledig plan → lijst {t:'vast'|'regel', ini, m}.
    vast = afgesproken regels; regel = roosterregels die we nog samen bepalen. */
 function wdCheck(prep,plan){
-  var fout=[],lw={},ls={},kn={},cy=prep.carry;
+  var fout=[],lw={},ls={},kn={},cy=prep.carry,nsch={};
   if(cy)WD_POOL.forEach(function(m){var i=m.ini;if(cy.lw[i]>-99)lw[i]=cy.lw[i];if(cy.ls[i]>-99)ls[i]=cy.ls[i];if(cy.kerst[i])kn[i]=1;});
   function wkT(k){return k<0&&cy?'week '+(cy.N+k+1)+' van '+cy.jaar:'week '+(k+1);}
   function add(t,ini,m){fout.push({t:t,ini:ini,m:m});}
@@ -4941,6 +4942,7 @@ function wdCheck(prep,plan){
       var a=lw[i]===undefined?-99:lw[i],b=ls[i]===undefined?-99:ls[i];
       if(!wdGapOk(k,a,b,s==='SCH')){var vorig=Math.max(a,b);add('vast',i,'week '+(k+1)+': '+i+' te kort na dienst in '+wkT(vorig)+(WD_REGELS.schTelt?' (schaduw telt mee)':''));}
       if(s!=='SCH'&&!wdMag(prep,i,s))add('regel',i,'week '+(k+1)+': '+i+' mag '+nm+' niet draaien (reistijd of vleugel)');
+      if(s==='SCH'){nsch[i]=(nsch[i]||0)+1;if(nsch[i]===WD_REGELS.maxSch+1)add('regel',i,'week '+(k+1)+': '+i+' heeft dan meer dan '+WD_REGELS.maxSch+' schaduwdiensten dit jaar');}
       if(s==='SCH'&&!wdMag(prep,i,'SCH'))add('regel',i,'week '+(k+1)+': '+i+' is 60+ en vrijgesteld van schaduw');
       if(wdIsKerstNj(k)){kn[i]=(kn[i]||0)+1;if(kn[i]>1)add('regel',i,i+(cy&&cy.kerst[i]?' had vorig jaar al kerst/jaarwisseling en nu weer (week '+(k+1)+')':' heeft twee keer kerst/jaarwisseling'));}
     });
@@ -5729,6 +5731,7 @@ function wdViewRegels(){
     '<li>Een dienst is één week, vrijdag t/m donderdag. Elk roosterjaar start op de eerste vrijdag van januari en loopt tot de eerste vrijdag van het jaar erna (52 of 53 weken). '+WD_JAAR+': vr '+wdD(WD_START)+' t/m do '+wdD(wdWeekEnd(WD_N-1))+' '+wdWeekEnd(WD_N-1).getFullYear()+'.</li>'+
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ heeft factor '+String(WD_REGELS.fac60).replace('.',',')+' en draait naar verhouding minder; jonger factor 1.</li>'+
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
+    '<li>Maximaal '+WD_REGELS.maxSch+' schaduwdiensten per monteur per jaar.</li>'+
     '<li>Drie vaste combinaties nooit in dezelfde week (waak of schaduw): '+WD_VERBODEN.map(function(v){return v[0]+' & '+v[1];}).join(', ')+'.</li>'+
     '<li>Per week één waakdienst per gebied en één landelijke schaduwdienst.</li>'+
     '<li>Zara heeft daarnaast elke week een eigen waakdienst met één Zara-monteur, ongeacht waar die woont. Technocenter heeft geen waakdienst.</li></ol></div>'+
