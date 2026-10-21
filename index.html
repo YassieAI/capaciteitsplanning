@@ -4671,6 +4671,10 @@ WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});
 function wdIsZaraEcht(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
 var WD_ZPOOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1,zara:1};});
 var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch mee maar kunnen een week overnemen
+/* vaste flex-monteurs (code = 2 letters voornaam + 2 letters achternaam; allemaal onder 60 = factor 1) */
+var WD_FLEX_VAST=[{ini:'NABE',woon:'Den Haag',lat:52.0705,lng:4.3007},{ini:'SEBU',woon:'Haarlem',lat:52.3874,lng:4.6462},{ini:'MUUN',woon:'Rotterdam',lat:51.9244,lng:4.4777},{ini:'ROMA',woon:'Rotterdam',lat:51.9244,lng:4.4777}];
+function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(!WD_FLEX.some(function(x){return x.ini===v.ini;})&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_FLEX.push({id:9000001+i,ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1,flex:1});});}
+wdFlexVast();
 function wdAlle(){return WD_POOL.concat(WD_FLEX);}
 var WD_ZTUSSEN=8; // minimaal aantal weken tussen twee Zara-diensten van dezelfde persoon
 function wdZaTel(za){var t={};WD_ZPOOL.forEach(function(m){t[m.ini]={n:0,feest:0};});(za||[]).forEach(function(i,k){if(i&&t[i]){t[i].n++;if(wdIsFeest(k))t[i].feest++;}});return t;}
@@ -6249,6 +6253,7 @@ async function sbLoad(opts){
           else if(p[0]==='wd:v'&&p.length>=5)wdVerpl.push({id:id,key:p[1],ini:p[2],van:p[3],naar:p[4],door:String(row.door||'').slice(0,40),status:st});
         });
         wdVerpl.filter(function(x){return !x.t&&x.status==='goed'&&WD_KEYS.indexOf(x.key)>=0;}).forEach(function(x){WD_OVERRIDE[x.key]=WD_OVERRIDE[x.key]||{};WD_OVERRIDE[x.key][x.ini]=x.naar;});
+        wdFlexVast();
         if(wdSigStr()!==wdVoor)wdCache={};
       }
     }catch(e){console.error('[waakdienst] voorstellen laden faalde',e);}
