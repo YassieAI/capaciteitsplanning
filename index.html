@@ -4668,7 +4668,7 @@ var WD_POOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='r
 /* Zara heeft een eigen waakdienst, alleen voor de Zara-locaties, en het Technocenter heeft geen waakdienst.
    Monteurs van Zara en Technocenter draaien daarom niet mee in deze waakdienst (2× Randstad, Noord, Zuid + schaduw). */
 function wdIsZara(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&(LOCMAP[m.base].type==='zara'||LOCMAP[m.base].type==='techno'));}
-var WD_UIT=['ERMI01']; // doet niet (meer) mee in de waakdienst
+var WD_UIT=['ERMI01','HEMO01']; // doen (tijdelijk) niet mee in de waakdienst
 WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini)&&WD_UIT.indexOf(m.ini)<0;});
 /* Zara-waakdienst: elke week 1 Zara-monteur, woonplaats maakt niet uit, eerlijk verdeeld over alle Zara-monteurs */
 function wdIsZaraEcht(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
