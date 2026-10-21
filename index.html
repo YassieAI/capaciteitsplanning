@@ -5697,15 +5697,44 @@ function wdFlexWeg(id){
   WD_FLEX=WD_FLEX.filter(function(x){return x.id!==id;});wdCache={};
   wdOpslaan(id,'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].join('|'),wdRoleNaam(),'ingetrokken');
 }
+var wdMonQ='';
+function wdMonFilter(q){wdMonQ=q||'';var v=wdMonQ.trim().toLowerCase(),tb=document.getElementById('wdMonTbl');if(!tb)return;
+  var zicht={};tb.querySelectorAll('tr[data-z]').forEach(function(r){var ok=!v||r.dataset.z.indexOf(v)>=0;r.style.display=ok?'':'none';if(ok)zicht[r.dataset.g]=1;});
+  tb.querySelectorAll('tr[data-grp]').forEach(function(r){r.style.display=zicht[r.dataset.grp]?'':'none';});}
+/* doel per monteur: eerlijk deel van de waakdiensten binnen de eigen regio (die heeft een vast aantal diensten per week)
+   + eerlijk deel van alle schaduwdiensten, beide naar inzetbaarheidsfactor */
+function wdDoelPer(c){
+  var p=c.prep,N=c.plan.length,fsG={},fsS=0,d={};
+  WD_POOL.forEach(function(m){var g=p.home[m.ini];fsG[g]=(fsG[g]||0)+wdFactor(m);if(wdMag(p,m.ini,'SCH'))fsS+=wdFactor(m);});
+  WD_POOL.forEach(function(m){var g=p.home[m.ini],nsl=p.slots.filter(function(sl){return sl.g===g;}).length;
+    var w=fsG[g]?N*nsl*wdFactor(m)/fsG[g]:0,sch=(fsS&&wdMag(p,m.ini,'SCH'))?N*wdFactor(m)/fsS:0;
+    sch=Math.max(sch?1:0,Math.min(WD_REGELS.maxSch,sch));d[m.ini]=w+sch;});
+  return d;
+}
 function wdViewMonteur(){
-  var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),tot=WD_N*(c.prep.sIds.length+1),sf=wdTot();
-  var rijen=WD_POOL.slice().filter(function(m){return !team||!wdAlleen||team[m.ini];}).sort(function(a,b){return c.prep.gIds.indexOf(c.prep.home[a.ini])-c.prep.gIds.indexOf(c.prep.home[b.ini])||(a.ini<b.ini?-1:1);});
+  var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),D=wdDoelPer(c);
+  var rijen=WD_POOL.slice().filter(function(m){return !team||!wdAlleen||team[m.ini];});
   var h=wdFlexKaart(c,t);
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen</button></div>';
-  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. Doel = eerlijk deel van alle '+tot+' diensten naar inzetbaarheidsfactor (60+ telt voor 0,75). '+(WD_ECHT?'Woonplaats is echt, naam is fictief.':'Woonplaats en naam zijn fictief (demo).')+'</p><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th>Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
-  rijen.forEach(function(m){var x=t[m.ini],doel=tot*wdFactor(m)/sf,afw=x.tot-doel;
-    h+='<tr><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span></td><td>'+m.woon+'</td><td><i class="wd-sw" style="background:'+wdKleur(wdKey,c.prep.home[m.ini])+'"></i>'+wdGNaam(c,c.prep.home[m.ini])+'</td><td>'+String(wdFactor(m)).replace('.',',')+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td><b>'+x.tot+'</b></td><td class="'+(Math.abs(afw)>=2?'wd-bad':'')+'">'+doel.toFixed(1).replace('.',',')+'</td><td>'+x.feest+'</td>'+(c.prep.carry?'<td>'+(function(v){return (v>0.05?'+':v<-0.05?'−':'')+nl1(Math.abs(v));})(c.prep.carry.dev[m.ini]||0)+'</td>':'')+'<td>'+wdStrip(m.ini)+'</td></tr>';});
+  // gemiddelden
+  function gem(lijst){var n=lijst.length||1,w=0,s=0,tt=0;lijst.forEach(function(m){var x=t[m.ini];w+=x.waak;s+=x.sch;tt+=x.tot;});return {w:w/n,s:s/n,t:tt/n};}
+  var ga=gem(rijen);
+  h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:10px"><div class="metric"><div class="l">Gem. waakdiensten</div><div class="v">'+nl1(ga.w)+'</div></div><div class="metric"><div class="l">Gem. schaduwdiensten</div><div class="v">'+nl1(ga.s)+'</div></div><div class="metric"><div class="l">Gem. totaal per monteur</div><div class="v">'+nl1(ga.t)+'</div></div><div class="metric"><div class="l">Monteurs</div><div class="v">'+rijen.length+'</div></div></div>';
+  h+='<div class="ctrl" style="margin-bottom:8px"><input id="wdMonZoek" placeholder="Zoek monteur, code of woonplaats" value="'+esc(wdMonQ)+'" oninput="wdMonFilter(this.value)" style="min-width:260px"></div>';
+  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van de waakdiensten <i>binnen de eigen regio</i> plus een eerlijk deel van de schaduwdiensten, naar inzetbaarheidsfactor (60+ telt voor 0,75). Rood = 2 of meer ernaast. '+(WD_ECHT?'Woonplaats is echt, naam is fictief.':'Woonplaats en naam zijn fictief (demo).')+'</p><div class="wd-scroll"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
+  var ncol=10+(c.prep.carry?1:0);
+  c.prep.gIds.forEach(function(g){
+    var groep=rijen.filter(function(m){return c.prep.home[m.ini]===g;});if(!groep.length)return;
+    var isRA=c.prep.slots.some(function(sl){return sl.g===g&&sl.wing;});
+    groep.sort(function(a,b){var va=isRA?wdVleugel(a.ini):'',vb=isRA?wdVleugel(b.ini):'';return (va<vb?-1:va>vb?1:0)||(a.ini<b.ini?-1:1);});
+    var gg=gem(groep),nsl=c.prep.slots.filter(function(sl){return sl.g===g;}).length;
+    h+='<tr class="wd-grp" data-grp="'+g+'"><td colspan="'+ncol+'" style="background:var(--surface-1);font-weight:600"><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+' · '+groep.length+' monteurs · '+nsl+' dienst'+(nsl===1?'':'en')+' per week <span class="wd-mut" style="font-weight:400;margin-left:8px">gem. waak '+nl1(gg.w)+' · schaduw '+nl1(gg.s)+' · totaal '+nl1(gg.t)+'</span></td></tr>';
+    groep.forEach(function(m){var x=t[m.ini],doel=D[m.ini]||0,afw=x.tot-doel;
+      var z=(m.ini+' '+wdNaam(m.ini)+' '+m.woon).toLowerCase();
+      h+='<tr data-z="'+esc(z)+'" data-g="'+g+'"><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span></td><td>'+m.woon+'</td><td><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+(isRA?' · '+wdVleugels(m.ini).join('/'):'')+'</td><td>'+String(wdFactor(m)).replace('.',',')+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td><b>'+x.tot+'</b></td><td class="'+(Math.abs(afw)>=2?'wd-bad':'')+'" title="'+(afw>=0?'+':'−')+nl1(Math.abs(afw))+' t.o.v. doel">'+nl1(doel)+'</td><td>'+x.feest+'</td>'+(c.prep.carry?'<td>'+(function(v){return (v>0.05?'+':v<-0.05?'−':'')+nl1(Math.abs(v));})(c.prep.carry.dev[m.ini]||0)+'</td>':'')+'<td>'+wdStrip(m.ini)+'</td></tr>';});
+  });
   h+='</tbody></table></div>';
+  if(wdMonQ)setTimeout(function(){wdMonFilter(wdMonQ);},0);
   var zt=wdZaTel(c.za),zdoel=WD_N/WD_ZPOOL.length;
   h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct"><i class="wd-sw" style="background:#8e5bd1"></i>Zara-waakdienst · '+WD_ZPOOL.length+' monteurs</div><p class="wd-uitleg" style="margin:0 0 8px">Eén Zara-monteur per week, woonplaats maakt niet uit. Eerlijk verdeeld over alle Zara-monteurs (doel ca. '+nl1(zdoel)+' per persoon per jaar), minimaal '+WD_ZTUSSEN+' weken tussen twee diensten, feestdagen en kerst eerlijk verdeeld en het saldo loopt door naar het volgende jaar.</p><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Diensten</th><th>Feestdagweken</th><th>Jaar</th></tr></thead><tbody>';
   WD_ZPOOL.slice().sort(function(a,b){return a.ini<b.ini?-1:1;}).forEach(function(m){var x=zt[m.ini];
