@@ -4835,7 +4835,7 @@ function wdPrep(key,cells){
 
 /* ---------- regels ---------- */
 var WD_REGELS={grens:60,tussen:4,maxSch:3,fac60:0.75,seeds:40,schTelt:false,geenSch60:true,schTussen:6};
-var WD_GEEN_SCH=['MUUN']; // draait geen schaduwdienst
+var WD_GEEN_SCH=['MUUN']; // draait geen schaduwdienst (naast 60+)
 function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s);}
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
