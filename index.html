@@ -866,6 +866,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		print-color-adjust: exact;
 		}
 	}
+#wdPrintZone{display:none}
+@media print{body.wd-pr>*:not(#wdPrintZone){display:none!important}body.wd-pr #wdPrintZone{display:block!important;color:#000;background:#fff}body.wd-pr #wdPrintZone table{width:100%;border-collapse:collapse;font-size:10px}body.wd-pr #wdPrintZone td,body.wd-pr #wdPrintZone th{border:1px solid #999;padding:2px 4px}@page{size:landscape;margin:10mm}}
 /* ---------- waakdienst ---------- */
 .wd-q4 td,.wd-q4 th{vertical-align:top;min-width:64px}.wd-q4 .we{background:var(--bg2,rgba(128,128,128,.12))}.wd-q4d{font-size:10px;color:var(--text3,#888)}.wd-q4c{display:inline-block;margin:1px 2px 1px 0;padding:1px 6px;border-radius:9px;background:#3b7dd8;color:#fff;font-size:11px;font-weight:600}.wd-q4 .we .wd-q4c{background:#c2462f}
 .uv-maand{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px}.uv-mk{font-size:11px;color:var(--muted);text-align:center;font-weight:600}.uv-mwk{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:600}.uv-md{border-radius:8px;padding:5px 5px;min-height:58px;overflow:hidden}.uv-md.uv-buiten{background:transparent}.uv-md.uv-nu{outline:2px solid var(--text);outline-offset:1px}.uv-mdn{font-size:11px;opacity:.8}.uv-mdd{font-size:12px;font-weight:700;line-height:1.2;margin-top:2px;word-break:break-word}.uv-mdl{font-size:10px;font-weight:600;color:var(--risk);margin-top:2px}@media(max-width:600px){.uv-mdd{font-size:10px}.uv-md{min-height:50px;padding:4px 3px}}
@@ -4666,7 +4668,8 @@ var WD_POOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='r
 /* Zara heeft een eigen waakdienst, alleen voor de Zara-locaties, en het Technocenter heeft geen waakdienst.
    Monteurs van Zara en Technocenter draaien daarom niet mee in deze waakdienst (2× Randstad, Noord, Zuid + schaduw). */
 function wdIsZara(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&(LOCMAP[m.base].type==='zara'||LOCMAP[m.base].type==='techno'));}
-WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});
+var WD_UIT=['ERMI01']; // doet niet (meer) mee in de waakdienst
+WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini)&&WD_UIT.indexOf(m.ini)<0;});
 /* Zara-waakdienst: elke week 1 Zara-monteur, woonplaats maakt niet uit, eerlijk verdeeld over alle Zara-monteurs */
 function wdIsZaraEcht(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
 var WD_ZPOOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1,zara:1};});
@@ -4675,6 +4678,7 @@ var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch me
 var WD_FLEX_VAST=[{ini:'NABE',woon:'Den Haag',lat:52.0705,lng:4.3007},{ini:'SEBU',woon:'Haarlem',lat:52.3874,lng:4.6462},{ini:'MUUN',woon:'Rotterdam',lat:51.9244,lng:4.4777},{ini:'ROMA',woon:'Rotterdam',lat:51.9244,lng:4.4777}];
 function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(!WD_FLEX.some(function(x){return x.ini===v.ini;})&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_FLEX.push({id:9000001+i,ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1,flex:1});});}
 /* de inleners draaien vanaf 2027 gewoon mee in de waakdienst (vaste pool, factor 1) */
+WD_FLEX_VAST.push({ini:'JOHA',woon:'Almere',lat:52.3508,lng:5.2647}); // Joshua Harkelijn: draait mee met Noord (noordvleugel)
 WD_FLEX_VAST.forEach(function(v){if(!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_POOL.push({ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1});});
 wdFlexVast();
 function wdAlle(){return WD_POOL.concat(WD_FLEX);}
@@ -5020,7 +5024,7 @@ function wdC(){if(!wdCache[wdKey])wdBouw();return wdCache[wdKey];}
 var WD_ECHT=null; // bestandsnaam zodra echte gegevens zijn ingeladen
 function wdLaadEcht(j,naam){
   if(!j||!Array.isArray(j.pool)||!j.pool.length)throw new Error('geen pool in het bestand');
-  WD_POOL=j.pool.map(function(r){return {ini:r[0],woon:r[1],lat:+r[2],lng:+r[3],f:+r[4]};});
+  WD_POOL=j.pool.map(function(r){return {ini:r[0],woon:r[1],lat:+r[2],lng:+r[3],f:+r[4]};}).filter(function(m){return WD_UIT.indexOf(m.ini)<0;});
   var zr=WD_POOL.filter(function(m){return wdIsZara(m.ini);});
   if(zr.length){WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini);});
     var zz=zr.filter(function(m){return wdIsZaraEcht(m.ini);});if(zz.length)WD_ZPOOL=zz.map(function(m){m.zara=1;return m;});
@@ -5535,6 +5539,7 @@ function wdViewRooster(){
   var c=wdC(),slots=c.prep.sIds.concat(['SCH']),team=wdTeamSet();
   var h='';
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
+  h+='<div class="ctrl" style="margin-bottom:10px"><button onclick="wdPrint()">&#128438; Afdrukken</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+(wdNuWeek()+1)+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
   else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
@@ -5553,6 +5558,20 @@ function wdViewRooster(){
   return h;
 }
 
+/* afdrukken: alleen het jaarrooster (weken x diensten), zonder knoppen, kaart of totalen */
+function wdPrint(){
+  var t=document.querySelector('.wd-rooster');if(!t)return;
+  var old=document.getElementById('wdPrintZone');if(old)old.remove();
+  var z=document.createElement('div');z.id='wdPrintZone';
+  var h=document.createElement('h2');h.textContent='Waakdienst '+WD_JAAR;z.appendChild(h);
+  var c=t.cloneNode(true);
+  c.querySelectorAll('button').forEach(function(b){var sp=document.createElement('span');sp.textContent=b.textContent;b.parentNode.replaceChild(sp,b);});
+  c.querySelectorAll('.badge').forEach(function(b){b.remove();});
+  z.appendChild(c);document.body.appendChild(z);document.body.classList.add('wd-pr');
+  var klaar=function(){document.body.classList.remove('wd-pr');var e=document.getElementById('wdPrintZone');if(e)e.remove();window.removeEventListener('afterprint',klaar);};
+  window.addEventListener('afterprint',klaar);
+  setTimeout(function(){window.print();},50);
+}
 /* ---------- ruilen ---------- */
 function wdDeadlineOk(k){var d=wdWeekStart(k);var nu=new Date();nu.setHours(0,0,0,0);return (d-nu)/864e5>=7;}
 function wdZaRuilCheck(c,k1,k2){
