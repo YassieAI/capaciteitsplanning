@@ -4678,7 +4678,7 @@ var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch me
 var WD_FLEX_VAST=[{ini:'NABE',woon:'Den Haag',lat:52.0705,lng:4.3007},{ini:'SEBU',woon:'Haarlem',lat:52.3874,lng:4.6462},{ini:'MUUN',woon:'Rotterdam',lat:51.9244,lng:4.4777},{ini:'ROMA',woon:'Rotterdam',lat:51.9244,lng:4.4777}];
 function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(!WD_FLEX.some(function(x){return x.ini===v.ini;})&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_FLEX.push({id:9000001+i,ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1,flex:1});});}
 /* de inleners draaien vanaf 2027 gewoon mee in de waakdienst (vaste pool, factor 1) */
-WD_FLEX_VAST.push({ini:'JOHA',woon:'Almere',lat:52.3508,lng:5.2647}); // Joshua Harkelijn: draait mee met Noord (noordvleugel)
+WD_FLEX_VAST.push({ini:'JOHA',woon:'Almere',lat:52.3508,lng:5.2647}); // Joshua Harkelijn: draait mee met regio Noord
 WD_FLEX_VAST.forEach(function(v){if(!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_POOL.push({ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1});});
 wdFlexVast();
 function wdAlle(){return WD_POOL.concat(WD_FLEX);}
@@ -4803,6 +4803,8 @@ function wdMin(km){return 8+km*1.25/85*60;}
 var WD_OVERRIDE={A:{},B:{},C:{},D:{}}; // gesleepte monteurs: opzet → {code: gebied}
 var WD_INSTROOM_W=null;                  // {pc2: verwacht aantal storingen} — uit het instroomrapport
 function wdPc2Gebied(key){var o=WD_OPZET[key],r={};(typeof PC2!=='undefined'?PC2:[]).forEach(function(p){r[p[0]]=o.assign(p[3],p[1],p[2]);});return r;}
+/* vast thuisgebied, los van de woonplaats: JOHA woont in Almere maar draait mee met regio Noord (niet Randstad) */
+var WD_HOME_VAST={JOHA:{B:'NO',D:'LN'}};
 function wdPrep(key,cells){
   var o=WD_OPZET[key];
   var gIds=o.gebieden.map(function(g){return g.id;});
@@ -4815,7 +4817,7 @@ function wdPrep(key,cells){
   var slotDef={};slots.forEach(function(x){slotDef[x.id]=x;});
   wdAlle().forEach(function(m){
     var best=1e9,bi=0;cells.forEach(function(c,i){var d=(c[3]-m.lat)*(c[3]-m.lat)+((c[2]-m.lng)*0.61)*((c[2]-m.lng)*0.61);if(d<best){best=d;bi=i;}});
-    home[m.ini]=(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini])||(o.home&&o.home[m.ini])||cg[bi];
+    home[m.ini]=(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini])||(WD_HOME_VAST[m.ini]&&WD_HOME_VAST[m.ini][key])||(o.home&&o.home[m.ini])||cg[bi];
     tijd[m.ini]={};
     if(WD_INSTROOM_W&&typeof PC2!=='undefined'){ // gewogen naar verwachte storingen per postcode-2
       var pg=wdPc2Gebied(key),sw={},st={};gIds.forEach(function(g){sw[g]=0;st[g]=0;});
