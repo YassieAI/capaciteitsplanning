@@ -3750,7 +3750,7 @@ function weekStrip(){
   return h;
 }
 var totSel=null,totDag=null;   // totDag: null = hele week, anders index 0-6 van de dag
-function totSetSel(k){totSel=(totSel===k&&totDag===null?null:k);totDag=null;render();}
+function totSetSel(k){totSel=(k===null||(totSel===k&&totDag===null))?null:k;totDag=null;render();}
 function totKlik(k,i){if(totSel===k&&totDag===i){totSel=null;totDag=null;}else{totSel=k;totDag=i;}render();}
 function totaalCapBlokWeek(){
   var mon=mondayOf(new Date());mon.setDate(mon.getDate()+wgOff*7);
@@ -3764,16 +3764,17 @@ function totaalCapBlokWeek(){
   var nodigDag=(CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno)/5;
   // per categorie een eigen staaf, elk met een eigen streepje voor de benodigde uren per werkdag
   var ndCat={};types.forEach(function(g){ndCat[g]=CONTRACT_UREN[g]/5;});
-  var maxV=0;types.forEach(function(g){if(ndCat[g]*1.3>maxV)maxV=ndCat[g]*1.3;});per.forEach(function(r){types.forEach(function(g){if(r[g]>maxV)maxV=r[g];});});
+  var toon=(totSel==='regio'||totSel==='zara'||totSel==='techno')?[totSel]:types;
+  var maxV=0;toon.forEach(function(g){if(ndCat[g]*1.3>maxV)maxV=ndCat[g]*1.3;});per.forEach(function(r){toon.forEach(function(g){if(r[g]>maxV)maxV=r[g];});});
   var H=190;
   var tot=[],chart='',dl='';
   dagen.forEach(function(d,i){
-    var r=per[i],t=Math.round(r.regio+r.zara+r.techno),werk=i<5,nd=werk?nodigDag:0;
-    var staven=types.map(function(g){var hh=r[g]/maxV*H,p=werk?Math.round(r[g]/ndCat[g]*100):null,tn=p===null?null:tone(p);
+    var r=per[i],werk=i<5,t=0,nd=0;toon.forEach(function(g){t+=r[g];if(werk)nd+=ndCat[g];});t=Math.round(t);
+    var staven=toon.map(function(g){var hh=r[g]/maxV*H,p=werk?Math.round(r[g]/ndCat[g]*100):null,tn=p===null?null:tone(p);
       var ly=ndCat[g]/maxV*H,sel=(totSel===g&&totDag===i);
       return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;height:'+H+'px">'+
         '<span style="font-size:10px;font-weight:700;color:'+(tn?tn.tx:'var(--muted)')+';white-space:nowrap">'+(laden?'':Math.round(r[g]))+'</span>'+
-        '<div onclick="totKlik(\''+g+'\','+i+')" title="'+CONTRACT_NAAM[g]+': '+Math.round(r[g])+' u beschikbaar'+(werk?' van '+Math.round(ndCat[g])+' u nodig ('+p+'%)':'')+' · klik voor verdeling per '+(g==='regio'?'regio':'locatie')+'" style="width:100%;max-width:22px;height:'+Math.max(r[g]>0?2:0,hh).toFixed(1)+'px;background:'+GROEP_KLEUR[g]+';border-radius:3px 3px 0 0;cursor:pointer;'+(sel?'outline:2px solid var(--text);outline-offset:-2px;':'')+'"></div>'+
+        '<div onclick="totKlik(\''+g+'\','+i+')" title="'+CONTRACT_NAAM[g]+': '+Math.round(r[g])+' u beschikbaar'+(werk?' van '+Math.round(ndCat[g])+' u nodig ('+p+'%)':'')+' · klik voor verdeling per '+(g==='regio'?'regio':'locatie')+'" style="width:100%;max-width:'+(toon.length===1?'44':'22')+'px;height:'+Math.max(r[g]>0?2:0,hh).toFixed(1)+'px;background:'+GROEP_KLEUR[g]+';border-radius:3px 3px 0 0;cursor:pointer;'+(sel?'outline:2px solid var(--text);outline-offset:-2px;':'')+'"></div>'+
         (werk?'<div title="nodig '+CONTRACT_NAAM[g]+': '+Math.round(ndCat[g])+' u" style="position:absolute;left:8%;right:8%;bottom:'+ly.toFixed(1)+'px;border-top:2px dashed var(--text);pointer-events:none"></div>':'')+
       '</div>';}).join('');
     var dek=nd?Math.round(t/nd*100):null;
@@ -3814,7 +3815,7 @@ function totaalCapBlokWeek(){
     '<div style="position:relative"><div style="display:flex;gap:8px;border-bottom:0.5px solid var(--border)">'+chart+'</div>'+
     '</div>'+
     '<div style="display:flex;gap:8px;margin-top:4px">'+dl+'</div></div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 14px;font-size:12px;color:var(--muted)">'+types.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+' (nodig '+Math.round(CONTRACT_UREN[t]/5)+' u per werkdag)</span>';}).join('')+'<span><span style="display:inline-block;width:16px;height:0;border-top:2px dashed var(--text);vertical-align:3px"></span> benodigde uren per categorie</span></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 14px;font-size:12px;color:var(--muted)">'+(toon.length===1?'<span><b style="color:var(--text)">Alleen '+CONTRACT_NAAM[toon[0]]+'</b> · <button class="linkbtn" onclick="totSetSel(null)">toon alles</button></span>':'')+toon.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+' (nodig '+Math.round(CONTRACT_UREN[t]/5)+' u per werkdag)</span>';}).join('')+'<span><span style="display:inline-block;width:16px;height:0;border-top:2px dashed var(--text);vertical-align:3px"></span> benodigde uren per categorie</span></div>'+
     detail;
 }
 /* ---------- weekrooster (Manager R/D): diensten schuiven ---------- */
@@ -3944,16 +3945,17 @@ function viewWeek(){
 // Zet een dienst op elke cel van de selectie en schrijft ze allemaal weg.
 /* afwezig vanaf een tijdstip: beschikbare uren = tijd - begin van de dienst (dagvroeg 07:00, anders 08:00) */
 function vanafOpties(id){var st='height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)';
-  function opt(){var h='<option value="">–</option>';for(var t=7;t<=19;t+=0.5)h+='<option value="'+t+'">'+('0'+Math.floor(t)).slice(-2)+':'+(t%1?'30':'00')+'</option>';return h;}
-  return '<span style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:6px;font-size:13px;color:var(--muted)">of afwezig van <select id="'+id+'" style="'+st+'" onchange="vanafTxt(\''+id+'\')">'+opt()+'</select> tot <select id="'+id+'Tot" style="'+st+'" onchange="vanafTxt(\''+id+'\')">'+opt()+'</select><b id="'+id+'Txt" style="color:var(--text);font-weight:600"></b></span>';}
+  return '<span style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:6px;font-size:13px;color:var(--muted)">of afwezig van <input type="time" step="60" id="'+id+'" style="'+st+'" oninput="vanafTxt(\''+id+'\')"> tot <input type="time" step="60" id="'+id+'Tot" style="'+st+'" oninput="vanafTxt(\''+id+'\')"><b id="'+id+'Txt" style="color:var(--text);font-weight:600"></b></span>';}
+function tijdUur(v){if(!v)return NaN;var p=String(v).split(':');var h=parseInt(p[0],10),m=parseInt(p[1]||'0',10);return isNaN(h)?NaN:h+(isNaN(m)?0:m)/60;}
+function uMin(u){var h=Math.floor(u+1e-9),m=Math.round((u-h)*60);if(m===60){h++;m=0;}return h+(m?':'+('0'+m).slice(-2):'')+' u';}
 /* werktijden per dienst: dagvroeg 7:00–15:30, sw (bij inzet) 10:30–19:00, overige 8:00–16:30; 8 uur werk + 30 min pauze */
 function dienstVenster(oudSt){var b=oudSt==='dagvroeg'?7:(oudSt==='sw'?10.5:8);return [b,b+8.5];}
 /* afwezige werkuren tussen van en tot (tot leeg = einde dienst); pauze 12:00–12:30 telt niet mee */
 function afwUrenVanTot(oudSt,van,tot){var w=dienstVenster(oudSt);if(isNaN(tot))tot=w[1];var a=Math.max(van,w[0]),e=Math.min(tot,w[1]);if(e<=a)return 0;var u=e-a;var p=Math.max(0,Math.min(e,12.5)-Math.max(a,12));u-=p;return Math.max(0,Math.min(8,u));}
-function vanafBesch(oudSt,id,terug){var el=document.getElementById(id),v=el&&el.value?parseFloat(el.value):NaN;if(isNaN(v))return terug;var te=document.getElementById(id+'Tot'),t=te&&te.value?parseFloat(te.value):NaN;
+function vanafBesch(oudSt,id,terug){var el=document.getElementById(id),v=tijdUur(el&&el.value);if(isNaN(v))return terug;var te=document.getElementById(id+'Tot'),t=tijdUur(te&&te.value);
   var afw=Math.round(afwUrenVanTot(oudSt,v,t));afw=Math.max(1,Math.min(8,afw));return Math.max(0,Math.min(7,8-afw));}
-function vanafTxt(id){var el=document.getElementById(id),te=document.getElementById(id+'Tot'),o=document.getElementById(id+'Txt');if(!o)return;var v=el&&el.value?parseFloat(el.value):NaN,t=te&&te.value?parseFloat(te.value):NaN;
-  if(isNaN(v)){o.textContent='';return;}var afw=Math.round(afwUrenVanTot('dag',v,t));afw=Math.max(1,Math.min(8,afw));o.textContent='= '+afw+' u afwezig · nog '+(8-afw)+' u beschikbaar (bij dagdienst 8:00–16:30)';}
+function vanafTxt(id){var el=document.getElementById(id),te=document.getElementById(id+'Tot'),o=document.getElementById(id+'Txt');if(!o)return;var v=tijdUur(el&&el.value),t=tijdUur(te&&te.value);
+  if(isNaN(v)){o.textContent='';return;}var a=afwUrenVanTot('dag',v,t),r=Math.max(1,Math.min(8,Math.round(a)));o.textContent='= '+uMin(a)+' afwezig · nog '+uMin(Math.max(0,8-a))+' beschikbaar (bij dagdienst 8:00–16:30)'+(Math.abs(a-r)>0.01?' · in het rooster afgerond op '+r+' u afwezig':'');}
 /* eerst een keuze maken, daarna pas op Toepassen: zo gaat er niets direct door (en kun je de uren nog aanpassen) */
 var wkPendFn=null;
 function wkKies(b,fn){wkPendFn=fn;
