@@ -6646,8 +6646,8 @@ metLog('sbSaveStatus',function(m,idx){var r=statusToRow(m,m.roster[idx],idx);var
   if(was!==undefined&&was!==nu){var wl=was?stLabel(was):'vrij';wt='; was: '+wl+'; raw: '+(was||'vrij');ROOSTER_WAS_S[m.ini+'|'+isoOf(idx)]={was:wl};}
   return ['Rooster','Rooster · '+isoOf(idx),m.ini+' ('+m.naam+'): '+(r.del?'dienst verwijderd':'dienst op '+r.type+(r.hrs?' ('+r.hrs+' u)':''))+wt];});
 metLog('sbSaveMove',function(mid,idx,loc){var m=logMon(mid);if(!m)return null;var oud=locOf(m,idx);return ['Verschuiving','Schuifbord · '+isoOf(idx),m.ini+' naar '+locNaam(loc)+(oud&&oud!==loc?'; was: '+locNaam(oud):'')];});
-metLog('sbSaveProposal',function(p){var m=logMon(p.mid);return m?['Voorstel','Te bespreken · '+isoOf(p.day),'Nieuw voorstel: '+m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt))]:null;});
-metLog('removeProposal',function(id,status){var p=proposals.filter(function(x){return x.id===id;})[0],m=p&&logMon(p.mid);return ['Voorstel','Te bespreken'+(p?' · '+isoOf(p.day):''),'Voorstel '+(m?m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt)):'#'+id)+' '+(status==='doorgevoerd'?'doorgevoerd':status==='afgewezen'?'afgewezen':status?status:'ingetrokken')];});
+metLog('sbSaveProposal',function(p){var m=logMon(p.mid);return m?['Voorstel','Te bespreken · '+isoOf(p.day),'Nieuw voorstel: '+m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?propNaam(p):locNaam(p.tgt))]:null;});
+metLog('removeProposal',function(id,status){var p=proposals.filter(function(x){return x.id===id;})[0],m=p&&logMon(p.mid);return ['Voorstel','Te bespreken'+(p?' · '+isoOf(p.day):''),'Voorstel '+(m?m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?propNaam(p):locNaam(p.tgt)):'#'+id)+' '+(status==='doorgevoerd'?'doorgevoerd':status==='afgewezen'?'afgewezen':status?status:'ingetrokken')];});
 metLog('sbSaveNorm',function(perLoc){return ['Dekkingsnorm','Norm',(perLoc||[]).map(function(x){return x.id+' '+(x.oud!=null?x.oud+' → ':'')+x.nieuw;}).join(', ')||'norm aangepast'];});
 metLog('sbWisNorm',function(){return ['Dekkingsnorm','Norm','norm teruggezet naar standaard'];});
 metLog('wdOpslaan',function(id,doel,door,status){var p=String(doel).split('|'),st=status==='open'?'voorgesteld':status==='doorgevoerd'?'doorgevoerd':status==='ingetrokken'?'ingetrokken':status||'';
@@ -6719,7 +6719,7 @@ var LOG_FOCUS=null;
 function lfMatch(ini,iso){return !!(LOG_FOCUS&&LOG_FOCUS.ini===ini&&LOG_FOCUS.iso===iso);}
 function lfWaak(k,sl){var f=LOG_FOCUS;if(!f||f.jaar!==WD_JAAR)return false;if(f.cells)return f.cells.some(function(c){return c.k===k&&c.slot===sl;});return f.slot===sl&&f.wk===k;}
 function lfStijl(){var c=LOG_FOCUS?LOG_FOCUS.kleur:'#6b6a63';return 'outline:3px solid '+c+';outline-offset:-1px;box-shadow:0 0 0 4px '+c+'44;';}
-function logBanner(){var v=document.getElementById('view');if(!v||!LOG_FOCUS)return;var f=LOG_FOCUS,kan=lfKanVoor(),vs=!!f.voorstel,d=document.createElement('div');d.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:8px 12px;border-radius:10px;border:2px solid '+f.kleur+';background:'+f.kleur+'14';
+function logBanner(){var v=document.getElementById('view');if(!v||!LOG_FOCUS)return;var f=LOG_FOCUS,kan=lfKanVoor(),vs=!!f.voorstel,d=document.createElement('div');if((!vs&&!f.was&&!f.nu)||(!vs&&boardView==='voorstellen')){LOG_FOCUS=null;return;}d.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:8px 12px;border-radius:10px;border:2px solid '+f.kleur+';background:'+f.kleur+'14';
   var wasT=(vs?f.wasT:f.was)||'niet vastgelegd',nuT=(vs?f.nuT:f.nu)||'—',naKan=vs?!!f.apply:true,rd=(role==='RD');
   d.innerHTML=(vs?'<b style="font-size:12px">Voorstel</b>':'')+'<div class="ctrl"><button data-lfv="1" class="'+(LOG_VOOR?'active':'')+'"'+(kan?'':' disabled title="De oude stand is niet vastgelegd"')+'>Voor</button><button data-lfv="0" class="'+(!LOG_VOOR?'active':'')+'"'+(naKan?'':' disabled title="Hiervan is geen voorbeeld te tonen"')+'>Na</button></div>'+
     '<span style="font-size:13px"><b>'+(LOG_VOOR?'Voor':'Na')+(vs&&!LOG_VOOR?' (voorbeeld)':'')+':</b> '+esc(LOG_VOOR?wasT:nuT)+' <span style="color:var(--muted)">&nbsp;&rarr;&nbsp; '+esc(LOG_VOOR?nuT:wasT)+(LOG_VOOR?' (na)':' (voor)')+'</span></span><span>'+tlBadge(f.r.door)+'</span>'+
@@ -6853,7 +6853,8 @@ function viewLog(){
   return h+'</tbody></table></div>';
 }
 /* klik in de log: ga naar de plek waar de wijziging is gedaan */
-function logWat(r){var w=String(r.wat||'').replace(/; raw: .*$/,'');return r.soort==='Waakdienst'?logSlotTxt(w):w;}
+function logStTxt(w){return String(w).replace(/\bst:([^\s;]+)/g,function(x,t){try{return propNaam({tgt:'st:'+t,day:0});}catch(e){return x;}});}
+function logWat(r){var w=logStTxt(String(r.wat||'').replace(/; raw: .*$/,''));return r.soort==='Waakdienst'?logSlotTxt(w):w;}
 function logSlotTxt(t){var n={RA1:'Randstad 1 (noord)',RA2:'Randstad 2 (zuid)',LN:'Noord',LZ:'Zuid',SCH:'schaduw'};
   return String(t).replace(/\b(RA1|RA2|LN|LZ|SCH)\b/g,function(x){return n[x];});}
 function logDoel(r){var w=String(r.waar||'');
@@ -6905,7 +6906,13 @@ function logSpring(id){
   LOG_FOCUS={txt:TXT(),r:r,type:d.t,ini:fi,iso:d.iso||null,idx:idx,wk:d.wk,jaar:d.jaar,slot:fslot,was:fwas,nu:nuW,raw:raw,kleur:tlKleur(r.door)};
   LOG_VOOR=true;
   if(d.t==='Waakdienst'){wdZetJaar(d.jaar);boardView='waak';wdSub='kaart';wdKaartIni=null;if(d.wk!=null)wdKaartWk=d.wk;setCtrls();render();window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(d.t==='Voorstel'){boardView='voorstellen';setCtrls();render();return;}
+  if(d.t==='Voorstel'){
+    var mv=String(r.wat).match(/^Voorstel (\S+) naar /),iniV=mv?mv[1]:null,t0=new Date(r.t).getTime(),zoek=null,bd=1e12;
+    (LOG_RIJEN||[]).forEach(function(x){if(x.soort!=='Rooster'&&x.soort!=='Verschuiving')return;if(!d.iso||String(x.waar).indexOf(d.iso)<0)return;if(iniV&&String(x.wat).indexOf(iniV+' ')!==0)return;var dt=Math.abs(new Date(x.t).getTime()-t0);if(dt<bd&&dt<10*60*1000){bd=dt;zoek=x;}});
+    if(zoek){return logSpring(zoek.id);}
+    LOG_FOCUS=null;boardView='voorstellen';setCtrls();render();
+    try{sbToast('Van dit voorstel is niet vastgelegd wat er eerst stond; er is geen voor/na te tonen.');}catch(e){}
+    return;}
   if(idx!==null&&(idx<0||idx>13)&&d.t==='Rooster'){
     var dt2=new Date(d.iso+'T00:00:00'),n0=new Date();rMode='maand';rMaandOff=(dt2.getFullYear()-n0.getFullYear())*12+dt2.getMonth()-n0.getMonth();boardView='week';
     var mo2=M.filter(function(m){return m.ini===ini;})[0];if(mo2)weekSel=weekCols().filter(function(c){return c.members.indexOf(mo2.base)>=0;}).map(function(c){return c.key;});
