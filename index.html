@@ -1374,7 +1374,7 @@ function setCtrls(){
       '<button data-v="bord" class="'+(boardView==='bord'?'active':'')+'">Schuifbord</button>'+
       '<button data-v="balans" class="'+(boardView==='balans'?'active':'')+'">Balans</button>'+
       '<button data-v="voorstellen" class="'+(boardView==='voorstellen'?'active':'')+'">Te bespreken'+(openCount?' ('+openCount+')':'')+'</button>'+'<button data-v="waak" class="'+(boardView==='waak'?'active':'')+'">Waakdienst</button>'+'<button data-v="log" class="'+(boardView==='log'?'active':'')+'">Wijzigingen</button>';
-    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;boardView=b.dataset.v;if(boardView==='week'){rMode='maand';rMaandOff=0;}pick=null;editCell=null;editCells=[];setCtrls();render();};});
+    vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;LOG_FOCUS=null;boardView=b.dataset.v;if(boardView==='week'){rMode='maand';rMaandOff=0;}pick=null;editCell=null;editCells=[];setCtrls();render();};});
   } else if(role==='G'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button>'+
     '<button data-gv="dag" class="'+(gView==='dag'?'active':'')+'">Dashboard</button>'+
@@ -6644,7 +6644,7 @@ function locNaam(id){return LOCMAP[id]?LOCMAP[id].naam:String(id);}
 metLog('sbSaveStatus',function(m,idx){var r=statusToRow(m,m.roster[idx],idx);var k=m.id+':'+idx,was=ROSTER_BASIS[k],nu=m.roster[idx]||'';ROSTER_BASIS[k]=nu;var wt='';
   if(was!==undefined&&was!==nu){var wl=was?stLabel(was):'vrij';wt='; was: '+wl;ROOSTER_WAS_S[m.ini+'|'+isoOf(idx)]={was:wl};}
   return ['Rooster','Rooster · '+isoOf(idx),m.ini+' ('+m.naam+'): '+(r.del?'dienst verwijderd':'dienst op '+r.type+(r.hrs?' ('+r.hrs+' u)':''))+wt];});
-metLog('sbSaveMove',function(mid,idx,loc){var m=logMon(mid);return m?['Verschuiving','Schuifbord · '+isoOf(idx),m.ini+' naar '+locNaam(loc)]:null;});
+metLog('sbSaveMove',function(mid,idx,loc){var m=logMon(mid);if(!m)return null;var oud=locOf(m,idx);return ['Verschuiving','Schuifbord · '+isoOf(idx),m.ini+' naar '+locNaam(loc)+(oud&&oud!==loc?'; was: '+locNaam(oud):'')];});
 metLog('sbSaveProposal',function(p){var m=logMon(p.mid);return m?['Voorstel','Te bespreken · '+isoOf(p.day),'Nieuw voorstel: '+m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt))]:null;});
 metLog('removeProposal',function(id,status){var p=proposals.filter(function(x){return x.id===id;})[0],m=p&&logMon(p.mid);return ['Voorstel','Te bespreken'+(p?' · '+isoOf(p.day):''),'Voorstel '+(m?m.ini+' naar '+(String(p.tgt).indexOf('st:')===0?p.tgt:locNaam(p.tgt)):'#'+id)+' '+(status==='doorgevoerd'?'doorgevoerd':status==='afgewezen'?'afgewezen':status?status:'ingetrokken')];});
 metLog('sbSaveNorm',function(perLoc){return ['Dekkingsnorm','Norm',(perLoc||[]).map(function(x){return x.id+' '+(x.oud!=null?x.oud+' → ':'')+x.nieuw;}).join(', ')||'norm aangepast'];});
@@ -6662,7 +6662,7 @@ function rosterSnap(){try{M.forEach(function(m){for(var i=0;i<m.roster.length;i+
 function wasVoor(m,d){var iso=isoOf(d),e=ROOSTER_WAS_S[m.ini+'|'+iso]||(ROOSTER_WAS_L&&ROOSTER_WAS_L[m.ini+'|'+iso]);if(!e)return '';var nu=m.roster[d]?stLabel(m.roster[d]):'vrij';return e.was&&e.was!==nu?e.was:'';}
 function wasVoorIso(m,iso,nuTxt){var e=ROOSTER_WAS_S[m.ini+'|'+iso]||(ROOSTER_WAS_L&&ROOSTER_WAS_L[m.ini+'|'+iso]);return e&&e.was&&e.was!==nuTxt?e.was:'';}
 var LOG_FOCUS=null;
-function logBanner(){var v=document.getElementById('view');if(!v||!LOG_FOCUS)return;var d=document.createElement('div');d.className='ai';d.style.cssText='margin:0 0 10px;border:1.5px solid var(--accent)';d.innerHTML='<div class="hd" style="justify-content:space-between"><span><span class="dot"></span>Uit Wijzigingen: '+esc(LOG_FOCUS)+'</span><button class="linkbtn" id="lfSluit">sluiten &#10006;</button></div>';v.insertBefore(d,v.firstChild);document.getElementById('lfSluit').onclick=function(){LOG_FOCUS=null;d.remove();};}
+function logBanner(){var v=document.getElementById('view');if(!v||!LOG_FOCUS)return;var r=LOG_FOCUS.r,d=document.createElement('div');d.className='ai';d.style.cssText='margin:0 0 10px;border:1.5px solid var(--accent)';d.innerHTML='<div class="hd" style="justify-content:space-between"><span><span class="dot"></span>Uit Wijzigingen: '+esc(LOG_FOCUS.txt)+'</span><button class="linkbtn" id="lfSluit">sluiten &#10006;</button></div><div id="lfBody" style="padding:6px 0 2px"></div>';v.insertBefore(d,v.firstChild);document.getElementById('lfSluit').onclick=function(){LOG_FOCUS=null;d.remove();};logVul(r,document.getElementById('lfBody'));}
 async function wasLaad(){if(!sb||ROOSTER_WAS_BEZIG)return;ROOSTER_WAS_BEZIG=true;
   try{var r=await sb.from('stuur_voorstellen').select('id,doel').like('doel','log|%|Rooster|%').order('id',{ascending:false}).limit(400);var o={};
     (r.data||[]).forEach(function(x){var p=String(x.doel).split('|'),iso=String(p[3]||'').replace('Rooster · ','').trim(),w=p.slice(4).join('|'),mm=w.match(/^(\S+) \(.*?\): .*; was: (.*)$/);if(!mm)return;var key=mm[1]+'|'+iso;if(!o[key])o[key]={was:mm[2]};});
@@ -6780,7 +6780,7 @@ function viewLog(){
     '<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap"><button data-logs="" class="'+(!LOG_SOORT?'active':'')+'">Alles ('+LOG_RIJEN.length+')</button>'+soorten.map(function(x){return '<button data-logs="'+x+'" class="'+(LOG_SOORT===x?'active':'')+'">'+x+'</button>';}).join('')+'<button data-logref="1">Ververs</button></div>'+'<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap;gap:6px;align-items:center"><input id="logQ" placeholder="Zoek op monteur, teamleider, datum of tekst" value="'+esc(LOG_Q)+'" oninput="logFilter(this.value)" style="min-width:260px"><input type="date" id="logDatum" value="'+LOG_DATUM+'" onchange="LOG_DATUM=this.value;render()"><select id="logWie" onchange="LOG_WIE=this.value;render()"><option value="">Iedereen</option>'+wies.map(function(w){return '<option'+(w===LOG_WIE?' selected':'')+'>'+esc(w)+'</option>';}).join('')+'</select>'+((LOG_Q||LOG_DATUM||LOG_WIE)?'<button class="linkbtn" onclick="LOG_Q=\'\';LOG_DATUM=\'\';LOG_WIE=\'\';render()">wis filters</button>':'')+'</div>';
   if(!rijen.length)return h+'<div class="empty">Nog geen wijzigingen vastgelegd.</div>';
   h+='<div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Wanneer</th><th>Wie</th><th>Soort</th><th>Waar</th><th>Wat</th><th></th></tr></thead><tbody>';
-  rijen.forEach(function(r){var z=(tijd(r.t)+' '+r.door+' '+r.soort+' '+r.waar+' '+(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)).toLowerCase();h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)+'</td><td>'+(logDoel(r)?'<button class="linkbtn" data-logga="'+r.id+'" style="white-space:nowrap">Bekijk &rsaquo;</button>':'')+'</td></tr>';});
+  rijen.forEach(function(r){var z=(tijd(r.t)+' '+r.door+' '+r.soort+' '+r.waar+' '+(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)).toLowerCase();h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)+'</td><td style="white-space:nowrap">'+(r.soort!=='Dekkingsnorm'?'<button class="linkbtn" data-logdet="'+r.id+'">Was &rarr; nu</button> ':'')+(logDoel(r)?'<button class="linkbtn" data-logga="'+r.id+'">Bekijk &rsaquo;</button>':'')+'</td></tr>';});
   if(LOG_Q)setTimeout(function(){logFilter(LOG_Q);},0);
   return h+'</tbody></table></div>';
 }
@@ -6791,15 +6791,47 @@ function logDoel(r){var w=String(r.waar||'');
   if(r.soort==='Rooster'||r.soort==='Verschuiving'||r.soort==='Voorstel'){var m=w.match(/(\d{4}-\d{2}-\d{2})/);return {t:r.soort,iso:m?m[1]:null};}
   if(r.soort==='Waakdienst'){var m2=w.match(/Waakdienst · (\d{4}) · wk (\d+)/);return {t:'Waakdienst',jaar:m2?+m2[1]:WD_BASISJAAR,wk:m2?+m2[2]-1:null};}
   return null;}
+/* was → nu, direct in de lijst */
+function logWasNu(r){
+  var w=String(r.wat),m,was=null,nu=null,wie=null,extra='';
+  if(r.soort==='Rooster'){m=w.match(/^(\S+) \(.*?\): (.*?)(?:; was: (.*))?$/);if(m){wie=m[1];nu=m[2].replace(/^dienst op /,'');was=m[3]||null;}}
+  else if(r.soort==='Waakdienst'){m=w.match(/^(\S+) neemt (\S+) over(?: van (\S+))? \((.*)\)$/);if(m){wie=m[1];nu=m[1]+' ('+logSlotTxt(m[2])+')';was=m[3]||'leeg';extra=m[4];}}
+  else if(r.soort==='Verschuiving'){m=w.match(/^(\S+) naar (.*?)(?:; was: (.*))?$/);if(m){wie=m[1];nu=m[2];was=m[3]||null;}}
+  return {wie:wie,was:was,nu:nu,extra:extra};
+}
+function logZoekWas(ini,iso,t0){ // zoek in de log een rooster-/schuifwijziging van dezelfde monteur en dag, met 'was'
+  var best=null;(LOG_RIJEN||[]).forEach(function(x){if(x.soort!=='Rooster'&&x.soort!=='Verschuiving')return;if(String(x.waar).indexOf(iso)<0||String(x.wat).indexOf(ini+' ')!==0)return;var wn=logWasNu(x);if(!wn.was)return;
+    if(!best||Math.abs(new Date(x.t)-new Date(t0))<Math.abs(new Date(best.t)-new Date(t0)))best=x;});return best?logWasNu(best):null;}
+async function logDetail(id,tr){
+  var r=(LOG_RIJEN||[]).filter(function(x){return String(x.id)===String(id);})[0];if(!r||!tr)return;
+  var nxt=tr.nextSibling;if(nxt&&nxt.className==='logdet'){nxt.remove();return;}
+  var row=document.createElement('tr');row.className='logdet';var td=document.createElement('td');td.colSpan=6;td.style.cssText='background:var(--surface-1);padding:10px 12px';row.appendChild(td);tr.parentNode.insertBefore(row,tr.nextSibling);
+  return logVul(r,td);
+}
+async function logVul(r,td){
+  function kaart(was,nu,tekst){td.innerHTML=(tekst?'<div style="margin-bottom:6px;color:var(--muted);font-size:12px">'+esc(tekst)+'</div>':'')+'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="padding:6px 12px;border-radius:8px;border:1px solid var(--border,#ddd);background:var(--surface)"><div style="font-size:11px;color:var(--muted)">Eerst</div><b>'+esc(was||'niet vastgelegd')+'</b></div><span style="font-size:18px">&rarr;</span><div style="padding:6px 12px;border-radius:8px;border:2px solid var(--accent);background:var(--surface)"><div style="font-size:11px;color:var(--muted)">Nu</div><b>'+esc(nu||'—')+'</b></div></div>'+(was?'':'<div style="font-size:12px;color:var(--muted);margin-top:6px">Wat er eerst stond is niet vastgelegd: deze wijziging is gedaan voordat de tool dat bewaarde.</div>');}
+  var wn=logWasNu(r);
+  if(r.soort==='Voorstel'){
+    var mm=String(r.wat).match(/#(\d+)/),iso=(String(r.waar).match(/(\d{4}-\d{2}-\d{2})/)||[])[1],ini=null,nuT=null,st=(String(r.wat).match(/(doorgevoerd|afgewezen|ingetrokken|gesloten)\s*$/)||[])[1]||'';
+    var m2=String(r.wat).match(/^Voorstel (\S+) naar (.*?) (doorgevoerd|afgewezen|ingetrokken|gesloten|open)\s*$/);if(m2){ini=m2[1];nuT=m2[2];}
+    if(mm&&sb){td.textContent='Voorstel ophalen…';
+      try{var q=await sb.from('stuur_voorstellen').select('id,monteur,datum,doel,door,status').eq('id',+mm[1]).limit(1);var x=q.data&&q.data[0];
+        if(x){var mo=M.filter(function(k){return k.naam===x.monteur;})[0];ini=mo?mo.ini:x.monteur;iso=x.datum;var tg=String(x.doel);nuT=tg.indexOf('st:')===0?(function(){var a=tg.slice(3).split('@');return (afwSoort(a[0])?stLabel(a[0]):(dienstShow(a[0])||a[0]))+(a[1]?' ('+a[1]+' u)':'');})():locNaam(tg);st=x.status;
+          var zw=logZoekWas(ini,iso,r.t);kaart(zw&&zw.was,nuT,'Voorstel #'+x.id+' van '+x.door+' · '+ini+' · '+iso+' · status: '+x.status);return;}}catch(e){}
+    }
+    var zw2=ini&&iso?logZoekWas(ini,iso,r.t):null;kaart(zw2&&zw2.was,nuT,'Voorstel '+(mm?'#'+mm[1]:'')+(ini?' · '+ini:'')+(iso?' · '+iso:'')+(st?' · '+st:''));return;
+  }
+  kaart(wn.was,wn.nu,r.soort+(wn.wie?' · '+wn.wie:'')+(wn.extra?' · '+wn.extra:''));
+}
 function logSpring(id){
   var r=(LOG_RIJEN||[]).filter(function(x){return String(x.id)===String(id);})[0];if(!r)return;var d=logDoel(r);if(!d)return;
   var idx=null;if(d.iso){var dt=new Date(d.iso+'T00:00:00'),t0=new Date();t0.setHours(0,0,0,0);idx=TODAY+Math.round((dt-t0)/864e5);}
   startOn=false;pick=null;editCell=null;editCells=[];
-  if(d.t==='Waakdienst'){wdZetJaar(d.jaar);boardView='waak';wdSub='kaart';wdKaartIni=null;if(d.wk!=null)wdKaartWk=d.wk;setCtrls();render();window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(d.t==='Voorstel'){boardView='voorstellen';setCtrls();render();return;}
   var ini=String(r.wat).split(' ')[0];
   var TXT=function(){var d0=new Date(r.t);return (d.t==='Waakdienst'?logSlotTxt(r.wat):r.wat)+' · '+r.door+(isNaN(d0)?'':' · '+d0.getDate()+'/'+(d0.getMonth()+1)+' '+('0'+d0.getHours()).slice(-2)+':'+('0'+d0.getMinutes()).slice(-2));};
-  LOG_FOCUS=TXT();
+  LOG_FOCUS={txt:TXT(),r:r};
+  if(d.t==='Waakdienst'){wdZetJaar(d.jaar);boardView='waak';wdSub='kaart';wdKaartIni=null;if(d.wk!=null)wdKaartWk=d.wk;setCtrls();render();window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(d.t==='Voorstel'){boardView='voorstellen';setCtrls();render();return;}
   if(idx!==null&&(idx<0||idx>13)&&d.t==='Rooster'){
     var dt2=new Date(d.iso+'T00:00:00'),n0=new Date();rMode='maand';rMaandOff=(dt2.getFullYear()-n0.getFullYear())*12+dt2.getMonth()-n0.getMonth();boardView='week';
     var mo2=M.filter(function(m){return m.ini===ini;})[0];if(mo2)weekSel=weekCols().filter(function(c){return c.members.indexOf(mo2.base)>=0;}).map(function(c){return c.key;});
@@ -6815,6 +6847,7 @@ function logSpring(id){
 function logFilter(q){LOG_Q=q||'';var v=LOG_Q.toLowerCase().trim();document.querySelectorAll('tr[data-z]').forEach(function(r){r.style.display=!v||r.dataset.z.indexOf(v)>=0?'':'none';});}
 function wireLog(){
   document.querySelectorAll('[data-logs]').forEach(function(b){b.onclick=function(){LOG_SOORT=b.dataset.logs;render();};});
+  document.querySelectorAll('[data-logdet]').forEach(function(b){b.onclick=function(){logDetail(b.dataset.logdet,b.closest('tr'));};});
   document.querySelectorAll('[data-logga]').forEach(function(b){b.onclick=function(){logSpring(b.dataset.logga);};});
   document.querySelectorAll('[data-logref]').forEach(function(b){b.onclick=function(){LOG_RIJEN=null;render();};});
 }
