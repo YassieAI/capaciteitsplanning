@@ -6754,7 +6754,7 @@ function viewIfs(){
   if(!rij.length)return h+'<div class="empty">'+(IFS_TOON==='open'?'Geen open taken. Alles staat in IFS.':'Nog niets afgevinkt.')+'</div>';
   h+='<div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Wanneer</th><th>Door</th><th>Soort</th><th>Waar</th><th>Wat</th><th></th></tr></thead><tbody>';
   rij.forEach(function(r){var k=IFS_KLAAR[r.id],z=(tijd(r.t)+' '+r.door+' '+r.soort+' '+r.waar+' '+r.wat).toLowerCase();
-    h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.wat)+'</td><td style="white-space:nowrap">'+
+    h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)+'</td><td style="white-space:nowrap">'+
       (k?'<span class="wd-mut">&#10003; '+esc(k.door||'')+(k.t?' · '+tijd(k.t):'')+'</span> <button class="linkbtn" data-ifsterug="'+r.id+'">terugzetten</button>':'<button class="acc" data-ifsaf="'+r.id+'">Gedaan in IFS</button>')+'</td></tr>';});
   return h+'</tbody></table></div>';
 }
@@ -6774,14 +6774,37 @@ function viewLog(){
   var h='<p class="sub">Wie heeft wat gewijzigd en waar. Tijdstip en rol worden automatisch vastgelegd bij elke wijziging in rooster, schuifbord, voorstellen, waakdienst en dekkingsnorm. Vanaf het moment dat dit aanstaat; oudere wijzigingen staan er niet in.</p>'+
     '<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap"><button data-logs="" class="'+(!LOG_SOORT?'active':'')+'">Alles ('+LOG_RIJEN.length+')</button>'+soorten.map(function(x){return '<button data-logs="'+x+'" class="'+(LOG_SOORT===x?'active':'')+'">'+x+'</button>';}).join('')+'<button data-logref="1">Ververs</button></div>'+'<div class="ctrl" style="margin-bottom:10px;flex-wrap:wrap;gap:6px;align-items:center"><input id="logQ" placeholder="Zoek op monteur, teamleider, datum of tekst" value="'+esc(LOG_Q)+'" oninput="logFilter(this.value)" style="min-width:260px"><input type="date" id="logDatum" value="'+LOG_DATUM+'" onchange="LOG_DATUM=this.value;render()"><select id="logWie" onchange="LOG_WIE=this.value;render()"><option value="">Iedereen</option>'+wies.map(function(w){return '<option'+(w===LOG_WIE?' selected':'')+'>'+esc(w)+'</option>';}).join('')+'</select>'+((LOG_Q||LOG_DATUM||LOG_WIE)?'<button class="linkbtn" onclick="LOG_Q=\'\';LOG_DATUM=\'\';LOG_WIE=\'\';render()">wis filters</button>':'')+'</div>';
   if(!rijen.length)return h+'<div class="empty">Nog geen wijzigingen vastgelegd.</div>';
-  h+='<div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Wanneer</th><th>Wie</th><th>Soort</th><th>Waar</th><th>Wat</th></tr></thead><tbody>';
-  rijen.forEach(function(r){var z=(tijd(r.t)+' '+r.door+' '+r.soort+' '+r.waar+' '+r.wat).toLowerCase();h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.wat)+'</td></tr>';});
+  h+='<div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Wanneer</th><th>Wie</th><th>Soort</th><th>Waar</th><th>Wat</th><th></th></tr></thead><tbody>';
+  rijen.forEach(function(r){var z=(tijd(r.t)+' '+r.door+' '+r.soort+' '+r.waar+' '+(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)).toLowerCase();h+='<tr data-z="'+esc(z)+'"><td style="white-space:nowrap">'+tijd(r.t)+'</td><td>'+tlBadge(r.door)+'</td><td>'+esc(r.soort)+'</td><td>'+esc(r.waar)+'</td><td>'+esc(r.soort==='Waakdienst'?logSlotTxt(r.wat):r.wat)+'</td><td>'+(logDoel(r)?'<button class="linkbtn" data-logga="'+r.id+'" style="white-space:nowrap">Bekijk &rsaquo;</button>':'')+'</td></tr>';});
   if(LOG_Q)setTimeout(function(){logFilter(LOG_Q);},0);
   return h+'</tbody></table></div>';
+}
+/* klik in de log: ga naar de plek waar de wijziging is gedaan */
+function logSlotTxt(t){var n={RA1:'Randstad 1 (noord)',RA2:'Randstad 2 (zuid)',LN:'Noord',LZ:'Zuid',SCH:'schaduw'};
+  return String(t).replace(/\b(RA1|RA2|LN|LZ|SCH)\b/g,function(x){return n[x];});}
+function logDoel(r){var w=String(r.waar||'');
+  if(r.soort==='Rooster'||r.soort==='Verschuiving'||r.soort==='Voorstel'){var m=w.match(/(\d{4}-\d{2}-\d{2})/);return {t:r.soort,iso:m?m[1]:null};}
+  if(r.soort==='Waakdienst'){var m2=w.match(/Waakdienst · (\d{4}) · wk (\d+)/);return {t:'Waakdienst',jaar:m2?+m2[1]:WD_BASISJAAR,wk:m2?+m2[2]-1:null};}
+  return null;}
+function logSpring(id){
+  var r=(LOG_RIJEN||[]).filter(function(x){return String(x.id)===String(id);})[0];if(!r)return;var d=logDoel(r);if(!d)return;
+  var idx=null;if(d.iso){var dt=new Date(d.iso+'T00:00:00'),t0=new Date();t0.setHours(0,0,0,0);idx=TODAY+Math.round((dt-t0)/864e5);}
+  startOn=false;pick=null;editCell=null;editCells=[];
+  if(d.t==='Waakdienst'){wdZetJaar(d.jaar);boardView='waak';wdSub='kaart';wdKaartIni=null;if(d.wk!=null)wdKaartWk=d.wk;setCtrls();render();window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(d.t==='Voorstel'){boardView='voorstellen';setCtrls();render();return;}
+  if(idx===null||idx<0||idx>13){sbToast('Deze dag valt buiten het twee weken-venster van het rooster; kan hier niet getoond worden.');return;}
+  var ini=String(r.wat).split(' ')[0];
+  if(d.t==='Verschuiving'){boardView='bord';curDay=idx;setCtrls();render();return;}
+  var mon=M.filter(function(m){return m.ini===ini;})[0];
+  boardView='week';rMode='week';weekStart=idx>=7?7:0;
+  if(mon)weekSel=weekCols().filter(function(c){return c.members.indexOf(mon.base)>=0;}).map(function(c){return c.key;});
+  setCtrls();render();
+  setTimeout(function(){var el=mon&&document.querySelector('.wkcell[data-mid="'+mon.id+'"][data-day="'+idx+'"]');if(el){el.style.outline='3px solid var(--accent)';el.style.outlineOffset='1px';el.scrollIntoView({block:'center',behavior:'smooth'});}},50);
 }
 function logFilter(q){LOG_Q=q||'';var v=LOG_Q.toLowerCase().trim();document.querySelectorAll('tr[data-z]').forEach(function(r){r.style.display=!v||r.dataset.z.indexOf(v)>=0?'':'none';});}
 function wireLog(){
   document.querySelectorAll('[data-logs]').forEach(function(b){b.onclick=function(){LOG_SOORT=b.dataset.logs;render();};});
+  document.querySelectorAll('[data-logga]').forEach(function(b){b.onclick=function(){logSpring(b.dataset.logga);};});
   document.querySelectorAll('[data-logref]').forEach(function(b){b.onclick=function(){LOG_RIJEN=null;render();};});
 }
 var rtT=null;
