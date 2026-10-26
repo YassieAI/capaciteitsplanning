@@ -6677,10 +6677,15 @@ function lfToepas(){
 }
 function lfKanVoor(){var f=LOG_FOCUS;if(!f)return false;if(f.voorstel)return true;if(f.type==='Waakdienst')return !!f.slot&&f.wk!=null;if(f.type==='Rooster')return !!f.raw;if(f.type==='Verschuiving')return !!f.was&&LOC.some(function(l){return l.naam===f.was;});return false;}
 /* ---- voorstellen: voor = nu, na = zoals het wordt als je accepteert (alleen voorbeeld, niets wordt opgeslagen) ---- */
+/* na elke render: schuifbordkaart markeren en één keer in beeld scrollen */
+function lfMarkeer(){var f=LOG_FOCUS;if(!f)return;
+  if(f.nav==='bord'||f.type==='Verschuiving'){var mon=M.filter(function(x){return x.ini===f.ini;})[0];var el=mon&&document.querySelector('.mcard[data-mid="'+mon.id+'"]');if(el){el.style.cssText+=';'+lfStijl();}}
+  if(!f.gescrold){var e2=document.querySelector('[style*="outline:3px solid"]');if(e2){f.gescrold=true;e2.scrollIntoView({block:'center',behavior:'smooth'});}}
+}
 function lfNavigeer(f){
   startOn=false;pick=null;editCell=null;editCells=[];
   if(f.nav==='waak'){wdZetJaar(f.jaar);boardView='waak';wdSub=f.wdSub||'rooster';wdKaartIni=f.ini||null;if(f.wk!=null)wdKaartWk=f.wk;setCtrls();render();window.scrollTo({top:0});return;}
-  if(f.nav==='bord'){boardView='bord';curDay=f.idx;setCtrls();render();setTimeout(function(){var el=[].slice.call(document.querySelectorAll('.mcard')).filter(function(x){return x.textContent.indexOf(f.ini)>=0;})[0];if(el){el.style.cssText+=';'+lfStijl();el.scrollIntoView({block:'center',behavior:'smooth'});}},50);return;}
+  if(f.nav==='bord'){boardView='bord';curDay=f.idx;setCtrls();render();return;}
   var mon=M.filter(function(m){return m.ini===f.ini;})[0];
   if(f.idx>=0&&f.idx<=13){boardView='week';rMode='week';weekStart=f.idx>=7?7:0;if(mon)weekSel=weekCols().filter(function(c){return c.members.indexOf(mon.base)>=0;}).map(function(c){return c.key;});setCtrls();render();return;}
   var dt2=new Date(f.iso+'T00:00:00'),n0=new Date();rMode='maand';rMaandOff=(dt2.getFullYear()-n0.getFullYear())*12+dt2.getMonth()-n0.getMonth();boardView='week';
@@ -6707,7 +6712,7 @@ function lfVoorstel(kind,id){
 function lfBeslis(ok){var f=LOG_FOCUS;if(!f||!f.voorstel)return;var k=f.kind,id=f.id;LOG_FOCUS=null;boardView='voorstellen';startOn=false;setCtrls();render();
   var sel=k==='p'?(ok?'[data-vacc="'+id+'"]':'[data-vrej="'+id+'"]'):k==='r'?(ok?'[data-vwdok="'+id+'"]':'[data-vwdnee="'+id+'"]'):(ok?'[data-vwvok="'+id+'"]':'[data-vwvnee="'+id+'"]');
   var b=document.querySelector(sel);if(b&&!b.disabled)b.click();}
-(function(){var o=render;render=function(){var u=lfToepas(),r;try{r=o.apply(this,arguments);}finally{if(u)u();}rosterSnap();try{logBanner();}catch(e){}return r;};})();
+(function(){var o=render;render=function(){var u=lfToepas(),r;try{r=o.apply(this,arguments);}finally{if(u)u();}rosterSnap();try{logBanner();lfMarkeer();}catch(e){}return r;};})();
 function wasVoor(m,d){var iso=isoOf(d),e=ROOSTER_WAS_S[m.ini+'|'+iso]||(ROOSTER_WAS_L&&ROOSTER_WAS_L[m.ini+'|'+iso]);if(!e)return '';var nu=m.roster[d]?stLabel(m.roster[d]):'vrij';return e.was&&e.was!==nu?e.was:'';}
 function wasVoorIso(m,iso,nuTxt){var e=ROOSTER_WAS_S[m.ini+'|'+iso]||(ROOSTER_WAS_L&&ROOSTER_WAS_L[m.ini+'|'+iso]);return e&&e.was&&e.was!==nuTxt?e.was:'';}
 var LOG_FOCUS=null;
