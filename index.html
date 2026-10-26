@@ -1204,6 +1204,7 @@ function scopeIds(){
 function inScopeId(id){return scopeIds().indexOf(id)>=0;}
 function inScope(col){return col.members.every(function(m){return inScopeId(m);});}
 function canDecide(){return role==='RD';}
+function isTL(){return role==='TZ'||role==='TN'||role==='TS'||role==='TB';}
 function isOperational(){return role==='RD'||role==='TZ'||role==='TB';}
 function tlKleur(naam){naam=String(naam||'');if(/zara|techno/i.test(naam))return '#8e5bd1';if(/noord/i.test(naam))return '#1f7fd6';if(/zuid/i.test(naam))return '#e0731f';return '#6b6a63';}
 function tlBadge(naam){var c=tlKleur(naam);return '<span class="badge" style="background:'+c+'1f;color:'+c+';border:1px solid '+c+'66"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+c+';margin-right:5px"></i>'+esc(naam)+'</span>';}
@@ -1233,7 +1234,7 @@ var scenarioActief=null;
 var conceptOverride=null;     // tijdelijk ander conceptpakket, om scenario's door te rekenen
 function conceptSet(){
   if(conceptOverride)return conceptOverride;
-  if(conceptStijl==='scenarios'){
+  if(conceptStijl==='scenarios'&&canDecide()){
     var s=scenarios.filter(function(x){return x.id===scenarioActief;})[0];
     return s?s.moves:{};
   }
@@ -3124,8 +3125,8 @@ function viewBoard(){
   var html='<h2>Schuifbord</h2>';
   html+='<details class="wd-det" style="margin:0 0 12px"><summary><b>Wat betekenen de uren en percentages?</b></summary><p class="sub" style="margin:6px 0 0">Per kolom staat bijvoorbeeld <b>36 / 44 u</b>: links de <b>beschikbare uren</b> van de monteurs die die dag in die regio of locatie staan (deeldagen, afwezigheid en Nachtklus-compensatie zijn er al af), rechts de <b>benodigde uren</b>: de KPN-contracturen per week, verdeeld over de regio\'s en de 5 werkdagen. Het <b>percentage</b> is beschikbaar gedeeld door benodigd: 100–119% is goed, 120% of meer is overbezet, 75–99% is krap en onder 75% is een tekort. Het AI-advies rekent met dezelfde uren.</p></details>';
   html+=boardOutlook(cols,true);
-  if(decide) html+=conceptBalk();
-  html+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 0 8px"><h3 style="margin:0;font-size:16px">'+dLabel(curDay)+'</h3><span class="sub" style="margin:0">&#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Jouw verschuiving komt als bespreekpunt in het overleg.')+'</span></div>';
+  if(decide) html+=conceptBalk(); else html+=tlBalk();
+  html+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 0 8px"><h3 style="margin:0;font-size:16px">'+dLabel(curDay)+'</h3><span class="sub" style="margin:0">&#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Zet je verschuivingen klaar en dien ze daarna in bij R/D.')+'</span></div>';
   var cset=conceptSet();
   var isReg=function(c){return c.type==='regio'||c.type==='cluster';};
   cols=cols.filter(isReg).concat(cols.filter(function(c){return c.type==='techno';}),cols.filter(function(c){return c.type==='zara';}));
@@ -3134,7 +3135,7 @@ function viewBoard(){
   cols.forEach(function(c){
     if(!brk&&!isReg(c)){brk=true;html+='<div style="flex-basis:100%;height:0"></div><div style="flex-basis:100%;font-size:13px;font-weight:600;color:var(--muted);margin:4px 0 -4px">Technocenter en Zara</div>';}
     var dek=colDekking(c,curDay);var t=tone(dek);
-    var mine=isOperational()&&!decide&&inScope(c);
+    var mine=isTL()&&inScope(c);
     html+='<div class="col '+(t.cls==='risk'?'risk':'')+(pick&&canDrop(c)?' tgt':'')+'" data-col="'+c.key+'" style="'+(mine?'':'')+'">';
     html+='<h3>'+c.naam+(mine?' <span class="t" style="font-size:11px;color:var(--muted)">· jouw scope</span>':'')+'</h3><span class="badge b-'+t.cls+'">'+dek+'% '+t.lb+'</span>';
     html+='<div class="cap">'+uTxt(colBeschikbaar(c,curDay),c.benodigd)+' beschikbaar</div>';
@@ -3184,7 +3185,7 @@ function viewBoard(){
           '<button class="acc" '+act+'="'+s.m.id+'|'+primaryTarget(c,curDay)+'" style="margin-top:8px">'+(decide?'Accepteer':'Stel voor')+'</button></div>';});
       html+='</div>';});
   }
-  if(isOperational()&&!decide){
+  if(isTL()){
     var mineP=proposals.filter(function(p){return p.status==='open';});
     html+='<h2>Mijn agendapunten (te bespreken)</h2>';
     if(!mineP.length)html+='<div class="empty">Nog geen voorstellen ingediend.</div>';
@@ -3205,7 +3206,7 @@ function canDrop(col){ return pick ? canDropFor(pick.mid,pick.day,col) : false; 
 // Verschuiving doorvoeren: R/D direct, teamleider als voorstel.
 function doBoardMove(mid,col){
   var tgt=primaryTarget(col,curDay);
-  if(!canDecide()){ pushProposal(mid,curDay,tgt); return; }
+  if(!canDecide()){ var mm=M.filter(function(x){return x.id===mid;})[0],kk=mid+':'+curDay,orig=moves[kk]||(mm&&mm.base); if(tgt===orig)delete conceptMoves[kk]; else conceptMoves[kk]=tgt; return; }
   conceptDoel()[mid+':'+curDay]=tgt;   // eerst concept, pas bij Vastleggen naar de database
 }
 /* Waar een nieuwe conceptverschuiving in landt. In scenario-stand wordt bij de eerste sleep
@@ -3295,6 +3296,17 @@ function pbToastLite(txt){
 }
 /* De balk boven het bord: scenario's naast elkaar. De werkblad-variant is na vergelijking
    verwijderd; conceptStijl staat nu vast op 'scenarios' (zie var conceptStijl hierboven). */
+function tlBalk(){
+  if(!isTL())return '';
+  var keys=Object.keys(conceptMoves);
+  if(!keys.length)return '<div class="cbalk" style="padding:10px 14px;font-size:13px;color:var(--muted)">Sleep een monteur naar een andere kolom. Je kunt meerdere verschuivingen klaarzetten en ze daarna in één keer als voorstel indienen bij R/D.</div>';
+  var rows=keys.map(function(k){var q=k.split(':'),m=M.filter(function(x){return x.id===q[0];})[0];if(!m)return '';
+    return '<span class="badge" style="margin:2px 4px 2px 0">'+m.ini+' &rarr; '+esc(propNaam({tgt:conceptMoves[k],day:+q[1]}))+' · '+dLabel(+q[1])+' <a href="#" data-tlx="'+k+'" title="Verwijderen" style="margin-left:4px;text-decoration:none">&#10006;</a></span>';}).join('');
+  return '<div class="cbalk" style="padding:10px 14px"><div style="font-weight:600;margin-bottom:6px">Klaargezet: '+keys.length+' verschuiving'+(keys.length===1?'':'en')+' <span style="font-weight:400;color:var(--muted)">· nog niet ingediend, het schuifbord rekent al met je wijziging</span></div><div>'+rows+'</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="acc" id="tlIndien">Dien in bij R/D ('+keys.length+')</button><button class="acc ghost" id="tlWis">Alles wissen</button></div></div>';
+}
+function tlIndienen(){var keys=Object.keys(conceptMoves);if(!keys.length)return;
+  keys.forEach(function(k){var q=k.split(':');pushProposal(q[0],+q[1],conceptMoves[k]);});
+  conceptMoves={};pick=null;pbToastLite(keys.length+' voorstel'+(keys.length===1?'':'len')+' ingediend bij R/D');render();}
 function conceptBalk(){
   var basis=conceptMetriek({});
   var chips=scenarios.map(function(s){
@@ -3337,6 +3349,8 @@ function wireBoard(){
     el.addEventListener('dragleave',function(){el.classList.remove('dragover');});
     el.addEventListener('drop',function(e){e.preventDefault();el.classList.remove('dragover');if(!dragMid)return;var col=colByKey(el.dataset.col);if(canDropFor(dragMid,curDay,col))doBoardMove(dragMid,col);dragMid=null;render();});
   });
+  var ti=document.getElementById('tlIndien');if(ti)ti.onclick=tlIndienen;var tw=document.getElementById('tlWis');if(tw)tw.onclick=function(){conceptMoves={};render();};
+  document.querySelectorAll('[data-tlx]').forEach(function(a){a.onclick=function(e){e.preventDefault();delete conceptMoves[a.dataset.tlx];render();};});
   var cl=document.getElementById('cLeg');if(cl)cl.onclick=conceptVastleggen;
   var cw=document.getElementById('cWis');if(cw)cw.onclick=conceptWissen;
   var cm=document.getElementById('cMog');if(cm)cm.onclick=scenarioMogelijkheden;
