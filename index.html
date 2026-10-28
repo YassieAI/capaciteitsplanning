@@ -3967,10 +3967,10 @@ function dienstStyle(st){
   var map={sw:['#eeedfe','#6b5fd0'],dag:['var(--accent-bg)','var(--accent)'],dagvroeg:['#faeeda','#854f0b'],waak:['#eeedfe','#3c3489'],cursus:['#fbe7f3','#9d174d'],project:['#efeafc','#5b3fb0'],nacht:['#24324a','#e6ecf5'],ziek:['#fceceb','#a32d2d'],vrij:['var(--surface-1)','var(--muted)']};
   return map[st]||['var(--surface-1)','var(--muted)'];
 }
-function miniWeekChart(locId){
+function miniWeekChart(locId,klik){
   var c=(typeof locId==='string')?colFor(locId):locId;var days=[];for(var d=weekStart;d<weekStart+7;d++)days.push(d);
-  var bars=days.map(function(d){var dek=fDekking(c,d);var t=tone(dek);var du=Math.round(fBeschikbaar(c,d)*8);return '<div class="barc"><span class="barv" style="color:'+t.tx+'" title="'+du+' van '+Math.round(c.benodigd*8)+' contracturen">'+du+' u</span><div class="bar" style="height:'+Math.max(2,Math.min(100,dek/BAR_MAX*100))+'%;background:'+t.bar+'"></div></div>';}).join('');
-  var labs=days.map(function(d){return '<span'+(d===TODAY?' style="color:var(--text);font-weight:500"':'')+'>'+dChip(d)+'</span>';}).join('');
+  var bars=days.map(function(d){var dek=fDekking(c,d);var t=tone(dek);var du=Math.round(fBeschikbaar(c,d)*8);var kl=klik?klik(d):null;return '<div class="barc'+(klik?' barc-click':'')+'"'+(klik?' data-wkdag="'+d+'" title="Klik om '+dShort(d)+' te selecteren in het rooster"'+(kl?' style="background:var(--accent-bg)"':''):'')+'><span class="barv" style="color:'+t.tx+'" title=""'+du+' van '+Math.round(c.benodigd*8)+' contracturen">'+du+' u</span><div class="bar" style="height:'+Math.max(2,Math.min(100,dek/BAR_MAX*100))+'%;background:'+t.bar+'"></div></div>';}).join('');
+  var labs=days.map(function(d){var kl=klik?klik(d):null;return '<span'+(klik?' data-wkdag="'+d+'"':'')+' style="'+(d===TODAY?'color:var(--text);font-weight:500;':'')+(klik?'cursor:pointer;':'')+(kl?'background:var(--accent-bg);border-radius:6px;':'')+'">'+dChip(d)+'</span>';}).join('');
   return '<div class="chart" style="height:150px;margin-top:4px"><div class="norm" style="bottom:'+(NORM/BAR_MAX*100).toFixed(1)+'%"><span>contracturen</span></div><div class="bars">'+bars+'</div></div><div class="blab">'+labs+'</div>';
 }
 /* gebieden waaruit het weekrooster kiest: volgt de groepering bovenin (5 regio's / 3 clusters) */
@@ -3988,8 +3988,10 @@ function viewWeek(){
   var monteurs=rTeamFilter(M.filter(function(m){return memberIds.indexOf(m.base)>=0;}));
   var wkLabel=weekTxt(weekStart);
   var alleMonteurs=monteurs;monteurs=rZoekLijst(monteurs,wcols);
+  var kolAl=function(d){return monteurs.length>0&&monteurs.every(function(m){return editCells.some(function(c){return c.mid===m.id&&c.day===d;});});};
+  var rijAl=function(m){var n=0;for(var d=weekStart;d<weekStart+7;d++)if(editCells.some(function(c){return c.mid===m.id&&c.day===d;}))n++;return n===7;};
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
-  var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()||role==='PL'?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel, of <strong>sleep over meerdere cellen</strong> om ze in één keer te vullen — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
+  var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()||role==='PL'?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel aan (tik er meer aan om ze samen te kiezen), of <strong>sleep over meerdere cellen</strong>; klik op een dag (kop of grafiek) of een monteur voor een hele dag of rij. Zo vul je ze in één keer — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0&&winShift<=0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7&&winShift>=12?' disabled':'')+'>week ›</button>'+(winShift>0||weekStart===0?'<button id="wkNu">deze week</button>':'')+'</div>';
   html+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
@@ -4053,14 +4055,14 @@ function viewWeek(){
     (editCells.length?editCells:[editCell]).forEach(function(c){var i=volg.indexOf(c.mid);if(i>laatste)laatste=i;});
     paneelNa=laatste>=0?volg[laatste]:null;
   }
-  html+='<h2 style="font-size:16px">Dekking deze week · '+selNaam+'</h2>'+miniWeekChart(combo);
+  html+='<h2 style="font-size:16px">Dekking deze week · '+selNaam+'</h2>'+miniWeekChart(combo,kolAl);
   html+='<h2 style="font-size:16px">Rooster</h2>';
   html+='<div class="hm"><table class="hm-t" style="font-size:12px"><tr><td class="hm-lab"></td>';
-  for(var d=weekStart;d<weekStart+7;d++){html+='<td class="hm-day'+(d===TODAY?' hm-now':'')+'">'+dShort(d)+(d===TODAY?'<br><span style="font-size:9px">nu</span>':'')+'</td>';}
+  for(var d=weekStart;d<weekStart+7;d++){html+='<td class="hm-day'+(d===TODAY?' hm-now':'')+'" data-wkdag="'+d+'" title="Klik om deze dag voor iedereen te selecteren" style="cursor:pointer'+(kolAl(d)?';background:var(--accent-bg)':'')+'">'+dShort(d)+(d===TODAY?'<br><span style="font-size:9px">nu</span>':'')+'</td>';}
   html+='</tr>';
   if(ROOSTER_WAS_L===null)wasLaad();
   monteurs.forEach(function(m){
-    html+='<tr><td class="hm-lab" style="color:var(--text)" title="'+mLabel(m)+'">'+mLabel(m)+(multi?' <span style="color:var(--muted);font-weight:400;font-size:10px">'+m.base+'</span>':'')+'</td>';
+    html+='<tr><td class="hm-lab" data-wkrij="'+m.id+'" style="color:var(--text);cursor:pointer'+(rijAl(m)?';background:var(--accent-bg)':'')+'" title="'+mLabel(m)+' · klik om de hele week te selecteren">'+mLabel(m)+(multi?' <span style="color:var(--muted);font-weight:400;font-size:10px">'+m.base+'</span>':'')+'</td>';
     for(var d2=weekStart;d2<weekStart+7;d2++){
       var st=m.roster[d2];var cs=dienstStyle(st);
       var sel=editCells.some(function(c){return c.mid===m.id&&c.day===d2;});
@@ -4304,15 +4306,27 @@ function wireWeek(){
     var mid=el.dataset.mid, day=+el.dataset.day;
     el.addEventListener('pointerdown',function(e){
       if(role==='PL'&&!plNacht)return;
-      wkDrag.anker={mid:mid,day:day};wkDrag.bezig=true;wkDrag.verplaatst=false;
-      editCells=[{mid:mid,day:day}];teken();e.preventDefault();
+      wkDrag.anker={mid:mid,day:day};wkDrag.bezig=true;wkDrag.verplaatst=false;e.preventDefault();
     });
     el.addEventListener('pointerenter',function(){
       if(!wkDrag.bezig||!wkDrag.anker)return;
       if(mid!==wkDrag.anker.mid||day!==wkDrag.anker.day)wkDrag.verplaatst=true;
-      editCells=bereik(wkDrag.anker,{mid:mid,day:day});teken();
+      if(wkDrag.verplaatst){editCells=bereik(wkDrag.anker,{mid:mid,day:day});teken();}
     });
   });
+  /* hele dag (kop of grafiek) of hele week van een monteur in één klik aan of uit de selectie */
+  function selZet(lijst){editCells=lijst;editCell=lijst.length?lijst[0]:null;render();}
+  function selGroep(sel){
+    if(role==='PL'&&!plNacht)return;
+    var lijst=[].slice.call(document.querySelectorAll('.wkcell'+sel)).map(function(el){return {mid:el.dataset.mid,day:+el.dataset.day};});
+    if(!lijst.length)return;
+    var heeft=function(c){return editCells.some(function(x){return x.mid===c.mid&&x.day===c.day;});};
+    var alle=lijst.every(heeft);
+    var rest=editCells.filter(function(x){return !lijst.some(function(l){return l.mid===x.mid&&l.day===x.day;});});
+    selZet(alle?rest:rest.concat(lijst));
+  }
+  document.querySelectorAll('[data-wkdag]').forEach(function(el){el.onclick=function(){selGroep('[data-day="'+el.dataset.wkdag+'"]');};});
+  document.querySelectorAll('[data-wkrij]').forEach(function(el){el.onclick=function(){selGroep('[data-mid="'+el.dataset.wkrij+'"]');};});
   // pointerup hangt aan document (loslaten mag buiten de tabel) en wordt maar één keer gekoppeld —
   // wireWeek draait bij elke render, dus een listener per render zou zich opstapelen
   if(!wkDrag.gekoppeld){
@@ -4321,9 +4335,12 @@ function wireWeek(){
       if(!wkDrag.bezig)return;
       wkDrag.bezig=false;
       var a=wkDrag.anker;
-      // losse tik op de al geopende cel = sluiten (oud gedrag behouden)
-      if(!wkDrag.verplaatst&&editCell&&a&&editCell.mid===a.mid&&editCell.day===a.day){editCell=null;editCells=[];render();return;}
-      editCell=a;render();
+      if(!wkDrag.verplaatst&&a){ // losse tik = cel aan of uit de selectie (net als bij het maandrooster)
+        var i=-1;editCells.forEach(function(c,k){if(c.mid===a.mid&&c.day===a.day)i=k;});
+        if(i>=0)editCells.splice(i,1);else editCells.push({mid:a.mid,day:a.day});
+        editCell=editCells.length?editCells[0]:null;
+      }else editCell=a;
+      render();
     });
   }
 
