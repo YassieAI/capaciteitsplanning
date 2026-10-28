@@ -867,7 +867,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		}
 	}
 #wdPrintZone{display:none}
-@media print{body.wd-pr>*:not(#wdPrintZone){display:none!important}body.wd-pr #wdPrintZone{display:block!important;color:#000;background:#fff}body.wd-pr #wdPrintZone table{width:100%;border-collapse:collapse;font-size:10px}body.wd-pr #wdPrintZone td,body.wd-pr #wdPrintZone th{border:1px solid #999;padding:2px 4px}@page{size:landscape;margin:10mm}}
+@media print{body.wd-pr>*:not(#wdPrintZone){display:none!important}body.wd-pr #wdPrintZone{display:block!important;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}body.wd-pr #wdPrintZone table{width:100%;border-collapse:collapse;font-size:10px}body.wd-pr #wdPrintZone td,body.wd-pr #wdPrintZone th{border:1px solid #999;padding:2px 4px}@page{size:landscape;margin:10mm}}
 /* ---------- waakdienst ---------- */
 .wd-q4 td,.wd-q4 th{vertical-align:top;min-width:64px}.wd-q4 .we{background:var(--bg2,rgba(128,128,128,.12))}.wd-q4d{font-size:10px;color:var(--text3,#888)}.wd-q4c{display:inline-block;margin:1px 2px 1px 0;padding:1px 6px;border-radius:9px;background:#3b7dd8;color:#fff;font-size:11px;font-weight:600}.wd-q4 .we .wd-q4c{background:#c2462f}
 .uv-maand{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px}.uv-mk{font-size:11px;color:var(--muted);text-align:center;font-weight:600}.uv-mwk{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:600}.uv-md{border-radius:8px;padding:5px 5px;min-height:58px;overflow:hidden}.uv-md.uv-buiten{background:transparent}.uv-md.uv-nu{outline:2px solid var(--text);outline-offset:1px}.uv-mdn{font-size:11px;opacity:.8}.uv-mdd{font-size:12px;font-weight:700;line-height:1.2;margin-top:2px;word-break:break-word}.uv-mdl{font-size:10px;font-weight:600;color:var(--risk);margin-top:2px}@media(max-width:600px){.uv-mdd{font-size:10px}.uv-md{min-height:50px;padding:4px 3px}}
@@ -1074,7 +1074,7 @@ var LOC=[
  {id:'TCU',naam:'Technocenter Utrecht',type:'techno',cluster:'Techno',lat:52.09,lng:5.11,benodigd:4}
 ];
 var LOCMAP={}; LOC.forEach(function(l){LOCMAP[l.id]=l;});
-/* NORM = contracturen KPN per week. Field Force (3 gebieden) 566 u, Zara 600 u, Techno 233 u.
+/* NORM = contracturen per week. Field Force (3 gebieden) 566 u, Zara 600 u, Techno 233 u.
    De uren worden over de locaties verdeeld naar hun oude aandeel (benodigdBasis). benodigd = monteurs per werkdag
    (weekuren / 40), zodat dekking% = beschikbare uren / benodigde uren. Norm = 100%. */
 var CONTRACT_UREN={regio:566,zara:600,techno:233};
@@ -2156,7 +2156,7 @@ function pgWire(){
     PG_A.groeiReac=this.checked?null:Math.round(pgGroeiGemeten()*100);render();};
   var pas=document.getElementById('pgPas');
   if(pas)pas.onclick=function(){
-    alert('De norm komt nu uit de KPN-contracturen per week (Field Force '+CONTRACT_UREN.regio+' u, Zara '+CONTRACT_UREN.zara+' u, Techno '+CONTRACT_UREN.techno+' u). Deze knop past de norm niet meer aan.');return;
+    alert('De norm komt nu uit de contracturen per week (Field Force '+CONTRACT_UREN.regio+' u, Zara '+CONTRACT_UREN.zara+' u, Techno '+CONTRACT_UREN.techno+' u). Deze knop past de norm niet meer aan.');return;
     normBewaarBasis();
     if(!pgNormOud)pgNormOud=normBasis.slice();
     var v=pgNormVoorstel();
@@ -3123,7 +3123,7 @@ function viewBoard(){
   var cols=columns();
   var decide=canDecide();
   var html='<h2>Schuifbord</h2>';
-  html+='<details class="wd-det" style="margin:0 0 12px"><summary><b>Wat betekenen de uren en percentages?</b></summary><p class="sub" style="margin:6px 0 0">Per kolom staat bijvoorbeeld <b>36 / 44 u</b>: links de <b>beschikbare uren</b> van de monteurs die die dag in die regio of locatie staan (deeldagen, afwezigheid en Nachtklus-compensatie zijn er al af), rechts de <b>benodigde uren</b>: de KPN-contracturen per week, verdeeld over de regio\'s en de 5 werkdagen. Het <b>percentage</b> is beschikbaar gedeeld door benodigd: 100–119% is goed, 120% of meer is overbezet, 75–99% is krap en onder 75% is een tekort. Het AI-advies rekent met dezelfde uren.</p></details>';
+  html+='<details class="wd-det" style="margin:0 0 12px"><summary><b>Wat betekenen de uren en percentages?</b></summary><p class="sub" style="margin:6px 0 0">Per kolom staat bijvoorbeeld <b>36 / 44 u</b>: links de <b>beschikbare uren</b> van de monteurs die die dag in die regio of locatie staan (deeldagen, afwezigheid en Nachtklus-compensatie zijn er al af), rechts de <b>benodigde uren</b>: de contracturen per week, verdeeld over de regio\'s en de 5 werkdagen (weekuren gedeeld door 5). Het <b>percentage</b> is beschikbaar gedeeld door benodigd, dus 36 / 44 u is 36 &divide; 44 = 82%: 100–119% is goed, 120% of meer is overbezet, 75–99% is krap en onder 75% is een tekort. Het AI-advies rekent met dezelfde uren.</p></details>';
   html+=boardOutlook(cols,true);
   if(decide) html+=conceptBalk(); else html+=tlBalk();
   html+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 0 8px"><h3 style="margin:0;font-size:16px">'+dLabel(curDay)+'</h3><span class="sub" style="margin:0">&#128070; sleep een monteur naar een andere kolom (of tik een monteur en tik een kolom). '+(decide?'Verplaatsingen komen eerst in concept te staan.':'Zet je verschuivingen klaar en dien ze daarna in bij R/D.')+'</span></div>';
@@ -3769,7 +3769,7 @@ function totaalCapBlok(){
   var tegels=types.map(function(t){var p=Math.round(weekTot[t]/CONTRACT_UREN[t]*100);
     return '<div class="metric"><div class="l"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+'</div><div class="v" style="font-size:18px;color:'+tone(p).tx+'">'+Math.round(weekTot[t])+' / '+CONTRACT_UREN[t]+' u</div><div style="font-size:12px;color:var(--muted)">'+p+'% van contract</div></div>';}).join('');
   var pAll=Math.round(totWeek/nodigWeek*100);
-  return '<h2 style="margin-top:18px">Totale capaciteit · alles opgeteld</h2><p class="sub">week '+isoWeek(dateFor(s0))+' · beschikbare uren van alle monteurs (8 u per dienst, min afwezigheid) tegen de KPN-contracturen · gestippelde lijn = nodig per werkdag</p>'+
+  return '<h2 style="margin-top:18px">Totale capaciteit · alles opgeteld</h2><p class="sub">week '+isoWeek(dateFor(s0))+' · beschikbare uren van alle monteurs (8 u per dienst, min afwezigheid) tegen de contracturen · gestippelde lijn = nodig per werkdag</p>'+
     '<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="metric"><div class="l">Totaal deze week</div><div class="v" style="color:'+tone(pAll).tx+'">'+totWeek+' / '+nodigWeek+' u</div><div style="font-size:12px;color:var(--muted)">'+pAll+'% van contract</div></div>'+tegels+'</div>'+
     '<div style="display:flex;gap:8px;align-items:flex-end;padding:6px 0 2px;border-bottom:0.5px solid var(--border)">'+bars+'</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)">'+types.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+'</span>';}).join('')+
@@ -4858,7 +4858,7 @@ function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(WD_UIT.indexOf(v.ini
 WD_FLEX_VAST.push({ini:'JOHA',woon:'Almere',lat:52.3508,lng:5.2647}); // Joshua Harkelijn: draait mee met regio Noord
 WD_FLEX_VAST.forEach(function(v){if(WD_UIT.indexOf(v.ini)<0&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_POOL.push({ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1});});
 /* inzetbaarheidsfactor 0,75 (60+ op 1 januari 2027); de rest heeft factor 1 */
-var WD_F75=["MOBE02", "ROKR02", "ROMO01", "ERBR01", "JOMA02", "ASER01", "BOMU01", "EMMU01", "WIES01", "JADR01"];
+var WD_F75=["MOBE02", "ROKR02", "ROMO01", "ERBR01", "JOMA02", "ASER01", "BOMU01", "EMMU01", "WIES01", "JADR01", "NGHU01"]; // NGHU01: geb. 27-10-1964
 WD_POOL.forEach(function(m){if(WD_F75.indexOf(m.ini)>=0)m.f=0.75;});
 wdFlexVast();
 function wdAlle(){return WD_POOL.concat(WD_FLEX);}
@@ -5775,7 +5775,7 @@ function wdViewRooster(){
   var c=wdC(),slots=c.prep.sIds.concat(['SCH']),team=wdTeamSet();
   var h='';
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
-  h+='<div class="ctrl" style="margin-bottom:10px"><button onclick="wdPrint()">&#128438; Afdrukken</button></div>';
+  h+='<div class="ctrl" style="margin-bottom:10px"><button onclick="wdPrint()">&#128438; Afdrukken / PDF</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+(wdNuWeek()+1)+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
   else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
@@ -5794,19 +5794,83 @@ function wdViewRooster(){
   return h;
 }
 
-/* afdrukken: alleen het jaarrooster (weken x diensten), zonder knoppen, kaart of totalen */
+/* ---------- export voor monteurs en teamleiders: afdrukken/PDF en Excel ----------
+   Zonder Zara (voor nu), B&S-monteurs geel gemarkeerd, plus een overzicht per monteur. */
+var WD_BS=['NABE','ROMA','SEBU'];
+function wdIsBS(ini){return WD_BS.indexOf(ini)>=0;}
+function wdExportData(){
+  var c=wdC();if(!c)return null;var slots=c.prep.sIds.concat(['SCH']);
+  var kop=slots.map(function(s){return wdGNaam(c,s);});
+  var rijen=c.plan.map(function(wk,k){var f=WD_FEEST[k];return {wk:k+1,datum:wdWeekLabel(k),feest:f?f.join(', '):'',cel:slots.map(function(s){return wk[s]||'';})};});
+  var per={};rijen.forEach(function(r){r.cel.forEach(function(i,j){if(!i)return;(per[i]=per[i]||[]).push({wk:r.wk,datum:r.datum,gebied:kop[j],feest:r.feest});});});
+  var mons=Object.keys(per).sort();
+  return {jaar:WD_JAAR,kop:kop,rijen:rijen,per:per,mons:mons};
+}
 function wdPrint(){
   var t=document.querySelector('.wd-rooster');if(!t)return;
   var old=document.getElementById('wdPrintZone');if(old)old.remove();
   var z=document.createElement('div');z.id='wdPrintZone';
+  var st=document.createElement('style');st.textContent='#wdPrintZone th,#wdPrintZone thead{position:static!important;top:auto!important}#wdPrintZone table{min-width:0!important;width:100%!important;table-layout:auto}#wdPrintZone tr{break-inside:avoid}';z.appendChild(st);
   var h=document.createElement('h2');h.textContent='Waakdienst '+WD_JAAR;z.appendChild(h);
+  var lg=document.createElement('p');lg.style.cssText='margin:0 0 6px;font-size:11px';lg.innerHTML='<span style="background:#ffe58f;font-weight:700;padding:0 6px;border:1px solid #c9a227">Geel</span> = B&amp;S-monteur';z.appendChild(lg);
   var c=t.cloneNode(true);
+  c.querySelectorAll('tr').forEach(function(tr){var l=tr.lastElementChild;if(l)l.remove();}); // Zara-kolom eruit (voor nu)
   c.querySelectorAll('button').forEach(function(b){var sp=document.createElement('span');sp.textContent=b.textContent;b.parentNode.replaceChild(sp,b);});
   c.querySelectorAll('.badge').forEach(function(b){b.remove();});
+  c.querySelectorAll('td').forEach(function(td){if(wdIsBS(td.textContent.trim())){td.style.background='#ffe58f';td.style.fontWeight='700';}});
   z.appendChild(c);document.body.appendChild(z);document.body.classList.add('wd-pr');
   var klaar=function(){document.body.classList.remove('wd-pr');var e=document.getElementById('wdPrintZone');if(e)e.remove();window.removeEventListener('afterprint',klaar);};
   window.addEventListener('afterprint',klaar);
   setTimeout(function(){window.print();},50);
+}
+/* kleine xlsx-schrijver (zonder externe bibliotheek), zodat de gele markering ook in Excel staat */
+function xlsxZip(files){
+  var enc=new TextEncoder(),T=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;T[n]=c>>>0;}
+  function crc(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=T[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+  var parts=[],cd=[],off=0;
+  function u16(v){return [v&255,(v>>>8)&255];}function u32(v){return [v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255];}
+  files.forEach(function(f){var nm=enc.encode(f.n),data=enc.encode(f.d),cr=crc(data);
+    var lh=[].concat(u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0x21),u32(cr),u32(data.length),u32(data.length),u16(nm.length),u16(0));
+    parts.push(new Uint8Array(lh),nm,data);
+    cd.push(new Uint8Array([].concat(u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0x21),u32(cr),u32(data.length),u32(data.length),u16(nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off))),nm);
+    off+=lh.length+nm.length+data.length;});
+  var cdl=cd.reduce(function(a,b){return a+b.length;},0);
+  return new Blob(parts.concat(cd,[new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cdl),u32(off),u16(0)))]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function xlsxSheet(rows,cols,freeze){
+  function col(i){var s='';i++;while(i){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
+  function x(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  var b='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  if(freeze)b+='<sheetViews><sheetView workbookViewId="0"><pane ySplit="'+freeze+'" topLeftCell="A'+(freeze+1)+'" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+  b+='<cols>'+cols.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}).join('')+'</cols><sheetData>';
+  rows.forEach(function(r,ri){b+='<row r="'+(ri+1)+'">';r.forEach(function(c,ci){if(c==null)return;var v=typeof c==='object'?c:{v:c},ref=col(ci)+(ri+1),st=v.s?' s="'+v.s+'"':'';
+    if(typeof v.v==='number')b+='<c r="'+ref+'"'+st+'><v>'+v.v+'</v></c>';else b+='<c r="'+ref+'"'+st+' t="inlineStr"><is><t xml:space="preserve">'+x(v.v)+'</t></is></c>';});b+='</row>';});
+  return b+'</sheetData></worksheet>';
+}
+function wdExcel(){
+  var d=wdExportData();if(!d)return;
+  var H=1,BS=2,TI=3,UI=4,BSB=5,CE=6;
+  var r1=[[{v:'Waakdienst '+d.jaar,s:TI}],[{v:'Geel = B&S-monteur',s:UI}],[],
+    [{v:'Week',s:H},{v:'Datum',s:H},{v:'Feestdag',s:H}].concat(d.kop.map(function(k){return {v:k,s:H};}))];
+  d.rijen.forEach(function(r){r1.push([{v:r.wk,s:CE},r.datum,r.feest?'★ '+r.feest:''].concat(r.cel.map(function(i){return {v:i||'—',s:wdIsBS(i)?BS:CE};})));});
+  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font><font><i/><sz val="10"/><color rgb="FF555555"/><name val="Calibri"/></font></fonts>'+
+    '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7E6E1"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE58F"/></patternFill></fill></fills>'+
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+
+    '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+    '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'+
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var files=[
+    {n:'[Content_Types].xml',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+    {n:'_rels/.rels',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {n:'xl/workbook.xml',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Waakdienst" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+    {n:'xl/_rels/workbook.xml.rels',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {n:'xl/styles.xml',d:styles},
+    {n:'xl/worksheets/sheet1.xml',d:xlsxSheet(r1,[7,18,36].concat(d.kop.map(function(){return 18;})),4)}
+  ];
+  var a=document.createElement('a');a.href=URL.createObjectURL(xlsxZip(files));a.download='Waakdienst '+d.jaar+'.xlsx';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
 }
 /* ---------- ruilen ---------- */
 function wdDeadlineOk(k){var d=wdWeekStart(k);var nu=new Date();nu.setHours(0,0,0,0);return (d-nu)/864e5>=7;}
@@ -6613,7 +6677,7 @@ async function sbLoadNorm(){
     // altijd eerst terug naar de code-standaard, daarna het vastgelegde besluit eroverheen
     LOC.forEach(function(l,i){l.benodigd=normBasis[i];});
     normDoor=null;normWanneer=null;
-    // norm komt uit de KPN-contracturen; oude vastgelegde aantallen worden niet meer toegepast
+    // norm komt uit de contracturen; oude vastgelegde aantallen worden niet meer toegepast
     pgNormOud=null;   // stuurt de "zet terug"-knop
   }catch(e){ console.error('[Supabase] norm laden faalde',e); }
 }
