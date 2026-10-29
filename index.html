@@ -4278,6 +4278,7 @@ function wireWeek(){
   document.querySelectorAll('[data-drjaar]').forEach(function(b){b.onclick=function(){DR_JAAR=+b.dataset.drjaar;render();};});
   document.querySelectorAll('[data-drvoorb]').forEach(function(b){b.onclick=drVoorbeeld;});
   document.querySelectorAll('[data-drok]').forEach(function(b){b.onclick=drToepas;});
+  document.querySelectorAll('[data-drmon]').forEach(function(b){b.onclick=function(){DR_MON=DR_MON===b.dataset.drmon?null:b.dataset.drmon;render();};});
   function leeg(){editCell=null;editCells=[];}
   var p=document.getElementById('wkPrev');if(p)p.onclick=function(){leeg();if(weekStart===7){weekStart=0;render();}else if(winShift>0){shiftWindow(winShift-1,0);}};
   var n=document.getElementById('wkNext');if(n)n.onclick=function(){leeg();if(weekStart===0){weekStart=7;render();}else{shiftWindow(winShift+1,7);}};
@@ -4975,7 +4976,7 @@ WD_OPZET.A.kleur={NW:'#3b7dd8',NO:'#2a9d8f',MI:'#9b6bd6',ZW:'#e07a3f',ZO:'#d4a72
 /* ---------- kalender per jaar: waakweken vr t/m do ----------
    Een roosterjaar begint op de eerste vrijdag van januari en loopt door tot de dag voor de eerste
    vrijdag van het volgende jaar. Zo sluiten de jaren naadloos op elkaar aan (52 of 53 weken). */
-var WD_BASISJAAR=2027, WD_JAAR=2027, WD_JAREN=6;  // keuze 2027 t/m 2032
+var WD_BASISJAAR=2027, WD_JAAR=2027, WD_JAREN=Math.max(6,new Date().getFullYear()+6-WD_BASISJAAR);  // schuift mee: altijd t/m het huidige jaar + 5
 var WD_EERSTE=WD_BASISJAAR-1;                      // 2026: demo-indeling tot aan het 2027-rooster, sluit daarop aan
 function wdJaarStart(j){var d=new Date(j,0,1);while(d.getDay()!==5)d.setDate(d.getDate()+1);return d;}
 function wdDagen(a,b){return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);}
@@ -5325,6 +5326,7 @@ function wdVastBalk(){
   return '<div class="wd-bron"><span>Rooster '+j+' wordt automatisch berekend en kan nog verschuiven als de pool of de regels veranderen.</span>'+(role==='RD'?'<button class="linkbtn" data-wdvast="1">Rooster '+j+' vastzetten</button>':'')+'</div>';
 }
 function wdDatabron(){
+  return ''; // echte gegevens staan in de tool; het demoblok is niet meer nodig
   if(WD_ECHT)return '<div class="wd-bron echt"><span><b>Echte gegevens</b> uit '+WD_ECHT+' · alleen in deze browser, verdwijnt bij herladen. Deel geen screenshots met woonplaatsen.</span></div>';
   return '<div class="wd-bron"><span><b>Demogegevens</b> · fictieve woonplaatsen en 60+-verdeling, zelfde aantallen per gebied als echt.</span>'+
     '<label class="linkbtn wd-laad">Echte gegevens inladen<input type="file" id="wdEchtFile" accept=".json,application/json" hidden></label></div>';
@@ -5560,13 +5562,14 @@ function wdKpi(key){
 function viewWaak(){
   var c=wdC();
   var open=wdOpenAantal();
-  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')]]:[]).concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
+  if(wdSub==='voorspel')wdSub='kaart';
+  var subs=[['kaart','Kaart'],].concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
   if(wdSub==='q4'||(wdSub==='voorspel'&&role!=='RD'&&role!=='G'))wdSub='kaart';
   var jk='<div class="ctrl wd-jaren" style="margin:0 0 8px;flex-wrap:wrap"><span class="wd-lbl" style="margin-right:4px">Roosterjaar</span>';
   for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
   var eind=wdWeekEnd(WD_N-1),vj=WD_JAAR>WD_BASISJAAR;
-  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst · fictieve namen.'+
+  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'</div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
@@ -5618,7 +5621,7 @@ function drMaak(j,modus){
     (W[m.ini]||[]).concat(S[m.ini]||[]).forEach(function(f){[-4,3].forEach(function(o){var k=mIdx[drIso(drPlus(f,o))];if(k!==undefined)n[k]=1;});});
     blok[m.ini]=b;inSch[m.ini]=s;inDienst[m.ini]=n;});
   var dv=MA.map(function(){return {};}),cnt={},extraN={},st={overSch:0,invallers:0,extra:0,gat:0,nX:0,naast:0};
-  pool.forEach(function(m){cnt[m.ini]=0;extraN[m.ini]=0;});
+  var extraK={};pool.forEach(function(m){cnt[m.ini]=0;extraN[m.ini]=0;extraK[m.ini]={};});
   function heeft(i,k){return k>=0&&k<MA.length&&(dv[k][regio[i]]||[]).indexOf(i)>=0;}
   function zet(k,i){var g=regio[i];(dv[k][g]=dv[k][g]||[]).push(i);cnt[i]++;}
   function last(i){return (W[i]||[]).length+(S[i]||[]).length;}
@@ -5641,7 +5644,7 @@ function drMaak(j,modus){
         for(var k2=0;k2<MA.length;k2++){if(!werk[k2]||blok[i][k2]||heeft(i,k2)||heeft(i,k2-1)||heeft(i,k2+1))continue;
           var md=99;for(var q2=0;q2<MA.length;q2++){if(blok[i][q2]||heeft(i,q2)){var a=Math.abs(q2-k2);if(a<md)md=a;}}
           var sc=Math.min(md,10)*2-(dv[k2][regio[i]]||[]).length*3;if(sc>bs){bs=sc;best=k2;}}
-        if(best!==null){zet(best,i);extraN[i]++;st.extra++;}}});
+        if(best!==null){zet(best,i);extraN[i]++;extraK[i][best]=1;st.extra++;}}});
   }
   // dagrooster per monteur en per dag
   var vaste={};DR_VASTE.forEach(function(v){(vaste[v[0]]=vaste[v[0]]||{})[v[1]]={t:v[2]};});
@@ -5661,7 +5664,11 @@ function drMaak(j,modus){
       if(t){rows.push({monteur:m.naam,datum:iso,type:t,hrs:8});if(tel[t]!==undefined)tel[t]++;}}
     if(ty==='regio'&&regio[i]!==undefined){
       var nw=(W[i]||[]).filter(function(f){return f>=start&&f<=eind;}).length,ns=(S[i]||[]).filter(function(f){return f>=start&&f<=eind;}).length;
-      mons.push({ini:i,g:regio[i],f:fac[i],waak:nw,sch:ns,dv:cnt[i],extra:extraN[i]});}
+      var wk={},vr={};
+      (W[i]||[]).forEach(function(f){if(f<start||f>eind)return;var k6=mIdx[drIso(drPlus(f,3))];if(k6!==undefined){wk[k6]='w';vr[k6]=drIso(f);}});
+      (S[i]||[]).forEach(function(f){if(f<start||f>eind)return;var k6=mIdx[drIso(drPlus(f,3))];if(k6!==undefined&&!wk[k6]){wk[k6]='s';vr[k6]=drIso(f);}});
+      for(var k5=0;k5<MA.length;k5++){if(heeft(i,k5))wk[k5]=(extraK[i]&&extraK[i][k5])?'x':'v';}
+      mons.push({ini:i,g:regio[i],f:fac[i],waak:nw,sch:ns,dv:cnt[i],extra:extraN[i],wk:wk,vr:vr});}
   });
   var nietIn=pool.filter(function(m){return !inRooster[m.ini];}).map(function(m){return m.ini;});
   // dekking per regio op werkdagen
@@ -5670,7 +5677,7 @@ function drMaak(j,modus){
     Object.keys(perG).forEach(function(g){var n2=(dv[kk][g]||[]).length;perG[g].som+=n2;if(!n2)perG[g].leeg++;});}
   pool.forEach(function(m){for(var k4=0;k4<MA.length;k4++){if(heeft(m.ini,k4)&&inSch[m.ini][k4])dubbel++;}});
   mons.sort(function(a,b){return (a.g<b.g?-1:a.g>b.g?1:0)||(a.ini<b.ini?-1:1);});
-  return {jaar:j,modus:modus,van:drIso(start),tot:drIso(eind),rows:rows,mons:mons,st:st,perG:perG,werkdagen:werkdagen,dubbel:dubbel,nietIn:nietIn,vast:!!r.vast};
+  return {jaar:j,modus:modus,weken:MA.map(drIso),van:drIso(start),tot:drIso(eind),rows:rows,mons:mons,st:st,perG:perG,werkdagen:werkdagen,dubbel:dubbel,nietIn:nietIn,vast:!!r.vast};
 }
 /* vergelijk met wat er al in het rooster staat: handmatige diensten (verlof, ziek, …) blijven altijd staan */
 function drEigen(b){return String(b.updated_by_role||'').indexOf('jaarrooster')===0;}
@@ -5708,12 +5715,36 @@ async function drToepas(){
   }catch(e){sbToast('⚠️ Niet (helemaal) gelukt: '+String((e&&e.message)||e).slice(0,140));}
   DR_BEZIG=false;render();
 }
+var DR_MON=null; // open monteur in het jaarrooster-overzicht
+var DR_KLR={w:['#3c3489','waak'],s:['#8e84e0','schaduw'],v:['#e0a526','dagvroeg'],x:['#a86b00','dagvroeg (extra 60+)']};
+function drWeekTxt(iso){var d=new Date(iso+'T12:00:00'),e=drPlus(d,4);return 'wk '+isoWeek(d)+' · '+wdD(d)+' – '+wdD(e);}
+function drVrTxt(iso){var d=new Date(iso+'T12:00:00');return 'vr '+wdD(d)+' – do '+wdD(drPlus(d,6));}
+function drStrip(v,x){var h='<div class="wd-strip" aria-label="weken van het jaar, gekleurd = dienst">';
+  v.weken.forEach(function(iso,k){var t=x.wk[k];h+='<span title="'+drWeekTxt(iso)+(t?' · '+DR_KLR[t][1]:'')+'" style="'+(t?'background:'+DR_KLR[t][0]:'')+'"></span>';});
+  return h+'</div>';}
+function drDetail(v,x){var per={w:[],s:[],v:[],x:[]};Object.keys(x.wk).forEach(function(k){per[x.wk[k]].push(+k);});
+  return '<div class="wd-card" style="margin:4px 0 8px">'+['w','s','v','x'].filter(function(t){return per[t].length;}).map(function(t){
+    return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+DR_KLR[t][0]+'"></i>'+DR_KLR[t][1]+' ('+per[t].length+')</span><b style="font-weight:400;text-align:right">'+per[t].sort(function(a,b){return a-b;}).map(function(k){return (x.vr[k]?drVrTxt(x.vr[k]):drWeekTxt(v.weken[k]));}).join('<br>')+'</b></div>';}).join('')+
+    (x.f<1?'<p class="wd-uitleg" style="margin:6px 0 0">60+: geen schaduwdienst, daarvoor '+x.extra+' extra dagvroegweken.</p>':'')+'</div>';}
+function drPerMonteur(v){
+  var h='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur ('+v.jaar+')</div><p class="wd-uitleg" style="margin:0 0 8px">Hoeveel en welke diensten elke monteur in '+v.jaar+' krijgt. Elk blokje is een week (ma t/m vr). Klik op een monteur om zijn weken te zien.</p>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+['w','s','v','x'].map(function(t){return '<span><i class="wd-sw" style="background:'+DR_KLR[t][0]+'"></i>'+DR_KLR[t][1]+'</span>';}).join('')+'</div>';
+  h+='<div class="wd-scroll" style="max-height:none"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Waak</th><th>Schaduw</th><th>Dagvroeg</th><th>Totaal</th><th>'+v.jaar+'</th></tr></thead><tbody>';
+  ['LN','RA','LZ'].forEach(function(g){var l=v.mons.filter(function(x){return x.g===g;});if(!l.length)return;
+    var gem=function(f){return nl1(l.reduce(function(a,x){return a+f(x);},0)/l.length);};
+    h+='<tr class="wd-grp"><td colspan="6" style="background:var(--surface-1);font-weight:600">'+DR_GNAAM[g]+' · '+l.length+' monteurs · gem. waak '+gem(function(x){return x.waak;})+' · schaduw '+gem(function(x){return x.sch;})+' · dagvroeg '+gem(function(x){return x.dv;})+' · totaal '+gem(function(x){return x.waak+x.sch+x.dv;})+'</td></tr>';
+    l.forEach(function(x){var open=DR_MON===x.ini;
+      h+='<tr data-drmon="'+x.ini+'" style="cursor:pointer'+(open?';background:var(--accent-bg)':'')+'"><td><b>'+x.ini+'</b>'+(x.f<1?' <span class="wd-mut">60+</span>':'')+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td>'+x.dv+(x.extra?' <span class="wd-mut">(+'+x.extra+')</span>':'')+'</td><td><b>'+(x.waak+x.sch+x.dv)+'</b></td><td>'+drStrip(v,x)+'</td></tr>';
+      if(open)h+='<tr><td colspan="6">'+drDetail(v,x)+'</td></tr>';});
+  });
+  return h+'</tbody></table></div></div>';
+}
 function drView(){
   if(role!=='RD')return '<div class="wd-card"><p class="wd-uitleg" style="margin:0">Alleen Manager R/D kan het dagrooster van een heel jaar maken.</p></div>';
   if(wdKey!=='D')return '<div class="wd-card"><p class="wd-uitleg" style="margin:0">Het jaarrooster wordt gemaakt uit de aangeleverde waakdienst-indeling (3 regio\'s, Randstad 2 diensten). Kies die in Waakdienst bij de kaart.</p></div>';
   var nu=wdJaarVan(new Date()),eerst=Math.max(WD_BASISJAAR,(nu?nu.j:WD_BASISJAAR)+1);
   if(!DR_JAAR)DR_JAAR=Math.min(eerst,WD_BASISJAAR+WD_JAREN-1);
-  var j=DR_JAAR,vast=!!wdVastVoor(j),echt=!!WD_ECHT||vast;
+  var j=DR_JAAR,vast=!!wdVastVoor(j),echt=true;
   var h='<div class="wd-card"><div class="wd-ct">Jaarrooster maken</div><p class="wd-uitleg" style="margin:0 0 10px">De tool maakt het dagrooster van het gekozen jaar uit het waakrooster: waak (vrijdag t/m donderdag, ook weekend en feestdagen), schaduw, dagvroeg, dag, Zara en Techno. Je ziet eerst een voorbeeld; pas na <b>Toepassen</b> komt het in het rooster. Verlof, ziek en andere diensten die er al staan blijven altijd staan.</p>';
   h+='<div class="ctrl" style="flex-wrap:wrap;margin-bottom:8px">';for(var y=WD_BASISJAAR;y<WD_BASISJAAR+WD_JAREN;y++)h+='<button data-drjaar="'+y+'" class="'+(y===j?'active':'')+'">'+y+'</button>';h+='</div>';
   h+='<p class="wd-uitleg" style="margin:0 0 8px"><b>Dagvroeg: '+DR_MODI[DR_MODUS].naam+'.</b> '+DR_MODI[DR_MODUS].uitleg+'</p>';
@@ -5736,8 +5767,7 @@ function drView(){
   if(v.klaar)h+='<div class="wd-bron"><span><b>Toegepast:</b> '+v.klaar.n+' diensten gezet, '+v.klaar.houd+' bestaande bleven staan'+(v.klaar.weg?', '+v.klaar.weg+' oude automatische vervallen':'')+'.</span></div>';
   else h+='<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="acc" data-drok="1"'+(!echt||DR_BEZIG||!sb?' disabled':'')+'>'+(DR_BEZIG?'Bezig…':'Toepassen: zet '+v.jaar+' in het rooster')+'</button>'+(!echt?'<span class="wd-mut" style="font-size:12px">Toepassen kan pas met echte gegevens of een vastgezet waakrooster.</span>':'')+'</div>';
   h+='</div>';
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur ('+v.jaar+')</div><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Regio</th><th>Waak</th><th>Schaduw</th><th>Dagvroeg</th>'+(v.modus==='hybride60'?'<th>waarvan extra 60+</th>':'')+'</tr></thead><tbody>'+
-    v.mons.map(function(x){return '<tr><td><b>'+x.ini+'</b>'+(x.f<1?' <span class="wd-mut">60+</span>':'')+'</td><td>'+DR_GNAAM[x.g]+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td>'+x.dv+'</td>'+(v.modus==='hybride60'?'<td>'+(x.extra||'')+'</td>':'')+'</tr>';}).join('')+'</tbody></table></div>';
+  h+=drPerMonteur(v);
   return h;
 }
 
@@ -6283,7 +6313,7 @@ function wdViewMonteur(){
   var ga=gem(rijen);
   h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:10px"><div class="metric"><div class="l">Gem. waakdiensten</div><div class="v">'+nl1(ga.w)+'</div></div><div class="metric"><div class="l">Gem. schaduwdiensten</div><div class="v">'+nl1(ga.s)+'</div></div><div class="metric"><div class="l">Gem. totaal per monteur</div><div class="v">'+nl1(ga.t)+'</div></div><div class="metric"><div class="l">Monteurs</div><div class="v">'+rijen.length+'</div></div></div>';
   h+='<div class="ctrl" style="margin-bottom:8px"><input id="wdMonZoek" placeholder="Zoek monteur, code of woonplaats" value="'+esc(wdMonQ)+'" oninput="wdMonFilter(this.value)" style="min-width:260px"></div>';
-  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van alle diensten (waak + schaduw) die de eigen regio draait, naar inzetbaarheidsfactor (60+ telt voor 0,75). Wie geen schaduw draait, draait daardoor wat meer waakdiensten. Rood = 2 of meer ernaast. '+(WD_ECHT?'Woonplaats is echt, naam is fictief.':'Woonplaats en naam zijn fictief (demo).')+'</p><div class="wd-scroll"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
+  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van alle diensten (waak + schaduw) die de eigen regio draait, naar inzetbaarheidsfactor (60+ telt voor 0,75). Wie geen schaduw draait, draait daardoor wat meer waakdiensten. Rood = 2 of meer ernaast. </p><div class="wd-scroll"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
   var ncol=10+(c.prep.carry?1:0);
   c.prep.gIds.forEach(function(g){
     var groep=rijen.filter(function(m){return c.prep.home[m.ini]===g;});if(!groep.length)return;
