@@ -4968,6 +4968,21 @@ function bsFocus(m){
   h+='<p class="sub" style="margin-top:8px">Kleuren zoals in het weekrooster. Zwarte rand = vandaag. Diagonaal = middag compensatie voor een nachtklus of een deeldag afwezig.</p>';
   return h;
 }
+/* alle monteurs voor een week buiten het geladen venster (idx 0-13): één query per week, in het geheugen bewaard */
+var BS_WEEK={};
+function bsWeekLaad(ma){var key=fmtIsoD(dateFor(ma));if(BS_WEEK[key])return BS_WEEK[key];
+  var o=BS_WEEK[key]={loaded:false,st:{}};
+  if(!sb){o.loaded=true;return o;}
+  (async function(){try{var van=key,tot=fmtIsoD(dateFor(ma+7)),from=0;
+    while(true){var r=await sb.from('rooster_entries').select('monteur,datum,type,hrs').gte('datum',van).lte('datum',tot).range(from,from+999);
+      if(r.error||!r.data)break;r.data.forEach(function(x){(o.st[x.monteur]=o.st[x.monteur]||{})[x.datum]=typeToStatus(x.type,x.hrs);});
+      if(r.data.length<1000)break;from+=1000;}
+  }catch(e){console.error('[Beschikbaar] week laden faalde',e);}
+  o.loaded=true;if(role==='PL'&&plView==='besch')render();})();
+  return o;}
+/* status van een monteur op dag idx, voor de week die begint op ma (idx mag ma+7 zijn); null = nog aan het laden */
+function bsStAlle(m,idx,ma){if(idx>=0&&idx<=13&&m.roster[idx]!==undefined)return m.roster[idx];
+  var o=bsWeekLaad(ma),h=(o.st[m.naam]||{})[fmtIsoD(dateFor(idx))];if(h!==undefined)return h;return o.loaded?'vrij':null;}
 function bsMaVal(){if(bsMa===null)bsMa=curDay-((dateFor(curDay).getDay()+6)%7);return bsMa;}
 function bsDag(n){bsMa=n===0?null:bsMaVal()+n;bsPd=null;render();}
 function bsNav(txt){return '<div class="ctrl" style="margin:6px 0 10px"><button onclick="bsDag(-7)">‹ week</button><span class="daylabel" style="min-width:190px">'+txt+'</span><button onclick="bsDag(7)">week ›</button><button onclick="bsDag(0)">deze week</button></div>';}
@@ -4979,7 +4994,7 @@ function viewBeschikbaar(){
   var ma=bsMaVal(),dn=['ma','di','wo','do','vr','za','zo'];
   var pd=(bsPd!==null&&bsPd>=ma&&bsPd<ma+7)?bsPd:((TODAY>=ma&&TODAY<ma+7)?TODAY:ma);
   var kol=cols.map(function(c){
-    var ms=colMonteurs(c,pd).filter(function(m){return !zoek||(m.ini+' '+m.naam).toLowerCase().indexOf(zoek)>=0;}).map(function(m){var st=m.roster[pd];return {m:m,st:st,i:bsInfo(st,pd,m.roster[pd+1])};});
+    var ms=colMonteurs(c,pd).filter(function(m){return !zoek||(m.ini+' '+m.naam).toLowerCase().indexOf(zoek)>=0;}).map(function(m){var st=bsStAlle(m,pd,ma)||'vrij',nx=bsStAlle(m,pd+1,ma);return {m:m,st:st,i:bsInfo(st,pd,nx===null?undefined:nx)};});
     ms.forEach(function(x){tot[x.i.c]++;});
     return {c:c,ms:ms};});
   var h='<h2>Beschikbaarheid · week '+isoWeek(dateFor(ma))+'</h2><p class="sub">'+(week?'Per monteur de hele week: de letter is de dienst, een cijfer erachter het aantal uur dat hij beschikbaar of bezet is (D = dag, DV = dagvroeg, W = waak, V = verlof, Z = ziek, O = opleiding, P = project, C = compensatie, N = nachtklus, Za = ZARA, T = Techno). Klik op een monteur voor zijn rooster van 2 weken.':'Wie is er beschikbaar, waar en van hoe laat tot hoe laat (de balk is de werktijd van de dienst; groen is beschikbaar, andere kleuren zijn bezet of afwezig). Bij een deels afwezige dag is alleen het aantal uur vastgelegd, dus beschikbaar loopt dan vanaf het begin van de dienst. Klik op een monteur voor zijn rooster van 2 weken.')+'</p>';
@@ -4998,9 +5013,9 @@ function viewBeschikbaar(){
     if(week){
       o+='<table style="width:100%;border-collapse:separate;border-spacing:2px;font-size:12px"><thead><tr><th style="text-align:left;font-weight:600;color:var(--muted)">monteur</th>'+dn.map(function(x,q){return '<th onclick="bsPd='+(ma+q)+';render()" style="cursor:pointer;font-weight:'+((ma+q)===pd?'700':'600')+';color:'+((ma+q)===pd?'var(--accent)':'var(--muted)')+'">'+x+' '+dateFor(ma+q).getDate()+'</th>';}).join('')+'</tr></thead><tbody>';
       lijst.forEach(function(x){o+='<tr><td onclick="bsSet(\'sel\',\''+x.m.id+'\')" style="cursor:pointer;white-space:nowrap;padding-right:8px"><b>'+x.m.ini+'</b> <span style="color:var(--muted)">'+esc(x.m.naam===x.m.ini?'':x.m.naam)+'</span></td>';
-        for(var q=0;q<7;q++){var idx=ma+q,live=idx>=0&&idx<=13&&x.m.roster[idx]!==undefined;
-          if(!live){o+='<td style="text-align:center;color:var(--muted);background:var(--surface-1);border-radius:4px" title="buiten het geladen venster">·</td>';continue;}
-          var st=x.m.roster[idx],i=bsInfo(st,idx,x.m.roster[idx+1]),cs=dienstStyle(st),tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
+        for(var q=0;q<7;q++){var idx=ma+q,st=bsStAlle(x.m,idx,ma);
+          if(st===null){o+='<td style="text-align:center;color:var(--muted);background:var(--surface-1);border-radius:4px" title="wordt geladen…">…</td>';continue;}
+          var nx=bsStAlle(x.m,idx+1,ma),i=bsInfo(st,idx,nx===null?undefined:nx),cs=dienstStyle(st),tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
           o+='<td onclick="bsSet(\'sel\',\''+x.m.id+'\')" title="'+esc(tip)+'" style="cursor:pointer;text-align:center;font-weight:700;border-radius:4px;padding:5px 2px;background:'+mcBg(celBg(st,cs,'dag'),i.mc)+';color:'+cs[1]+(idx===pd?';outline:2px solid var(--accent)':'')+'">'+bsKort(st)+(i.mc&&i.c==='deels'?'4':'')+'</td>';}
         o+='</tr>';});
       o+='</tbody></table></div>';return o;}
