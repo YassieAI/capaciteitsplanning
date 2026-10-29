@@ -5658,7 +5658,8 @@ function viewWaak(){
    ================================================================ */
 var DR_MODUS='hybride60', DR_JAAR=null, DR_VOORB=null, DR_BEZIG=false;
 /* vaste afspraken: code, weekdag (1=ma … 5=vr), dienst (null = niet-werkdag) */
-var DR_VASTE=[['JEJO05',2,'project'],['JADR01',4,null],['T07',5,null]];
+var DR_VASTE=[['JEJO05',2,'project'],['JADR01',4,null],['T07',5,null],['ERMI01',1,null],['ERMI01',2,null],['ERMI01',3,null]]; // ERMI01 werkt alleen do en vr (dag)
+var DR_DVALLEEN=[['HEMO01','LZ']]; // draait wel mee met dagvroeg, niet met waak/schaduw
 var DR_MODI={
   hybride60:{naam:'Hybride + 60+ extra',uitleg:'Dagvroeg in de week (ma t/m vr) vóór je eigen waakweek. Valt die samen met je eigen schaduwweek, dan neemt een collega uit dezelfde regio het over (wie het minst dagvroeg had, 60+ telt zwaarder). 60+ monteurs krijgen extra dagvroegweken in plaats van de schaduw die zij niet doen. Een waakruil verandert de dagvroeg niet.'}};
 var DR_GNAAM={LN:'Noord',RA:'Randstad',LZ:'Zuid'};
@@ -5676,6 +5677,7 @@ function drMaak(j,modus){
   voeg(r);if(rn)voeg(rn);
   var pool=WD_POOL.slice(),regio={},fac={};
   pool.forEach(function(m){regio[m.ini]=prep.home[m.ini];fac[m.ini]=wdFactor(m);});
+  var dvAl={};DR_DVALLEEN.forEach(function(x){var mm=M.filter(function(q){return q.ini===x[0];})[0];if(mm&&!pool.some(function(p){return p.ini===x[0];})){pool.push({ini:x[0],woon:mm.woonNaam,lat:mm.lat,lng:mm.lng,f:1});regio[x[0]]=x[1];fac[x[0]]=1;dvAl[x[0]]=1;}});
   // maandagen van het jaar; een week telt als er minstens één werkdag in het jaar valt
   var MA=[],mIdx={},werk=[];
   for(var d0=drPlus(start,-((start.getDay()+6)%7));d0<=eind;d0=drPlus(d0,7)){var w=false;for(var x=0;x<5;x++){var dd=drPlus(d0,x);if(dd>=start&&dd<=eind&&!feest[drIso(dd)])w=true;}mIdx[drIso(d0)]=MA.length;MA.push(d0);werk.push(w);}
@@ -5702,8 +5704,17 @@ function drMaak(j,modus){
     Object.keys(W).forEach(function(i){if(regio[i]===undefined)return;W[i].forEach(function(f){var k=mIdx[drIso(drPlus(f,-11))];if(k===undefined||!werk[k])return;
       if(inSch[i][k]){st.overSch++;var inv=kies(regio[i],k,true);if(inv){zet(k,inv);st.invallers++;}else st.gat++;}else zet(k,i);});});
     for(var k=0;k<MA.length;k++){if(!werk[k])continue;['LN','RA','LZ'].forEach(function(g){if(!(dv[k][g]||[]).length){var inv=kies(g,k,true);if(inv){zet(k,inv);st.invallers++;}else st.gat++;}});}
+    // dagvroeg-alleen monteurs (geen waak/schaduw): nemen een eerlijk deel van de dagvroegweken in hun regio over
+    Object.keys(dvAl).forEach(function(i){var g=regio[i];
+      var rest=pool.filter(function(m){return !dvAl[m.ini]&&regio[m.ini]===g&&fac[m.ini]===1;});
+      var tgt=rest.length?Math.round(rest.reduce(function(s,m){return s+cnt[m.ini];},0)/rest.length):0;
+      var wk=[];for(var k=0;k<MA.length;k++)if(werk[k]&&(dv[k][g]||[]).length)wk.push(k);
+      for(var t=0;t<tgt&&wk.length;t++){var k=wk[Math.min(wk.length-1,Math.floor((t+.5)*wk.length/tgt))];
+        if(heeft(i,k)||heeft(i,k-1)||heeft(i,k+1)){var alt=wk.filter(function(q){return !heeft(i,q)&&!heeft(i,q-1)&&!heeft(i,q+1)&&(dv[q][g]||[]).some(function(o){return !dvAl[o];});});if(!alt.length)continue;k=alt[0];}
+        var lst=dv[k][g],vi=-1,vm=-1;lst.forEach(function(o,ix){if(!dvAl[o]&&cnt[o]>vm){vm=cnt[o];vi=ix;}});
+        if(vi<0)continue;var weg=lst.splice(vi,1)[0];cnt[weg]--;zet(k,i);}});
     // 60+: evenveel extra dagvroegweken als de rest gemiddeld schaduw heeft
-    var jong=pool.filter(function(m){return fac[m.ini]===1&&WD_GEEN_SCH.indexOf(m.ini)<0;});
+    var jong=pool.filter(function(m){return fac[m.ini]===1&&WD_GEEN_SCH.indexOf(m.ini)<0&&!dvAl[m.ini];});
     var gemS=jong.length?jong.reduce(function(s,m){return s+(S[m.ini]||[]).filter(function(f){return f>=start&&f<=eind;}).length;},0)/jong.length:0;
     st.nX=Math.round(gemS);
     pool.filter(function(m){return fac[m.ini]<1;}).forEach(function(m){var i=m.ini;
