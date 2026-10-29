@@ -3991,6 +3991,7 @@ function viewWeek(){
   var kolAl=function(d){return monteurs.length>0&&monteurs.every(function(m){return editCells.some(function(c){return c.mid===m.id&&c.day===d;});});};
   var rijAl=function(m){var n=0;for(var d=weekStart;d<weekStart+7;d++)if(editCells.some(function(c){return c.mid===m.id&&c.day===d;}))n++;return n===7;};
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
+  if(rMode==='jaar'){if(role==='RD')return '<h2>Rooster</h2>'+rModeKnoppen()+drView();rMode='week';}
   var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()||role==='PL'?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel aan (tik er meer aan om ze samen te kiezen), of <strong>sleep over meerdere cellen</strong>; klik op een dag (kop of grafiek) of een monteur voor een hele dag of rij. Zo vul je ze in één keer — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0&&winShift<=0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7&&winShift>=12?' disabled':'')+'>week ›</button>'+(winShift>0||weekStart===0?'<button id="wkNu">deze week</button>':'')+'</div>';
@@ -4212,7 +4213,7 @@ function mToepas(soort,arg){
 }
 function rSetMode(m){rMode=m;editCell=null;editCells=[];render();}
 function rMaandNav(d){rMaandOff=d===0?0:rMaandOff+d;render();}
-function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button><button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
+function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button>'+(role==='RD'?'<button class="'+(rMode==='jaar'?'active':'')+'" onclick="rSetMode(\'jaar\')">Jaarrooster maken</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
 function rVers(b){if(b){b.disabled=true;b.textContent='Bezig…';}RMND={};PNL={};Promise.resolve(sbLoad({})).then(function(){render();sbToast('Rooster ververst');},function(){render();});}
 function rMaandLaad(key,namen,van,tot){
   if(RMND[key])return RMND[key];
@@ -4274,6 +4275,9 @@ function viewRoosterMaand(wcols,alles,monteurs){
 }
 
 function wireWeek(){
+  document.querySelectorAll('[data-drjaar]').forEach(function(b){b.onclick=function(){DR_JAAR=+b.dataset.drjaar;render();};});
+  document.querySelectorAll('[data-drvoorb]').forEach(function(b){b.onclick=drVoorbeeld;});
+  document.querySelectorAll('[data-drok]').forEach(function(b){b.onclick=drToepas;});
   function leeg(){editCell=null;editCells=[];}
   var p=document.getElementById('wkPrev');if(p)p.onclick=function(){leeg();if(weekStart===7){weekStart=0;render();}else if(winShift>0){shiftWindow(winShift-1,0);}};
   var n=document.getElementById('wkNext');if(n)n.onclick=function(){leeg();if(weekStart===0){weekStart=7;render();}else{shiftWindow(winShift+1,7);}};
@@ -5556,7 +5560,7 @@ function wdKpi(key){
 function viewWaak(){
   var c=wdC();
   var open=wdOpenAantal();
-  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')]]:[]).concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]).concat(role==='RD'?[['dagrooster','Dagrooster maken']]:[]);
+  var subs=[['kaart','Kaart'],].concat(role==='RD'||role==='G'?[['voorspel','Voorspelling'+(WP_FC&&!WP_FC.teKort?' ✓':'')]]:[]).concat([['rooster','Jaarrooster '+WD_JAAR],['monteur','Per monteur'],['ruil','Ruilen'+(open?' ('+open+')':'')],['regels','Spelregels']]);
   if(wdSub==='q4'||(wdSub==='voorspel'&&role!=='RD'&&role!=='G'))wdSub='kaart';
   var jk='<div class="ctrl wd-jaren" style="margin:0 0 8px;flex-wrap:wrap"><span class="wd-lbl" style="margin-right:4px">Roosterjaar</span>';
   for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
@@ -5574,7 +5578,6 @@ function viewWaak(){
   else if(wdSub==='rooster')h+=wdViewRooster();
   else if(wdSub==='monteur')h+=wdViewMonteur();
   else if(wdSub==='ruil')h+=wdViewRuil();
-  else if(wdSub==='dagrooster')h+=drView();
   else h+=wdViewRegels();
   return h;
 }
@@ -5587,9 +5590,7 @@ var DR_MODUS='hybride60', DR_JAAR=null, DR_VOORB=null, DR_BEZIG=false;
 /* vaste afspraken: code, weekdag (1=ma … 5=vr), dienst (null = niet-werkdag) */
 var DR_VASTE=[['JEJO05',2,'project'],['JADR01',4,null],['T07',5,null]];
 var DR_MODI={
-  hybride60:{naam:'Hybride + 60+ extra',uitleg:'Dagvroeg in de week (ma t/m vr) vóór je eigen waakweek. Valt die samen met je eigen schaduwweek, dan neemt een collega uit dezelfde regio het over (wie het minst dagvroeg had, 60+ telt zwaarder). 60+ monteurs krijgen extra dagvroegweken in plaats van de schaduw die zij niet doen. Een waakruil verandert de dagvroeg niet.'},
-  los:{naam:'Los van waak',uitleg:'Dagvroeg staat los van de waakdienst: elke week vast 1 in Noord, 2 in de Randstad en 1 in Zuid, eerlijk verdeeld (wie het minst had eerst), nooit in of naast een eigen waak- of schaduwweek en niet twee weken achter elkaar als het anders kan.'},
-  geen:{naam:'Geen dagvroeg',uitleg:'Er wordt geen dagvroeg ingepland: alleen waak, schaduw, dag, Zara en Techno. Dagvroeg plan je daarna zelf in het rooster.'}};
+  hybride60:{naam:'Hybride + 60+ extra',uitleg:'Dagvroeg in de week (ma t/m vr) vóór je eigen waakweek. Valt die samen met je eigen schaduwweek, dan neemt een collega uit dezelfde regio het over (wie het minst dagvroeg had, 60+ telt zwaarder). 60+ monteurs krijgen extra dagvroegweken in plaats van de schaduw die zij niet doen. Een waakruil verandert de dagvroeg niet.'}};
 var DR_GNAAM={LN:'Noord',RA:'Randstad',LZ:'Zuid'};
 function drIso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function drPlus(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
@@ -5641,9 +5642,6 @@ function drMaak(j,modus){
           var md=99;for(var q2=0;q2<MA.length;q2++){if(blok[i][q2]||heeft(i,q2)){var a=Math.abs(q2-k2);if(a<md)md=a;}}
           var sc=Math.min(md,10)*2-(dv[k2][regio[i]]||[]).length*3;if(sc>bs){bs=sc;best=k2;}}
         if(best!==null){zet(best,i);extraN[i]++;st.extra++;}}});
-  } else if(modus==='los'){
-    var nodig={LN:1,RA:2,LZ:1};
-    for(var k3=0;k3<MA.length;k3++){if(!werk[k3])continue;Object.keys(nodig).forEach(function(g){for(var n=0;n<nodig[g];n++){var i=kies(g,k3,false);if(i)zet(k3,i);else st.gat++;}});}
   }
   // dagrooster per monteur en per dag
   var vaste={};DR_VASTE.forEach(function(v){(vaste[v[0]]=vaste[v[0]]||{})[v[1]]={t:v[2]};});
@@ -5694,39 +5692,38 @@ function drVoorbeeld(){
 async function drToepas(){
   var v=DR_VOORB;if(!v||DR_BEZIG||!sb||role!=='RD')return;
   var x;try{x=await drBestaand(v);}catch(e){sbToast('⚠️ Kon het rooster niet lezen: '+(e&&e.message||e));return;}
-  if(!window.confirm('Dagrooster '+v.jaar+' ('+DR_MODI[v.modus].naam+') in het rooster zetten?\n\n- '+x.schrijf.length+' diensten worden gezet\n- '+x.houd+' diensten die er al stonden (verlof, ziek, opleiding, …) blijven staan'+(x.weg.length?'\n- '+x.weg.length+' eerder automatisch gemaakte diensten vervallen':'')+(v.vast?'':'\n- het waakrooster '+v.jaar+' wordt vastgezet, zodat waak en dagrooster bij elkaar blijven passen')))return;
+  if(!window.confirm('Jaarrooster '+v.jaar+' ('+DR_MODI[v.modus].naam+') in het rooster zetten?\n\n- '+x.schrijf.length+' diensten worden gezet\n- '+x.houd+' diensten die er al stonden (verlof, ziek, opleiding, …) blijven staan'+(x.weg.length?'\n- '+x.weg.length+' eerder automatisch gemaakte diensten vervallen':'')+(v.vast?'':'\n- het waakrooster '+v.jaar+' wordt vastgezet, zodat waak en dagrooster bij elkaar blijven passen')))return;
   DR_BEZIG=true;render();
   try{
     var tag='jaarrooster-'+v.jaar,nu=new Date().toISOString();
     for(var i=0;i<x.schrijf.length;i+=500){
       var deel=x.schrijf.slice(i,i+500).map(function(r){return {datum:r.datum,monteur:r.monteur,type:r.type,hrs:r.hrs,updated_by_role:tag,updated_at:nu};});
       var q=await sb.from('rooster_entries').upsert(deel,{onConflict:'datum,monteur'});if(q.error)throw q.error;
-      sbToast('Dagrooster '+v.jaar+': '+Math.min(i+500,x.schrijf.length)+' van '+x.schrijf.length+' diensten gezet…');}
+      sbToast('Jaarrooster '+v.jaar+': '+Math.min(i+500,x.schrijf.length)+' van '+x.schrijf.length+' diensten gezet…');}
     for(var w=0;w<x.weg.length;w+=200){var q2=await sb.from('rooster_entries').delete().in('id',x.weg.slice(w,w+200));if(q2.error)throw q2.error;}
     if(!wdVastVoor(v.jaar)&&wdKey==='D'){var rr=wdPlanJaar(v.jaar),sl=rr.prep.sIds.concat(['SCH']),id=propId++;WD_VASTDB[v.jaar]={id:id,plan:rr.basis};wdOpslaan(id,wdVastTxt(v.jaar,rr.basis,sl),wdRoleNaam(),'doorgevoerd');wdBouw();}
     v.klaar={n:x.schrijf.length,houd:x.houd,weg:x.weg.length};v.db=null;
-    sbToast('Dagrooster '+v.jaar+' staat in het rooster.');
+    sbToast('Jaarrooster '+v.jaar+' staat in het rooster.');
     if(typeof RMND!=='undefined')RMND={};
   }catch(e){sbToast('⚠️ Niet (helemaal) gelukt: '+String((e&&e.message)||e).slice(0,140));}
   DR_BEZIG=false;render();
 }
 function drView(){
   if(role!=='RD')return '<div class="wd-card"><p class="wd-uitleg" style="margin:0">Alleen Manager R/D kan het dagrooster van een heel jaar maken.</p></div>';
-  if(wdKey!=='D')return '<div class="wd-card"><p class="wd-uitleg" style="margin:0">Het dagrooster wordt gemaakt uit de aangeleverde indeling (3 regio\'s, Randstad 2 diensten). Kies die bovenin bij de kaart.</p></div>';
+  if(wdKey!=='D')return '<div class="wd-card"><p class="wd-uitleg" style="margin:0">Het jaarrooster wordt gemaakt uit de aangeleverde waakdienst-indeling (3 regio\'s, Randstad 2 diensten). Kies die in Waakdienst bij de kaart.</p></div>';
   var nu=wdJaarVan(new Date()),eerst=Math.max(WD_BASISJAAR,(nu?nu.j:WD_BASISJAAR)+1);
   if(!DR_JAAR)DR_JAAR=Math.min(eerst,WD_BASISJAAR+WD_JAREN-1);
   var j=DR_JAAR,vast=!!wdVastVoor(j),echt=!!WD_ECHT||vast;
-  var h='<div class="wd-card"><div class="wd-ct">Dagrooster voor een heel jaar maken</div><p class="wd-uitleg" style="margin:0 0 10px">De tool maakt het dagrooster van het gekozen jaar uit het waakrooster: waak (vrijdag t/m donderdag, ook weekend en feestdagen), schaduw, dagvroeg, dag, Zara en Techno. Je ziet eerst een voorbeeld; pas na <b>Toepassen</b> komt het in het rooster. Verlof, ziek en andere diensten die er al staan blijven altijd staan.</p>';
+  var h='<div class="wd-card"><div class="wd-ct">Jaarrooster maken</div><p class="wd-uitleg" style="margin:0 0 10px">De tool maakt het dagrooster van het gekozen jaar uit het waakrooster: waak (vrijdag t/m donderdag, ook weekend en feestdagen), schaduw, dagvroeg, dag, Zara en Techno. Je ziet eerst een voorbeeld; pas na <b>Toepassen</b> komt het in het rooster. Verlof, ziek en andere diensten die er al staan blijven altijd staan.</p>';
   h+='<div class="ctrl" style="flex-wrap:wrap;margin-bottom:8px">';for(var y=WD_BASISJAAR;y<WD_BASISJAAR+WD_JAREN;y++)h+='<button data-drjaar="'+y+'" class="'+(y===j?'active':'')+'">'+y+'</button>';h+='</div>';
-  h+='<div class="ctrl" style="flex-wrap:wrap;margin-bottom:6px">'+Object.keys(DR_MODI).map(function(k){return '<button data-drmodus="'+k+'" class="'+(DR_MODUS===k?'active':'')+'">'+DR_MODI[k].naam+'</button>';}).join('')+'</div>';
-  h+='<p class="wd-uitleg" style="margin:0 0 8px">'+DR_MODI[DR_MODUS].uitleg+'</p>';
+  h+='<p class="wd-uitleg" style="margin:0 0 8px"><b>Dagvroeg: '+DR_MODI[DR_MODUS].naam+'.</b> '+DR_MODI[DR_MODUS].uitleg+'</p>';
   h+='<p class="wd-uitleg" style="margin:0 0 8px">Vaste afspraken: '+DR_VASTE.map(function(v){return v[0]+' '+['','ma','di','wo','do','vr'][v[1]]+' '+(v[2]||'niet-werkdag');}).join(' · ')+'.</p>';
-  if(!echt)h+='<div class="wd-bron"><span><b>Let op:</b> je werkt met demogegevens en het waakrooster '+j+' staat nog niet vast. Laad eerst de echte gegevens in (boven aan deze pagina), anders klopt de verdeling niet. Een voorbeeld kan wel.</span></div>';
+  if(!echt)h+='<div class="wd-bron"><span><b>Let op:</b> je werkt met demogegevens en het waakrooster '+j+' staat nog niet vast. Laad eerst de echte gegevens in (Waakdienst, bovenaan), anders klopt de verdeling niet. Een voorbeeld kan wel.</span></div>';
   else if(vast)h+='<div class="wd-bron"><span>Het waakrooster '+j+' staat vast; het dagrooster wordt daaruit gemaakt.</span></div>';
   h+='<div style="margin-top:8px"><button class="acc" data-drvoorb="1">Maak voorbeeld '+j+'</button></div></div>';
   var v=DR_VOORB;if(!v||v.jaar!==j||v.modus!==DR_MODUS)return h;
   var G=['LN','RA','LZ'];
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Voorbeeld dagrooster '+v.jaar+' · '+DR_MODI[v.modus].naam+'</div><p class="wd-uitleg" style="margin:0 0 8px">'+v.van.split('-').reverse().join('-')+' t/m '+v.tot.split('-').reverse().join('-')+' · '+v.werkdagen+' werkdagen (zonder feestdagen).</p>';
+  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Voorbeeld jaarrooster '+v.jaar+' · '+DR_MODI[v.modus].naam+'</div><p class="wd-uitleg" style="margin:0 0 8px">'+v.van.split('-').reverse().join('-')+' t/m '+v.tot.split('-').reverse().join('-')+' · '+v.werkdagen+' werkdagen (zonder feestdagen).</p>';
   h+='<table class="wd-tbl"><thead><tr><th>Regio</th><th>Gem. dagvroeg per werkdag</th><th>Werkdagen zonder dagvroeg</th></tr></thead><tbody>'+G.map(function(g){var p=v.perG[g];return '<tr><td>'+DR_GNAAM[g]+'</td><td>'+nl1(p.som/Math.max(1,v.werkdagen)).replace(/,0$/,',00')+'</td><td>'+(p.leeg?'<b class="wd-bad">'+p.leeg+'</b>':'0')+'</td></tr>';}).join('')+'</tbody></table>';
   if(v.modus==='hybride60')h+='<div class="wd-kv"><span>Dagvroeg die samenviel met eigen schaduw, door een collega overgenomen</span><b>'+v.st.overSch+'</b></div><div class="wd-kv"><span>Weken met een invaller (met de hand gekozen door de tool)</span><b>'+v.st.invallers+'</b></div><div class="wd-kv"><span>Extra dagvroegweken per 60+ monteur (= gemiddelde schaduw van de rest)</span><b>'+v.st.nX+' · samen '+v.st.extra+'</b></div>';
   h+='<div class="wd-kv"><span>Dagvroeg tijdens eigen schaduwweek</span><b>'+v.dubbel+'</b></div>'+(v.st.naast?'<div class="wd-kv"><span>Weken waarin de dagvroeg direct naast een eigen waak- of schaduwweek valt (niemand anders kon)</span><b>'+v.st.naast+'</b></div>':'')+(v.st.gat?'<div class="wd-kv"><span>Weken waarin niemand dagvroeg kon doen</span><b class="wd-bad">'+v.st.gat+'</b></div>':'');
@@ -6433,10 +6430,7 @@ function wireWaak(){
   if(wdSub==='kaart')wdLeaflet();else if(WD_LMAP){try{WD_LMAP.remove();}catch(e){}WD_LMAP=null;}
   document.querySelectorAll('[data-wdundo]').forEach(function(b){b.onclick=function(){var i=b.dataset.wdundo;wdVerpl.filter(function(x){return !x.t&&x.status==='goed'&&x.key===wdKey&&(i==='*'||x.ini===i);}).forEach(function(x){x.status='nee';removeProposal(x.id,'gesloten');});if(i==='*')WD_OVERRIDE[wdKey]={};else delete WD_OVERRIDE[wdKey][i];wdRuilen=wdRuilen.filter(function(r){return r.key!==wdKey;});wdBouw();render();};});
   var q=function(sel,fn){document.querySelectorAll(sel).forEach(function(b){b.onclick=function(e){fn(b,e);};});};
-  q('[data-drjaar]',function(b){DR_JAAR=+b.dataset.drjaar;render();});
-  q('[data-drmodus]',function(b){DR_MODUS=b.dataset.drmodus;render();});
-  q('[data-drvoorb]',function(){drVoorbeeld();});
-  q('[data-drok]',function(){drToepas();});
+
   q('[data-wdk]',function(b){wdKey=b.dataset.wdk;wdSel=null;WD_LVIEW=WD_LVIEW;wdKaartIni=null;wdKaartG=null;wdKaartWk=null;render();});
   q('[data-wds]',function(b){wdSub=b.dataset.wds;wdSel=null;wdScrollNu=true;render();});
   q('[data-wdq4]',function(){WD_Q4=null;render();});
