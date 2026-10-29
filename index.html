@@ -4223,7 +4223,10 @@ var RJ_SOORT=[ // volgorde = wat het zwaarst telt in een week
   {k:'waak',l:'W',n:'waak',bg:'#3c3489',tx:'#fff'},{k:'sw',l:'S',n:'schaduw',bg:'#8e84e0',tx:'#1d1a3a'},{k:'dagvroeg',l:'D',n:'dagvroeg',bg:'#e0a526',tx:'#3a2a00'},
   {k:'nacht',l:'N',n:'nachtklus',bg:'#24324a',tx:'#fff'},{k:'verlof',l:'V',n:'verlof',bg:'#2e9e6b',tx:'#fff'},{k:'ziek',l:'Z',n:'ziek',bg:'#c0392b',tx:'#fff'},
   {k:'cursus',l:'O',n:'opleiding',bg:'#c2185b',tx:'#fff'},{k:'project',l:'P',n:'project',bg:'#6d4fc4',tx:'#fff'},{k:'comp',l:'C',n:'compensatie',bg:'#0f6e56',tx:'#fff'},
-  {k:'nb',l:'nb',n:'niet beschikbaar',bg:'#8a8a8a',tx:'#fff'},{k:'garage',l:'G',n:'auto garage',bg:'#a0522d',tx:'#fff'}];
+  {k:'nb',l:'nb',n:'niet beschikbaar',bg:'#8a8a8a',tx:'#fff'},{k:'garage',l:'G',n:'auto garage',bg:'#a0522d',tx:'#fff'},
+  {k:'zara',l:'Za',n:'Zara',bg:'#e9a3b8',tx:'#4a1022'},{k:'techno',l:'T',n:'Techno',bg:'#7cc7bd',tx:'#0b3b35'},{k:'dag',l:'d',n:'dag',bg:'#b9d3f0',tx:'#123a66'}];
+var rjSel=null,rjLijst=[];
+function rjKies(i,k){var n=rjLijst[i];if(!n)return;rjSel=(rjSel&&rjSel.n===n&&rjSel.k===k)?null:{n:n,k:k};render();}
 function rjSoort(st){if(!st||st==='vrij')return null;var k=st.indexOf(':')>0?st.split(':')[0]:st;return k;}
 function rjNaam(st){var k=rjSoort(st);if(!k)return 'vrij';if(k==='zara')return 'ZARA '+(zdUren(st)||8)+'u';if(k==='techno')return 'Techno '+(zdUren(st)||8)+'u';if(k==='dag')return 'dag';var x=RJ_SOORT.filter(function(s){return s.k===k;})[0];return x?x.n:k;}
 function rJaarNav(d){rJaar=d===0?new Date().getFullYear():rJaar+d;render();}
@@ -4240,20 +4243,39 @@ function viewRoosterJaar(wcols,alles,monteurs){
   h+='<div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){h+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
   h+='</div>'+rZoekHtml()+'</div>';
-  h+='<p class="sub" style="margin:-4px 0 8px">Per monteur een vakje per week (week '+isoWeek(weken[0])+' t/m '+isoWeek(weken[weken.length-1])+') met de belangrijkste dienst van die week. Ga met de muis op een vakje staan voor de dagen; klik om die maand te openen.</p>';
-  h+='<div style="display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:10px;font-size:12px">'+RJ_SOORT.map(function(s){return '<span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:16px;border-radius:3px;font-size:10px;font-weight:700;background:'+s.bg+';color:'+s.tx+'">'+s.l+'</span>'+s.n+'</span>';}).join('')+'<span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:20px;height:16px;border-radius:3px;background:var(--accent-bg)"></span>alleen dag / Zara / Techno</span></div>';
+  h+='<p class="sub" style="margin:-4px 0 8px">Per monteur een vakje per week (week '+isoWeek(weken[0])+' t/m '+isoWeek(weken[weken.length-1])+') Eén kleur = de hele week (ma t/m vr) dezelfde dienst; strepen = elke streep is een dag (ma t/m vr). Klik op een vakje voor de dagen van die week, of op een monteur voor zijn jaar.</p>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:10px;font-size:12px">'+RJ_SOORT.map(function(s){return '<span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:16px;border-radius:3px;font-size:10px;font-weight:700;background:'+s.bg+';color:'+s.tx+'">'+s.l+'</span>'+s.n+'</span>';}).join('')+'</div>';
   if(!data.loaded)return h+'<p class="sub">Rooster van '+j+' wordt geladen…</p>';
   var nW=weken.length,grid='grid-template-columns:repeat('+nW+',minmax(0,1fr))',vorige=-1;
+  function srt(k){return RJ_SOORT.filter(function(x){return x.k===k;})[0];}
   var mnd='<div class="dr-jaar dr-mnd" style="'+grid+'">';weken.forEach(function(w,k){var m=new Date(w.getFullYear(),w.getMonth(),w.getDate()+3).getMonth();mnd+='<span>'+(m!==vorige?mnK[m]:'')+'</span>';vorige=m;});mnd+='</div>';
+  rjLijst=monteurs.map(function(m){return m.naam;});
   h+='<div class="wd-scroll" style="max-height:none"><table class="wd-tbl"><tbody><tr><td style="border:0"></td><td style="border:0;padding-bottom:0">'+mnd+'</td></tr>';
-  monteurs.forEach(function(m){var dm=data.d[m.naam]||{};
-    h+='<tr><td style="white-space:nowrap;font-size:12px;vertical-align:middle;padding-right:8px" title="'+mLabel(m)+'">'+mLabel(m)+'</td><td style="padding:3px 0"><div class="dr-jaar" style="'+grid+';margin:0">';
-    weken.forEach(function(w){var tel={},regels=[],werk=0;
-      for(var i=0;i<7;i++){var dd=new Date(w.getFullYear(),w.getMonth(),w.getDate()+i),iso=fmtIsoD(dd),x=dm[iso],st=x&&x.st;var k=rjSoort(st);if(k){tel[k]=(tel[k]||0)+1;werk++;}regels.push(dn[dd.getDay()]+' '+dd.getDate()+' '+mnK[dd.getMonth()]+': '+rjNaam(st));}
-      var s=null;for(var q=0;q<RJ_SOORT.length;q++){if(tel[RJ_SOORT[q].k]){s=RJ_SOORT[q];break;}}
-      var t='wk '+isoWeek(w)+'&#10;'+regels.join('&#10;'),mo=new Date(w.getFullYear(),w.getMonth(),w.getDate()+3);
-      h+='<span title="'+t+'" onclick="rJaarNaar('+mo.getFullYear()+','+mo.getMonth()+')" style="cursor:pointer;'+(s?'background:'+s.bg+';color:'+s.tx:(werk?'background:var(--accent-bg)':''))+'">'+(s?s.l:'')+'</span>';});
-    h+='</div></td></tr>';});
+  monteurs.forEach(function(m,mi){var dm=data.d[m.naam]||{},rijSel=rjSel&&rjSel.n===m.naam;
+    var jaarTel={};
+    h+='<tr'+(rijSel?' style="background:var(--accent-bg)"':'')+'><td style="white-space:nowrap;font-size:12px;vertical-align:middle;padding-right:8px;cursor:pointer;'+(rijSel?'font-weight:700':'')+'" onclick="rjKies('+mi+',-1)" title="Klik voor een overzicht van '+m.ini+' in '+j+'">'+mLabel(m)+'</td><td style="padding:3px 0"><div class="dr-jaar" style="'+grid+';margin:0">';
+    weken.forEach(function(w,k){var dagen=[],tel={},regels=[];
+      for(var i=0;i<7;i++){var dd=new Date(w.getFullYear(),w.getMonth(),w.getDate()+i),x=dm[fmtIsoD(dd)],st=x&&x.st,sk=rjSoort(st);dagen.push(sk);if(sk){tel[sk]=(tel[sk]||0)+1;jaarTel[sk]=(jaarTel[sk]||0)+1;}regels.push(dn[dd.getDay()]+' '+dd.getDate()+' '+mnK[dd.getMonth()]+': '+rjNaam(st));}
+      // ma t/m vr als vijf strepen; waak in het weekend telt mee als die doordeweeks ontbreekt
+      var wd5=dagen.slice(0,5),soorten=wd5.filter(function(x,ix){return x&&wd5.indexOf(x)===ix;});
+      var een=soorten.length===1&&wd5.every(function(x){return x===soorten[0];})?srt(soorten[0]):null;
+      var cel=rjSel&&rjSel.n===m.naam&&rjSel.k===k;
+      var inh='';
+      if(een)inh=(een.k==='dag'?'':een.l);
+      else if(soorten.length)inh='<span style="display:flex;width:100%;height:100%;gap:0">'+wd5.map(function(x){var q=x&&srt(x);return '<i style="flex:1;background:'+(q?q.bg:'transparent')+'"></i>';}).join('')+'</span>';
+      else if(tel.waak)inh=srt('waak').l;
+      var bg=een?een.bg:(!soorten.length&&tel.waak?srt('waak').bg:'');
+      h+='<span title="wk '+isoWeek(w)+' · klik voor de dagen&#10;'+regels.join('&#10;')+'" onclick="rjKies('+mi+','+k+')" style="cursor:pointer;padding:0;'+(bg?'background:'+bg+';color:'+(een?een.tx:'#fff')+';':'')+(cel?'outline:2.5px solid var(--text);outline-offset:1px;position:relative;z-index:1;':'')+'">'+inh+'</span>';});
+    h+='</div></td></tr>';
+    if(rijSel){var det='';
+      if(rjSel.k>=0){var w0=weken[rjSel.k],eind=new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+6);
+        det='<div style="font-weight:600;margin-bottom:6px">'+m.ini+' · week '+isoWeek(w0)+' · '+w0.getDate()+' '+mnK[w0.getMonth()]+' t/m '+eind.getDate()+' '+mnK[eind.getMonth()]+'</div><div style="display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:6px">';
+        for(var i2=0;i2<7;i2++){var d2=new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+i2),x2=dm[fmtIsoD(d2)],st2=x2&&x2.st,q2=srt(rjSoort(st2));
+          det+='<div style="border-radius:6px;padding:6px 8px;background:'+(q2?q2.bg:'var(--surface-1)')+';color:'+(q2?q2.tx:'var(--muted)')+'"><div style="font-size:11px;opacity:.85">'+dn[d2.getDay()]+' '+d2.getDate()+' '+mnK[d2.getMonth()]+'</div><div style="font-weight:600">'+rjNaam(st2)+'</div></div>';}
+        det+='</div><div style="margin-top:8px"><button class="acc ghost" onclick="rJaarNaar('+new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+3).getFullYear()+','+new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+3).getMonth()+')">Open deze maand</button> <button class="linkbtn" onclick="rjSel=null;render()">sluiten</button></div>';}
+      else{det='<div style="font-weight:600;margin-bottom:6px">'+m.ini+' · '+j+' in dagen</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+RJ_SOORT.filter(function(q){return jaarTel[q.k];}).map(function(q){return '<span style="border-radius:6px;padding:4px 8px;background:'+q.bg+';color:'+q.tx+';font-weight:600">'+q.n+': '+jaarTel[q.k]+'</span>';}).join('')+(Object.keys(jaarTel).length?'':'<span class="sub">Nog niets ingeroosterd in '+j+'.</span>')+'</div><div style="margin-top:8px"><button class="linkbtn" onclick="rjSel=null;render()">sluiten</button></div>';}
+      h+='<tr><td colspan="2" style="padding:8px 4px 12px">'+det+'</td></tr>';}
+  });
   if(!monteurs.length)h+='<tr><td colspan="2" class="sub">Geen monteurs in deze selectie.</td></tr>';
   return h+'</tbody></table></div>';
 }
