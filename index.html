@@ -4916,7 +4916,7 @@ function bsNaam(st){if(st==='dag')return 'Dagdienst';if(st==='dagvroeg')return '
 /* ok = beschikbaar voor werk, deels = een deel van de dag, bezet = wel dienst maar elders/waak, af = afwezig/vrij */
 function bsEind(b,u){var e=b+u;if(b<12.5&&e>12)e+=.5;return e;}
 function bsTijd(x){var h=Math.floor(x+1e-9),m=Math.round((x-h)*60);if(m===60){h++;m=0;}return ('0'+h).slice(-2)+':'+('0'+m).slice(-2);}
-function bsInfo(st,d){
+function bsInfo0(st,d){
   var OK='#0f6e56',zg=zdGroep(st),dow=dateFor(d).getDay(),wk=(dow===0||dow===6),T=bsTijd;
   function r(a,b){return T(a)+'–'+T(b);}
   function res(c,u,t,w,seg,tt){return {c:c,u:u,t:t,w:w,seg:seg,tt:tt};}
@@ -4941,6 +4941,11 @@ function bsBalk(x){if(!x.w)return '';var w=x.w,L=w[1]-w[0];
   return '<div style="margin:5px 0 3px"><div style="position:relative;height:9px;border-radius:4px;overflow:hidden;background:rgba(127,127,127,.25)">'+segs+'</div><div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-top:1px"><span>'+bsTijd(w[0])+'</span><span>'+bsTijd(w[1])+'</span></div><div style="font-size:11px;font-weight:600">'+tt+'</div></div>';}
 function bsKort(st){var zg=zdGroep(st);if(zg==='zara')return 'Za'+zdUren(st);if(zg==='techno')return 'T'+zdUren(st);if(zg==='regio')return 'D'+zdUren(st);
   var m={dag:'D',dagvroeg:'DV',waak:'W',sw:'S',nacht:'N'};if(m[st])return m[st];var ak=afwSoort(st);if(ak){var l={ziek:'Z',verlof:'V',comp:'C',cursus:'O',project:'P',garage:'G',nb:'nb'}[ak]||ak.slice(0,2),au=afwUren(st);return l+((au>0&&au<8)?au:'');}return '–';}
+function bsInfo(st,d,nx){var r=bsInfo0(st,d);
+  if(nx!==undefined&&mcMidag(st,nx)){r.mc=1;
+    if(r.c==='ok'&&r.w&&r.seg.length&&r.w[0]<=8&&st!=='waak'){var a=r.w[0],e=bsEind(a,4);r.c='deels';r.u=4;r.seg=[{a:a,b:e,k:'#0f6e56'},{a:e,b:r.w[1],k:'#24324a'}];r.t=r.t.split(' · ')[0]+' · middag compensatie (nachtklus)';r.tt=['beschikbaar '+bsTijd(a)+'–'+bsTijd(e),'compensatie '+bsTijd(e)+'–'+bsTijd(r.w[1])];}
+    else r.t+=' · middag compensatie';}
+  return r;}
 var BS_KL={ok:['#e1f5ee','#0f6e56'],deels:['#faeeda','#854f0b'],bezet:['#eeedfe','#3c3489'],af:['var(--surface-1)','var(--muted)']};
 function bsStDag(m,idx){if(idx>=0&&idx<=13&&m.roster[idx]!==undefined)return m.roster[idx];
   var d=dateFor(idx),data=uvMaandLaad(m,d.getFullYear(),d.getMonth());return data.st[fmtIsoD(d)]||'vrij';}
@@ -4951,8 +4956,8 @@ function bsFocus(m){
   h+=bsNav('week '+isoWeek(dateFor(ma))+' en '+isoWeek(dateFor(ma+7)));
   h+='<div class="uv-maand" style="grid-template-columns:32px repeat(7,minmax(0,1fr))"><div class="uv-mk">wk</div>'+dn.map(function(x){return '<div class="uv-mk">'+x+'</div>';}).join('');
   for(var w=0;w<2;w++){h+='<div class="uv-mwk">'+isoWeek(dateFor(ma+w*7))+'</div>';
-    for(var k=0;k<7;k++){var idx=ma+w*7+k,dt=dateFor(idx),iso=fmtIsoD(dt),st=bsStDag(m,idx),i=bsInfo(st,idx),cs=BS_KL[i.c],el=(idx>=0&&idx<=13&&m.roster[idx]!==undefined&&locOf(m,idx)!==m.base);
-      h+='<div class="uv-md'+(iso===nu?' uv-nu':'')+'" style="background:'+cs[0]+';color:'+cs[1]+';min-height:92px"><div class="uv-mdn">'+dt.getDate()+'</div><div class="uv-mdd">'+i.t+'</div>'+bsBalk(i)+(el?'<div class="uv-mdl">'+LOCMAP[locOf(m,idx)].naam+'</div>':'')+'</div>';}}
+    for(var k=0;k<7;k++){var idx=ma+w*7+k,dt=dateFor(idx),iso=fmtIsoD(dt),st=bsStDag(m,idx),i=bsInfo(st,idx,bsStDag(m,idx+1)),cs=BS_KL[i.c],el=(idx>=0&&idx<=13&&m.roster[idx]!==undefined&&locOf(m,idx)!==m.base);
+      h+='<div class="uv-md'+(iso===nu?' uv-nu':'')+'" style="background:'+mcBg(cs[0],i.mc)+';color:'+cs[1]+';min-height:92px"><div class="uv-mdn">'+dt.getDate()+'</div><div class="uv-mdd">'+i.t+'</div>'+bsBalk(i)+(el?'<div class="uv-mdl">'+LOCMAP[locOf(m,idx)].naam+'</div>':'')+'</div>';}}
   h+='</div><p class="sub" style="margin-top:6px">Zwarte rand = vandaag.</p>';
   return h;
 }
@@ -4967,7 +4972,7 @@ function viewBeschikbaar(){
   var ma=bsMaVal(),dn=['ma','di','wo','do','vr','za','zo'];
   var pd=(bsPd!==null&&bsPd>=ma&&bsPd<ma+7)?bsPd:((TODAY>=ma&&TODAY<ma+7)?TODAY:ma);
   var kol=cols.map(function(c){
-    var ms=colMonteurs(c,pd).filter(function(m){return !zoek||(m.ini+' '+m.naam).toLowerCase().indexOf(zoek)>=0;}).map(function(m){var st=m.roster[pd];return {m:m,st:st,i:bsInfo(st,pd)};});
+    var ms=colMonteurs(c,pd).filter(function(m){return !zoek||(m.ini+' '+m.naam).toLowerCase().indexOf(zoek)>=0;}).map(function(m){var st=m.roster[pd];return {m:m,st:st,i:bsInfo(st,pd,m.roster[pd+1])};});
     ms.forEach(function(x){tot[x.i.c]++;});
     return {c:c,ms:ms};});
   var h='<h2>Beschikbaarheid · week '+isoWeek(dateFor(ma))+'</h2><p class="sub">'+(week?'Per monteur de hele week: de letter is de dienst, een cijfer erachter het aantal uur dat hij beschikbaar of bezet is (D = dag, DV = dagvroeg, W = waak, V = verlof, Z = ziek, O = opleiding, P = project, C = compensatie, N = nachtklus, Za = ZARA, T = Techno). Klik op een monteur voor zijn rooster van 2 weken.':'Wie is er beschikbaar, waar en van hoe laat tot hoe laat (de balk is de werktijd van de dienst; groen is beschikbaar, andere kleuren zijn bezet of afwezig). Bij een deels afwezige dag is alleen het aantal uur vastgelegd, dus beschikbaar loopt dan vanaf het begin van de dienst. Klik op een monteur voor zijn rooster van 2 weken.')+'</p>';
@@ -4988,8 +4993,8 @@ function viewBeschikbaar(){
       lijst.forEach(function(x){o+='<tr><td onclick="bsSet(\'sel\',\''+x.m.id+'\')" style="cursor:pointer;white-space:nowrap;padding-right:8px"><b>'+x.m.ini+'</b> <span style="color:var(--muted)">'+esc(x.m.naam===x.m.ini?'':x.m.naam)+'</span></td>';
         for(var q=0;q<7;q++){var idx=ma+q,live=idx>=0&&idx<=13&&x.m.roster[idx]!==undefined;
           if(!live){o+='<td style="text-align:center;color:var(--muted);background:var(--surface-1);border-radius:4px" title="buiten het geladen venster">·</td>';continue;}
-          var st=x.m.roster[idx],i=bsInfo(st,idx),cs=BS_KL[i.c],tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
-          o+='<td onclick="bsSet(\'sel\',\''+x.m.id+'\')" title="'+esc(tip)+'" style="cursor:pointer;text-align:center;font-weight:700;border-radius:4px;padding:5px 2px;background:'+cs[0]+';color:'+cs[1]+(idx===pd?';outline:2px solid var(--accent)':'')+'">'+bsKort(st)+'</td>';}
+          var st=x.m.roster[idx],i=bsInfo(st,idx,x.m.roster[idx+1]),cs=BS_KL[i.c],tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
+          o+='<td onclick="bsSet(\'sel\',\''+x.m.id+'\')" title="'+esc(tip)+'" style="cursor:pointer;text-align:center;font-weight:700;border-radius:4px;padding:5px 2px;background:'+mcBg(cs[0],i.mc)+';color:'+cs[1]+(idx===pd?';outline:2px solid var(--accent)':'')+'">'+bsKort(st)+(i.mc&&i.c==='deels'?'4':'')+'</td>';}
         o+='</tr>';});
       o+='</tbody></table></div>';return o;}
     o+='<div class="cards">';
