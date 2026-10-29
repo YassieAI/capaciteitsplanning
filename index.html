@@ -929,6 +929,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-chip.sel{background:var(--accent);color:#fff;border-color:var(--accent);opacity:1}
 .wd-mut{color:var(--muted);font-size:11.5px}
 .wd-bad{color:var(--risk);font-weight:500}
+.dr-jaar{display:grid;gap:2px;margin:0 0 8px;min-width:620px}
+.dr-jaar span{height:22px;border-radius:3px;background:var(--surface-1);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}
+.dr-jaar.dr-mnd span{height:14px;background:none;color:var(--muted);font-weight:500;justify-content:flex-start;overflow:visible;white-space:nowrap;font-size:11px}
 .wd-strip{display:grid;grid-template-columns:repeat(53,1fr);gap:1px;margin:6px 0}
 .wd-strip span{height:14px;background:var(--surface-1);border-radius:1px}
 .wd-strip span.wd-nw{outline:2px solid var(--text);outline-offset:0;position:relative;z-index:1}
@@ -5719,23 +5722,26 @@ var DR_MON=null; // open monteur in het jaarrooster-overzicht
 var DR_KLR={w:['#3c3489','waak'],s:['#8e84e0','schaduw'],v:['#e0a526','dagvroeg'],x:['#a86b00','dagvroeg (extra 60+)']};
 function drWeekTxt(iso){var d=new Date(iso+'T12:00:00'),e=drPlus(d,4);return 'wk '+isoWeek(d)+' · '+wdD(d)+' – '+wdD(e);}
 function drVrTxt(iso){var d=new Date(iso+'T12:00:00');return 'vr '+wdD(d)+' – do '+wdD(drPlus(d,6));}
-function drStrip(v,x){var h='<div class="wd-strip" aria-label="weken van het jaar, gekleurd = dienst">';
-  v.weken.forEach(function(iso,k){var t=x.wk[k];h+='<span title="'+drWeekTxt(iso)+(t?' · '+DR_KLR[t][1]:'')+'" style="'+(t?'background:'+DR_KLR[t][0]:'')+'"></span>';});
+var DR_LET={w:'W',s:'S',v:'D',x:'D+'},DR_TXT={w:'#fff',s:'#1d1a3a',v:'#3a2a00',x:'#fff'};
+function drStrip(v,x){var h='<div class="dr-jaar" style="grid-template-columns:repeat('+v.weken.length+',minmax(0,1fr))">';
+  v.weken.forEach(function(iso,k){var t=x.wk[k];h+='<span title="'+drWeekTxt(iso)+(t?' · '+DR_KLR[t][1]:'')+'" style="'+(t?'background:'+DR_KLR[t][0]+';color:'+DR_TXT[t]:'')+'">'+(t?DR_LET[t]:'')+'</span>';});
   return h+'</div>';}
+function drMaanden(v){var mn=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],vorige=-1,h='<div class="dr-jaar dr-mnd" style="grid-template-columns:repeat('+v.weken.length+',minmax(0,1fr))">';
+  var ms=v.weken.map(function(iso){return drPlus(new Date(iso+'T12:00:00'),3).getMonth();});ms.forEach(function(m,k){var toon=m!==vorige&&!(k===0&&ms[1]!==m);h+='<span>'+(toon?mn[m]:'')+'</span>';vorige=m;});return h+'</div>';}
 function drDetail(v,x){var per={w:[],s:[],v:[],x:[]};Object.keys(x.wk).forEach(function(k){per[x.wk[k]].push(+k);});
   return '<div class="wd-card" style="margin:4px 0 8px">'+['w','s','v','x'].filter(function(t){return per[t].length;}).map(function(t){
     return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+DR_KLR[t][0]+'"></i>'+DR_KLR[t][1]+' ('+per[t].length+')</span><b style="font-weight:400;text-align:right">'+per[t].sort(function(a,b){return a-b;}).map(function(k){return (x.vr[k]?drVrTxt(x.vr[k]):drWeekTxt(v.weken[k]));}).join('<br>')+'</b></div>';}).join('')+
     (x.f<1?'<p class="wd-uitleg" style="margin:6px 0 0">60+: geen schaduwdienst, daarvoor '+x.extra+' extra dagvroegweken.</p>':'')+'</div>';}
 function drPerMonteur(v){
-  var h='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur ('+v.jaar+')</div><p class="wd-uitleg" style="margin:0 0 8px">Hoeveel en welke diensten elke monteur in '+v.jaar+' krijgt. Elk blokje is een week (ma t/m vr). Klik op een monteur om zijn weken te zien.</p>';
-  h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:8px;font-size:12px;color:var(--muted)">'+['w','s','v','x'].map(function(t){return '<span><i class="wd-sw" style="background:'+DR_KLR[t][0]+'"></i>'+DR_KLR[t][1]+'</span>';}).join('')+'</div>';
-  h+='<div class="wd-scroll" style="max-height:none"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Waak</th><th>Schaduw</th><th>Dagvroeg</th><th>Totaal</th><th>'+v.jaar+'</th></tr></thead><tbody>';
+  var h='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Per monteur ('+v.jaar+')</div><p class="wd-uitleg" style="margin:0 0 8px">Hoeveel en welke diensten elke monteur in '+v.jaar+' krijgt. Elk vakje onder een monteur is een week (ma t/m vr): <b>W</b> = waak, <b>S</b> = schaduw, <b>D</b> = dagvroeg, <b>D+</b> = extra dagvroeg voor 60+. Ga met de muis op een vakje staan voor de datum, of klik op een monteur voor al zijn weken op een rij.</p>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:8px;font-size:13px">'+['w','s','v','x'].map(function(t){return '<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:18px;border-radius:3px;font-size:10px;font-weight:700;background:'+DR_KLR[t][0]+';color:'+DR_TXT[t]+'">'+DR_LET[t]+'</span>'+DR_KLR[t][1]+'</span>';}).join('')+'</div>';
+  h+='<div class="wd-scroll" style="max-height:none"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Waak</th><th>Schaduw</th><th>Dagvroeg</th><th>Totaal</th></tr></thead><tbody>';
   ['LN','RA','LZ'].forEach(function(g){var l=v.mons.filter(function(x){return x.g===g;});if(!l.length)return;
     var gem=function(f){return nl1(l.reduce(function(a,x){return a+f(x);},0)/l.length);};
-    h+='<tr class="wd-grp"><td colspan="6" style="background:var(--surface-1);font-weight:600">'+DR_GNAAM[g]+' · '+l.length+' monteurs · gem. waak '+gem(function(x){return x.waak;})+' · schaduw '+gem(function(x){return x.sch;})+' · dagvroeg '+gem(function(x){return x.dv;})+' · totaal '+gem(function(x){return x.waak+x.sch+x.dv;})+'</td></tr>';
+    h+='<tr class="wd-grp"><td colspan="5" style="background:var(--surface-1);font-weight:600">'+DR_GNAAM[g]+' · '+l.length+' monteurs · gem. waak '+gem(function(x){return x.waak;})+' · schaduw '+gem(function(x){return x.sch;})+' · dagvroeg '+gem(function(x){return x.dv;})+' · totaal '+gem(function(x){return x.waak+x.sch+x.dv;})+'</td></tr><tr><td colspan="5" style="padding-bottom:0;border:0">'+drMaanden(v)+'</td></tr>';
     l.forEach(function(x){var open=DR_MON===x.ini;
-      h+='<tr data-drmon="'+x.ini+'" style="cursor:pointer'+(open?';background:var(--accent-bg)':'')+'"><td><b>'+x.ini+'</b>'+(x.f<1?' <span class="wd-mut">60+</span>':'')+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td>'+x.dv+(x.extra?' <span class="wd-mut">(+'+x.extra+')</span>':'')+'</td><td><b>'+(x.waak+x.sch+x.dv)+'</b></td><td>'+drStrip(v,x)+'</td></tr>';
-      if(open)h+='<tr><td colspan="6">'+drDetail(v,x)+'</td></tr>';});
+      h+='<tr data-drmon="'+x.ini+'" style="cursor:pointer'+(open?';background:var(--accent-bg)':'')+'"><td><b>'+x.ini+'</b>'+(x.f<1?' <span class="wd-mut">60+</span>':'')+'</td><td>'+x.waak+'</td><td>'+x.sch+'</td><td>'+x.dv+(x.extra?' <span class="wd-mut">(+'+x.extra+')</span>':'')+'</td><td><b>'+(x.waak+x.sch+x.dv)+'</b></td></tr><tr data-drmon="'+x.ini+'" style="cursor:pointer"><td colspan="5" style="padding-top:0">'+drStrip(v,x)+'</td></tr>';
+      if(open)h+='<tr><td colspan="5">'+drDetail(v,x)+'</td></tr>';});
   });
   return h+'</tbody></table></div></div>';
 }
