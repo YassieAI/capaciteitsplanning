@@ -4925,17 +4925,17 @@ function bsInfo(st,d){
   if(st==='dag')return res('ok',8,'Dagdienst',[8,16.5],[{a:8,b:16.5,k:OK}],[r(8,16.5)]);
   if(st==='dagvroeg')return res('ok',8,'Vroege dienst',[7,15.5],[{a:7,b:15.5,k:OK}],[r(7,15.5)]);
   if(st==='sw')return res('ok',8,'Dagdienst · schaduw waak',[8,16.5],[{a:8,b:16.5,k:OK}],[r(8,16.5)+' (bij inzet 10:30–19:00)']);
-  if(st==='waak'){var w=wk?[7,31]:[19,31];return res('bezet',0,'Waakdienst',w,[{a:w[0],b:w[1],k:'#3c3489'}],[r(w[0],w[1])]);}
-  if(st==='nacht')return res('bezet',0,'Nachtklus',[8,16.5],[{a:8,b:16.5,k:'#24324a'}],['hele dag compensatie']);
+  if(st==='waak'){var w=[10.5,19];return res('bezet',0,'Waakdienst',w,[{a:w[0],b:w[1],k:'#3c3489'}],[r(w[0],w[1])]);}
+  if(st==='nacht')return res('bezet',0,'Nachtklus · compensatie',null,[],[]);
   var ak=afwSoort(st);
   if(ak){var au=afwUren(st),k2=dienstStyle(st)[1];
     if(au>0&&au<8){var e3=bsEind(8,8-au);return res('deels',8-au,bsNaam(st)+' · '+(8-au)+'u beschikbaar',[8,16.5],[{a:8,b:e3,k:OK},{a:e3,b:16.5,k:k2}],['beschikbaar '+r(8,e3),bsNaam(st).toLowerCase()+' '+r(e3,16.5)]);}
-    return res('af',0,bsNaam(st),[8,16.5],[{a:8,b:16.5,k:k2}],['hele dag']);}
-  return res('af',0,'Vrij / geen dienst',[8,16.5],[],['']);
+    return res('af',0,bsNaam(st),null,[],[]);}
+  return res('af',0,'Vrij / geen dienst',null,[],[]);
 }
 function bsSet(k,v){if(k==='reg')bsReg=v;else if(k==='alleen')bsAlleen=!!v;else if(k==='zoek')bsZoek=v;else if(k==='sel')bsSel=(bsSel===v?null:v);render();}
 /* de balk is de werktijd van die dienst (bijv. 08:00–16:30); het gekleurde deel is wat de monteur daarvan beschikbaar of bezet is */
-function bsBalk(x){var w=x.w,L=w[1]-w[0];
+function bsBalk(x){if(!x.w)return '';var w=x.w,L=w[1]-w[0];
   var segs=x.seg.map(function(g){return '<div style="position:absolute;left:'+((g.a-w[0])/L*100).toFixed(1)+'%;width:'+((g.b-g.a)/L*100).toFixed(1)+'%;top:0;bottom:0;background:'+g.k+'"></div>';}).join('');
   var tt=x.tt.filter(function(q){return q;}).map(function(q){return '<div>'+q+'</div>';}).join('');
   return '<div style="margin:5px 0 3px"><div style="position:relative;height:9px;border-radius:4px;overflow:hidden;background:rgba(127,127,127,.25)">'+segs+'</div><div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-top:1px"><span>'+bsTijd(w[0])+'</span><span>'+bsTijd(w[1])+'</span></div><div style="font-size:11px;font-weight:600">'+tt+'</div></div>';}
