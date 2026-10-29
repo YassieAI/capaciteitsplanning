@@ -4935,10 +4935,10 @@ function bsInfo0(st,d){
 }
 function bsSet(k,v){if(k==='reg')bsReg=v;else if(k==='alleen')bsAlleen=!!v;else if(k==='zoek')bsZoek=v;else if(k==='mode')bsMode=v;else if(k==='sel')bsSel=(bsSel===v?null:v);render();}
 /* de balk is de werktijd van die dienst (bijv. 08:00–16:30); het gekleurde deel is wat de monteur daarvan beschikbaar of bezet is */
-function bsBalk(x){if(!x.w)return '';var w=x.w,L=w[1]-w[0];
+function bsBalk(x,kort){if(!x.w)return '';var w=x.w,L=w[1]-w[0];
   var segs=x.seg.map(function(g){return '<div style="position:absolute;left:'+((g.a-w[0])/L*100).toFixed(1)+'%;width:'+((g.b-g.a)/L*100).toFixed(1)+'%;top:0;bottom:0;background:'+g.k+'"></div>';}).join('');
   var tt=x.tt.filter(function(q){return q;}).map(function(q){return '<div>'+q+'</div>';}).join('');
-  return '<div style="margin:5px 0 3px"><div style="position:relative;height:9px;border-radius:4px;overflow:hidden;background:rgba(127,127,127,.25)">'+segs+'</div><div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-top:1px"><span>'+bsTijd(w[0])+'</span><span>'+bsTijd(w[1])+'</span></div><div style="font-size:11px;font-weight:600">'+tt+'</div></div>';}
+  return '<div style="margin:5px 0 3px"><div style="position:relative;height:9px;border-radius:4px;overflow:hidden;background:rgba(127,127,127,.25)">'+segs+'</div><div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-top:1px"><span>'+bsTijd(w[0])+'</span><span>'+bsTijd(w[1])+'</span></div>'+(kort?'':'<div style="font-size:11px;font-weight:600">'+tt+'</div>')+'</div>';}
 function bsKort(st){var zg=zdGroep(st);if(zg==='zara')return 'Za'+zdUren(st);if(zg==='techno')return 'T'+zdUren(st);if(zg==='regio')return 'D'+zdUren(st);
   var m={dag:'D',dagvroeg:'DV',waak:'W',sw:'S',nacht:'N'};if(m[st])return m[st];var ak=afwSoort(st);if(ak){var l={ziek:'Z',verlof:'V',comp:'C',cursus:'O',project:'P',garage:'G',nb:'nb'}[ak]||ak.slice(0,2),au=afwUren(st);return l+((au>0&&au<8)?au:'');}return '–';}
 function bsInfo(st,d,nx){var r=bsInfo0(st,d);
@@ -4954,11 +4954,18 @@ function bsFocus(m){
   var ma=bsMaVal(),dn=['ma','di','wo','do','vr','za','zo'],nu=fmtIsoD(new Date());
   var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px"><div><h2 style="margin:0">'+m.ini+' · '+esc(m.naam)+'</h2><p class="sub" style="margin:2px 0 0">Vaste plek '+LOCMAP[m.base].naam+' · week '+isoWeek(dateFor(ma))+' en '+isoWeek(dateFor(ma+7))+'</p></div><button class="linkbtn" onclick="bsSet(\'sel\',\''+m.id+'\')">‹ terug naar overzicht</button></div>';
   h+=bsNav('week '+isoWeek(dateFor(ma))+' en '+isoWeek(dateFor(ma+7)));
-  h+='<div class="uv-maand" style="grid-template-columns:32px repeat(7,minmax(0,1fr))"><div class="uv-mk">wk</div>'+dn.map(function(x){return '<div class="uv-mk">'+x+'</div>';}).join('');
-  for(var w=0;w<2;w++){h+='<div class="uv-mwk">'+isoWeek(dateFor(ma+w*7))+'</div>';
-    for(var k=0;k<7;k++){var idx=ma+w*7+k,dt=dateFor(idx),iso=fmtIsoD(dt),st=bsStDag(m,idx),i=bsInfo(st,idx,bsStDag(m,idx+1)),cs=BS_KL[i.c],el=(idx>=0&&idx<=13&&m.roster[idx]!==undefined&&locOf(m,idx)!==m.base);
-      h+='<div class="uv-md'+(iso===nu?' uv-nu':'')+'" style="background:'+mcBg(cs[0],i.mc)+';color:'+cs[1]+';min-height:92px"><div class="uv-mdn">'+dt.getDate()+'</div><div class="uv-mdd">'+i.t+'</div>'+bsBalk(i)+(el?'<div class="uv-mdl">'+LOCMAP[locOf(m,idx)].naam+'</div>':'')+'</div>';}}
-  h+='</div><p class="sub" style="margin-top:6px">Zwarte rand = vandaag.</p>';
+  function besch(i){if(i.c==='ok')return '<div style="color:#0f6e56;font-weight:700">Beschikbaar '+(i.tt[0]||'')+'</div>'+(i.u?'<div style="opacity:.85">'+i.u+' uur</div>':'');
+    if(i.c==='deels')return '<div style="color:#854f0b;font-weight:700">Deels beschikbaar ('+i.u+' uur)</div>'+i.tt.filter(function(q){return q;}).map(function(q){return '<div style="opacity:.9">'+q+'</div>';}).join('');
+    return '<div style="opacity:.75;font-weight:600">Niet beschikbaar</div>'+(i.c==='bezet'&&i.tt[0]?'<div style="opacity:.85">'+i.tt[0]+'</div>':'');}
+  h+='<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">';
+  var uren=[0,0],dagen=[0,0];
+  for(var w=0;w<2;w++){
+    for(var k=0;k<7;k++){var idx=ma+w*7+k,dt=dateFor(idx),iso=fmtIsoD(dt),st=bsStDag(m,idx),i=bsInfo(st,idx,bsStDag(m,idx+1)),cs=dienstStyle(st),el=(idx>=0&&idx<=13&&m.roster[idx]!==undefined&&locOf(m,idx)!==m.base);
+      if(i.u){uren[w]+=i.u;dagen[w]++;}
+      h+='<div'+(iso===nu?' class="uv-nu"':'')+' style="border-radius:10px;padding:8px 9px;min-height:130px;font-size:12px;background:'+mcBg(celBg(st,cs,'dag'),i.mc)+';color:'+cs[1]+'"><div style="display:flex;justify-content:space-between;opacity:.85;font-weight:600"><span>'+dn[k]+' '+dt.getDate()+' '+['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][dt.getMonth()]+'</span><span>wk '+isoWeek(dt)+'</span></div><div style="font-size:14px;font-weight:700;margin:4px 0 2px">'+bsNaam(st)+'</div>'+bsBalk(i,1)+besch(i)+(el?'<div style="margin-top:3px"><b>bij '+LOCMAP[locOf(m,idx)].naam+'</b></div>':'')+'</div>';}}
+  h+='</div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:13px">'+[0,1].map(function(w){return '<span style="border-radius:10px;padding:6px 12px;background:var(--surface-1)"><b>Week '+isoWeek(dateFor(ma+w*7))+'</b> · '+dagen[w]+' dagen beschikbaar · '+uren[w]+' uur</span>';}).join('')+'</div>';
+  h+='<p class="sub" style="margin-top:8px">Kleuren zoals in het weekrooster. Zwarte rand = vandaag. Diagonaal = middag compensatie voor een nachtklus of een deeldag afwezig.</p>';
   return h;
 }
 function bsMaVal(){if(bsMa===null)bsMa=curDay-((dateFor(curDay).getDay()+6)%7);return bsMa;}
@@ -4977,7 +4984,7 @@ function viewBeschikbaar(){
     return {c:c,ms:ms};});
   var h='<h2>Beschikbaarheid · week '+isoWeek(dateFor(ma))+'</h2><p class="sub">'+(week?'Per monteur de hele week: de letter is de dienst, een cijfer erachter het aantal uur dat hij beschikbaar of bezet is (D = dag, DV = dagvroeg, W = waak, V = verlof, Z = ziek, O = opleiding, P = project, C = compensatie, N = nachtklus, Za = ZARA, T = Techno). Klik op een monteur voor zijn rooster van 2 weken.':'Wie is er beschikbaar, waar en van hoe laat tot hoe laat (de balk is de werktijd van de dienst; groen is beschikbaar, andere kleuren zijn bezet of afwezig). Bij een deels afwezige dag is alleen het aantal uur vastgelegd, dus beschikbaar loopt dan vanaf het begin van de dienst. Klik op een monteur voor zijn rooster van 2 weken.')+'</p>';
   h+=bsNav('week '+isoWeek(dateFor(ma))+' · '+dChip(ma)+' – '+dChip(ma+6));
-  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px">'+[['ok','Beschikbaar (ook met waakdienst)'],['deels','Deels'],['bezet','Bezet (ZARA, Techno, nachtklus)'],['af','Afwezig of vrij']].map(function(p){return '<span style="border-radius:10px;padding:6px 12px;font-size:13px;background:'+BS_KL[p[0]][0]+';color:'+BS_KL[p[0]][1]+'"><b style="font-size:16px">'+tot[p[0]]+'</b> '+p[1]+'</span>';}).join('')+'<span style="align-self:center;font-size:12px;color:var(--muted)">telling voor '+dLabel(pd)+' (klik op een dag in de tabel om te wisselen)</span></div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px">'+[['ok','Beschikbaar (ook met waakdienst)'],['deels','Deels'],['bezet','Bezet (ZARA, Techno, nachtklus)'],['af','Afwezig of vrij']].map(function(p){return '<span style="border-radius:10px;padding:6px 12px;font-size:13px;background:var(--surface-1);color:var(--text)"><b style="font-size:16px;color:'+BS_KL[p[0]][1]+'">'+tot[p[0]]+'</b> '+p[1]+'</span>';}).join('')+'<span style="align-self:center;font-size:12px;color:var(--muted)">telling voor '+dLabel(pd)+' (klik op een dag in de tabel om te wisselen)</span></div>';
   h+='<div class="ctrl" style="flex-wrap:wrap;gap:8px;margin-bottom:10px"><select onchange="bsSet(\'reg\',this.value)" style="height:34px;border-radius:8px;border:0.5px solid var(--border-strong);background:var(--surface);padding:0 8px"><option value="">Alle regio\'s</option>'+columns().map(function(c){return '<option'+(bsReg===c.naam?' selected':'')+'>'+esc(c.naam)+'</option>';}).join('')+'</select>'+
     '<input value="'+esc(bsZoek)+'" placeholder="Zoek op naam of code…" onchange="bsSet(\'zoek\',this.value)" style="height:34px;border-radius:8px;border:0.5px solid var(--border-strong);background:var(--surface);padding:0 10px;min-width:200px">'+
     '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" '+(bsAlleen?'checked ':'')+'onchange="bsSet(\'alleen\',this.checked)"> alleen beschikbaar</label></div>';
@@ -4993,8 +5000,8 @@ function viewBeschikbaar(){
       lijst.forEach(function(x){o+='<tr><td onclick="bsSet(\'sel\',\''+x.m.id+'\')" style="cursor:pointer;white-space:nowrap;padding-right:8px"><b>'+x.m.ini+'</b> <span style="color:var(--muted)">'+esc(x.m.naam===x.m.ini?'':x.m.naam)+'</span></td>';
         for(var q=0;q<7;q++){var idx=ma+q,live=idx>=0&&idx<=13&&x.m.roster[idx]!==undefined;
           if(!live){o+='<td style="text-align:center;color:var(--muted);background:var(--surface-1);border-radius:4px" title="buiten het geladen venster">·</td>';continue;}
-          var st=x.m.roster[idx],i=bsInfo(st,idx,x.m.roster[idx+1]),cs=BS_KL[i.c],tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
-          o+='<td onclick="bsSet(\'sel\',\''+x.m.id+'\')" title="'+esc(tip)+'" style="cursor:pointer;text-align:center;font-weight:700;border-radius:4px;padding:5px 2px;background:'+mcBg(cs[0],i.mc)+';color:'+cs[1]+(idx===pd?';outline:2px solid var(--accent)':'')+'">'+bsKort(st)+(i.mc&&i.c==='deels'?'4':'')+'</td>';}
+          var st=x.m.roster[idx],i=bsInfo(st,idx,x.m.roster[idx+1]),cs=dienstStyle(st),tip=i.t+(i.tt&&i.tt[0]?' · '+i.tt.join(' · '):'');
+          o+='<td onclick="bsSet(\'sel\',\''+x.m.id+'\')" title="'+esc(tip)+'" style="cursor:pointer;text-align:center;font-weight:700;border-radius:4px;padding:5px 2px;background:'+mcBg(celBg(st,cs,'dag'),i.mc)+';color:'+cs[1]+(idx===pd?';outline:2px solid var(--accent)':'')+'">'+bsKort(st)+(i.mc&&i.c==='deels'?'4':'')+'</td>';}
         o+='</tr>';});
       o+='</tbody></table></div>';return o;}
     o+='<div class="cards">';
