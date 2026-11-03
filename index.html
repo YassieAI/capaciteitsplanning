@@ -1128,7 +1128,7 @@ var RAW=[
  ['MEAS01','Uithoorn','MI','MEAS01'],
  ['NGHU01','Eindhoven','ZO','NGHU01'],
  ['MUGO07','Rotterdam','MI','MUGO07'],
- ['BASE01','Bergen (L)','ZO','BASE01'],
+ ['BASE','Bergen (L)','ZO','BASE'],
  ['STAR01','Almere','ZAM','STAR01'],
  ['REGR01','Purmerend','ZAM','REGR01'],
  ['DAPR04','Zoetermeer','ZAM','DAPR04'],
@@ -5351,8 +5351,8 @@ function wdTel(prep,plan){
 var WD_TRAP={RA1:['SEBU','MEAS01','JEZA01','BOHA01','MOBE02','ROMO01','ERBR01','ROKR02'], // 60+ achteraan: de rest draait dan precies om de 7 weken
   RA2:['ASER01','JEJO05','ARZW02','MUGO07','NABE','JOMA02'],
   LN:['JONI','JOKO01','STGA02','BJEU01','LAGA01','BOMU01'],
-  LZ:['BASE01','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
-  SCH:['JONI','RIFA01','SEBU','NABE','JOKO01','BASE01','STGA02','JEZA01','JEJO05','BJEU01','ERMA01','BOHA01','ARZW02','LAGA01','CEMA03','MEAS01','MUGO07']};
+  LZ:['BASE','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
+  SCH:['JONI','RIFA01','SEBU','NABE','JOKO01','BASE','STGA02','JEZA01','JEJO05','BJEU01','ERMA01','BOHA01','ARZW02','LAGA01','CEMA03','MEAS01','MUGO07']};
 var WD_TRAP_START={SEBU:{j:2027,k:9}}; // SEBU vanaf week 10 (begin maart) 2027
 function wdTrapStart(i){var x=WD_TRAP_START[i];return x?wdTrapAbs(x.j)+x.k:0;}
 function wdTrapWeken(y){return Math.round(wdDagen(wdJaarStart(y),wdJaarStart(y+1))/7);}
