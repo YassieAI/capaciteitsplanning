@@ -912,6 +912,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;padding:6px 6px;border-bottom:0.5px solid var(--border-strong);white-space:nowrap;background:var(--surface);position:sticky;top:0;z-index:3}
 .wd-tbl td{padding:5px 6px;border-bottom:0.5px solid var(--border);vertical-align:middle}
 .wd-scroll{overflow-x:auto;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-height:72vh;overflow-y:auto}
+.wd-vast{position:sticky;top:calc(var(--barh,0px) + 6px);max-height:calc(100vh - var(--barh,0px) - 22px);z-index:5}
 .wd-rooster th{position:sticky;top:0;z-index:2}
 .wd-rooster td.wd-wk{white-space:nowrap;font-size:12px}
 .wd-wk span{color:var(--muted);margin-left:4px}
@@ -6803,7 +6804,7 @@ function wdViewMonteur(){
   var ga=gem(rijen);
   h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:10px"><div class="metric"><div class="l">Gem. waakdiensten</div><div class="v">'+nl1(ga.w)+'</div></div><div class="metric"><div class="l">Gem. schaduwdiensten</div><div class="v">'+nl1(ga.s)+'</div></div><div class="metric"><div class="l">Gem. totaal per monteur</div><div class="v">'+nl1(ga.t)+'</div></div><div class="metric"><div class="l">Monteurs</div><div class="v">'+rijen.length+'</div></div></div>';
   h+='<div class="ctrl" style="margin-bottom:8px"><input id="wdMonZoek" placeholder="Zoek monteur, code of woonplaats" value="'+esc(wdMonQ)+'" oninput="wdMonFilter(this.value)" style="min-width:260px"></div>';
-  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van alle diensten (waak + schaduw) die de eigen regio draait, naar inzetbaarheidsfactor (60+ telt voor 0,75). Wie geen schaduw draait, draait daardoor wat meer waakdiensten. Rood = 2 of meer ernaast. </p><div class="wd-scroll"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
+  h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van alle diensten (waak + schaduw) die de eigen regio draait, naar inzetbaarheidsfactor (60+ telt voor 0,75). Wie geen schaduw draait, draait daardoor wat meer waakdiensten. Rood = 2 of meer ernaast. </p><div class="wd-scroll wd-vast"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
   var ncol=10+(c.prep.carry?1:0);
   c.prep.gIds.forEach(function(g){
     var groep=rijen.filter(function(m){return c.prep.home[m.ini]===g;});if(!groep.length)return;
@@ -7929,6 +7930,9 @@ buildLogin();
 
 /* expose voor smoke test */
 window.__t={render:render,setPgView:function(v){pgView=v;render();},PG_A:PG_A,PG_CAT:PG_CAT,pgTot:pgTot,pgSom:pgSom,pgGroeiGemeten:pgGroeiGemeten,pg2027:pg2027,pgNormVoorstel:pgNormVoorstel,pgFteNodig:pgFteNodig,PG_CANC25:PG_CANC25,PG_CANC26:PG_CANC26,PG_OVL:PG_OVL,pgUurGem:pgUurGem,setRole:function(r){role=r;boardView='bord';gView='dag';render();},setView:function(v){boardView=v;render();},setGView:function(v){gView=v;render();},dekkingLoc:dekkingLoc,suggestions:suggestions,columns:columns,M:M,LOC:LOC,curDayGet:function(){return curDay;},todayGet:function(){return TODAY;},setWeekLoc:function(l){weekLoc=l;},getRoster:function(mid){return M.filter(function(m){return m.id===mid;})[0].roster;},weight:weight,stLabel:stLabel,getProposals:function(){return proposals;},setTlMode:function(m){tlMode=m;render();}};
+
+/* hoogte van de bovenbalk bijhouden, zodat tabelkoppen er net onder blijven staan */
+setTimeout(function(){var h=document.querySelector('header.bar');if(!h)return;function z(){document.documentElement.style.setProperty('--barh',h.getBoundingClientRect().height+'px');}z();if(window.ResizeObserver)new ResizeObserver(z).observe(h);window.addEventListener('resize',z);},0);
 </script>
 </body>
 </html>
