@@ -5231,7 +5231,7 @@ function wdPrep(key,cells){
 }
 
 /* ---------- regels ---------- */
-var WD_REGELS={grens:60,tussen:4,maxSch:3,fac60:0.75,seeds:40,schTelt:false,geenSch60:true,schTussen:6};
+var WD_REGELS={grens:60,tussen:4,maxSch:3,fac60:0.75,seeds:40,schTelt:false,geenSch60:true,schTussen:6,reg:14,regW:1}; // reg = sturing op regelmaat (0 = uit): wie het meest 'aan de beurt' is gaat voor
 var WD_GEEN_SCH=['MUUN']; // draait geen schaduwdienst (naast 60+)
 function wdG(prep,s){return s==='SCH'?'SCH':(prep.slotDef[s]?prep.slotDef[s].g:s);}
 function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
@@ -5273,6 +5273,10 @@ function wdTry(prep,seed){
   var R=wdRng(seed),slots=prep.sIds.concat(['SCH']);
   var cy=prep.carry; // overloop uit vorig jaar: laatste diensten, kerst, saldo diensten en feestdagen
   var st={};WD_POOL.forEach(function(m){var i=m.ini;st[i]={n:0,sch:0,feest:0,kn:cy&&cy.kerst[i]?1:0,lw:cy&&cy.lw[i]!=null?cy.lw[i]:-99,ls:cy&&cy.ls[i]!=null?cy.ls[i]:-99,f:wdFactor(m),dev:cy?(cy.dev[i]||0):0,fdev:cy?(cy.fdev[i]||0):0};});
+  /* regelmaat: elke monteur heeft een streefafstand tussen twee waakweken = (som factoren van zijn groep) / (zijn factor); wie het langst 'over tijd' is, gaat voor */
+  var REG=WD_REGELS.reg||0,grpW={},ivl={};
+  if(REG){WD_POOL.forEach(function(m){var key=prep.home[m.ini]+(prep.home[m.ini]==='RA'?'|'+wdVleugel(m.ini):'');grpW[key]=(grpW[key]||0)+wdFactor(m);});
+    WD_POOL.forEach(function(m){var key=prep.home[m.ini]+(prep.home[m.ini]==='RA'?'|'+wdVleugel(m.ini):'');ivl[m.ini]=grpW[key]/wdFactor(m);});}
   var plan=[];var leeg=0;
   for(var k=0;k<WD_N;k++){
     var wk={},bezet={},todo=slots.slice();
@@ -5300,6 +5304,7 @@ function wdTry(prep,seed){
         // wie maar in weinig gebieden mag, sparen voor dat gebied
         if(o.s==='SCH'&&x.sch===0)sc-=60;   // iedereen draait minimaal 1 schaduwdienst: wie er nog geen had gaat voor
         sc+=R()*1.5;
+        if(REG){if(o.s==='SCH'){if(x.ls>-50)sc+=(x.ls+WD_N/3-k)*REG*0.5;}else if(x.lw>-50){sc+=(x.lw+ivl[m.ini]-k)*REG;}}
         if(sc<bs){bs=sc;best=m;}});
       wk[o.s]=best.ini;bezet[best.ini]=1;var x=st[best.ini];x.n++;if(o.s==='SCH'){x.ls=k;x.sch++;}else x.lw=k;if(wdIsFeest(k))x.feest++;if(wdIsKerstNj(k))x.kn++;
     }
@@ -5313,7 +5318,8 @@ function wdScore(prep,res){
   var gem=0;WD_POOL.forEach(function(m){gem+=t[m.ini].tot/wdFactor(m)+dv(m.ini);});gem/=WD_POOL.length;
   WD_POOL.forEach(function(m){var d=t[m.ini].tot/wdFactor(m)+dv(m.ini)-gem;v+=d*d;var fd=t[m.ini].feest;v+=fd>2?(fd-2)*4:0;});
   res.plan.forEach(function(wk){prep.sIds.forEach(function(s){if(wk[s]){tr+=prep.tijd[wk[s]][wdG(prep,s)];n++;}});});
-  return res.leeg*1e5+v*10+tr/n;
+  var rv=0;if(WD_REGELS.reg){WD_POOL.forEach(function(m){var ks=t[m.ini].weken.filter(function(w){return w.s!=='SCH';}).map(function(w){return w.k;});for(var i=2;i<ks.length;i++){var d=(ks[i]-ks[i-1])-(ks[i-1]-ks[i-2]);rv+=d*d;}});}
+  return res.leeg*1e5+v*10+tr/n+rv*(WD_REGELS.regW||0);
 }
 function wdTel(prep,plan){
   var t={};wdAlle().forEach(function(m){t[m.ini]={waak:0,sch:0,tot:0,feest:0,buiten:0,weken:[]};});
@@ -6554,6 +6560,7 @@ function wdViewRegels(){
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ heeft factor '+String(WD_REGELS.fac60).replace('.',',')+' en draait naar verhouding minder; jonger factor 1.</li>'+
     '<li>Nieuwe monteur: vul bij Per monteur een code, woonplaats en startdatum in. Het rooster blijft staan; hij neemt vanaf zijn startweek weken over (doel naar rato van de rest van het jaar) en draait vanaf het volgende roosterjaar gewoon mee.</li>'+
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
+    '<li>Regelmaat: de tool streeft naar een vaste afstand tussen twee waakweken van dezelfde persoon (groepsgrootte gedeeld door de factor; 60+ wat langer). Wie het langst over tijd is, gaat voor.</li>'+
     '<li>Elke monteur draait minimaal 1 en maximaal '+WD_REGELS.maxSch+' schaduwdiensten per jaar.</li>'+
     '<li>60+ en '+WD_GEEN_SCH.join(', ')+' draaien geen schaduwdienst. Een schaduwweek valt nooit in of direct naast een eigen waakweek, en tussen twee schaduwweken van dezelfde persoon zitten minstens '+WD_REGELS.schTussen+' weken.</li>'+
     '<li>Drie vaste combinaties nooit in dezelfde week (waak of schaduw): '+WD_VERBODEN.map(function(v){return v[0]+' & '+v[1];}).join(', ')+'.</li>'+
