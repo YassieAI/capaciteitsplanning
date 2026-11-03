@@ -5144,7 +5144,7 @@ var WD_OPZET={
 WD_OPZET.D={kort:'3 regio\'s',naam:'3 regio\'s · Randstad ×2 + Noord + Zuid',
     uitleg:'Drie regio\'s: Randstad (Noord- en Zuid-Holland, Utrecht, Almere en Amersfoort e.o.), Noord (ook Lelystad en Emmeloord) en Zuid. De Randstad heeft elke week twee diensten: één uit de noordvleugel (Amsterdam/Utrecht) en één uit de zuidvleugel (Den Haag/Rotterdam). Noord en Zuid hebben elk één dienst, met bereik over de weg vanaf Hoogeveen en Eindhoven (ca. 130 km). 60+ draait geen schaduw.',
     gebieden:[{id:'RA',naam:'Randstad'},{id:'LN',naam:'Noord'},{id:'LZ',naam:'Zuid'}],
-    slots:[{id:'RA1',g:'RA',naam:'Randstad 1 (noord)',wing:WD_COLLEGA.wing.noord},{id:'RA2',g:'RA',naam:'Randstad 2 (zuid)',wing:WD_COLLEGA.wing.zuid},{id:'LN',g:'LN',naam:'Noord'},{id:'LZ',g:'LZ',naam:'Zuid'}],
+    slots:[{id:'RA1',g:'RA',naam:'Randstad noord',wing:WD_COLLEGA.wing.noord},{id:'RA2',g:'RA',naam:'Randstad zuid',wing:WD_COLLEGA.wing.zuid},{id:'LN',g:'LN',naam:'Noord'},{id:'LZ',g:'LZ',naam:'Zuid'}],
     home:WD_COLLEGA.home, centers:WD_COLLEGA.centers, vast:WD_COLLEGA.plan,
     assign:function(p,lng,lat){
       if(p==='NH'||p==='ZH'||p==='UT')return 'RA';
@@ -5153,6 +5153,7 @@ WD_OPZET.D={kort:'3 regio\'s',naam:'3 regio\'s · Randstad ×2 + Noord + Zuid',
       if(p==='GE'){ if(lat>=52.1&&lat<=52.28&&lng>=5.2&&lng<=5.72)return 'RA'; return lat>=52.1?'LN':'LZ'; } // Amersfoort e.o. = Randstad
       return 'LZ';}};
 WD_OPZET.D.kleur={RA:'#2e8b57',LN:'#3b7dd8',LZ:'#c2462f'};
+var WD_KLEUR_RA2='#d4880f'; // Randstad zuid krijgt een eigen kleur (Randstad noord blijft groen)
 var WD_KEYS=['D'];
 var WD_KLEUR={NW:'#3b7dd8',NO:'#2a9d8f',MI:'#9b6bd6',ZW:'#e07a3f',ZO:'#d4a72c',RA:'#3b7dd8',ZU:'#e07a3f',WE:'#3b7dd8',OO:'#2a9d8f'};
 WD_OPZET.B.kleur={RA:'#3b7dd8',NO:'#2a9d8f',ZU:'#d4a72c'};
@@ -5335,7 +5336,7 @@ function wdTel(prep,plan){
       Het ritme loopt door over de jaarwisseling (geteld vanaf de eerste week van het basisjaar).
    2. 60+ draait 3 van de 4 rondes; in zijn vrije ronde schuift iedereen na hem een week naar voren.
    3. Schaduw gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek, max 3 per roosterjaar. */
-var WD_TRAP={RA1:['MOBE02','BOHA01','MEAS01','ROMO01','SEBU','ERBR01','ROKR02','JEZA01'],
+var WD_TRAP={RA1:['SEBU','MEAS01','JEZA01','BOHA01','MOBE02','ROMO01','ERBR01','ROKR02'], // 60+ achteraan: de rest draait dan precies om de 7 weken
   RA2:['ASER01','JEJO05','ARZW02','MUGO07','NABE','ROMA','JOMA02'],
   LN:['JONI','JOKO01','STGA02','BOMU01','BJEU01','LAGA01'],
   LZ:['BASW01','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
@@ -5381,6 +5382,112 @@ function wdTrapPlan(prep){
   var plan=[],leeg=0;
   for(var k=0;k<WD_N;k++){var wk={};prep.sIds.forEach(function(sl){wk[sl]=R[sl][a0+k]||null;if(!wk[sl])leeg++;});wk.SCH=sch[a0+k]||null;if(!wk.SCH)leeg++;plan.push(wk);}
   return {plan:plan,leeg:leeg,trap:true};
+}
+
+/* ---------- Excel-export van het waakdienstrooster (2 roosterjaren) ---------- */
+function wdTrapRondes(leden,n){ // zelfde regels als wdTrapReeks, maar met de vrije rondes erbij: [{i,t,soort}]
+  var f60={};WD_POOL.forEach(function(m){if(wdFactor(m)<1)f60[m.ini]=1;});
+  var six=leden.filter(function(i){return f60[i];}),off={};six.forEach(function(i,k){off[i]=Math.floor(k*4/six.length);});
+  var st={};leden.forEach(function(i){st[i]=wdTrapStart(i);});
+  var ev=[],t=0,r=0;if(!leden.length)return ev;
+  while(t<n&&r<5000){r++;leden.forEach(function(i){if(off[i]!==undefined&&(r+off[i])%4===0){ev.push({i:i,t:t,soort:'vrij'});return;}if(t<st[i])return;ev.push({i:i,t:t,soort:'dienst'});t++;});}
+  return ev;
+}
+function wdExcelRitme(knop){
+  function ga(){try{wdExcelMaak();}catch(e){console.error(e);sbToast('Excel-export mislukt: '+e.message);}if(knop)knop.disabled=false;}
+  if(knop)knop.disabled=true;
+  if(window.ExcelJS)return ga();
+  var sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';sc.integrity='sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz';sc.crossOrigin='anonymous';
+  sc.onload=ga;sc.onerror=function(){if(knop)knop.disabled=false;sbToast('Excel-bibliotheek kon niet laden. Probeer het opnieuw.');};
+  document.head.appendChild(sc);
+}
+function wdExcelMaak(){
+  var J1=WD_JAAR,J2=Math.min(WD_JAAR+1,WD_BASISJAAR+WD_JAREN-1),jaren=J2>J1?[J1,J2]:[J1];
+  var R={},W=[];
+  jaren.forEach(function(j){var r=wdPlanJaar(j);R[j]=r;wdMetJaar(j,function(){for(var k=0;k<WD_N;k++)W.push({j:j,k:k,van:wdWeekStart(k),tot:wdWeekEnd(k),feest:WD_FEEST[k]?[].concat(WD_FEEST[k]).join(', '):'',r:r,w:r.plan[k],za:r.za?r.za[k]:null});});});
+  var prep=R[J1].prep,NT=W.length,sl=prep.sIds;
+  var NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',SCH:'Schaduw (landelijk)',ZA:'Zara'};
+  var KL={RA1:'2E8B57',RA2:WD_KLEUR_RA2.slice(1),LN:'3B7DD8',LZ:'C2462F',SCH:'6B6A63',ZA:'8E5BD1'};
+  var f60={};WD_POOL.forEach(function(m){if(wdFactor(m)<1)f60[m.ini]=1;});
+  var wb=new ExcelJS.Workbook();wb.creator='Capaciteitsplanning Field Force';
+  var F='Arial',dun={style:'thin',color:{argb:'FFD0D0D0'}},rand={top:dun,left:dun,bottom:dun,right:dun};
+  function vul(c,kl){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+kl}};}
+  function fnt(c,o){o=o||{};c.font={name:F,size:o.size||10,bold:!!o.bold,italic:!!o.italic,color:{argb:'FF'+(o.kl||'000000')}};}
+  function kop(ws,r,vals,kl){vals.forEach(function(v,i){var c=ws.getCell(r,i+1);c.value=v;fnt(c,{bold:true,kl:'FFFFFF',size:9});vul(c,kl||'C00000');c.alignment={horizontal:'center',vertical:'middle',wrapText:true};c.border=rand;});}
+  function wl(x){return x.k+1;}
+  var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  function dd(d){return d.getDate()+' '+MN[d.getMonth()]+' '+d.getFullYear();}
+  /* ---- Uitleg ---- */
+  var u=wb.addWorksheet('Uitleg',{views:[{showGridLines:false}]});u.getColumn(1).width=6;u.getColumn(2).width=120;
+  var rr=1;function regel(t,o){var c=u.getCell(rr,2);c.value=t;fnt(c,o);c.alignment={wrapText:true,vertical:'top'};rr++;}
+  regel('Waakdienstrooster '+jaren.join(' en '),{bold:true,size:16,kl:'1F3864'});
+  regel('Export uit de Capaciteitsplanning-tool op '+dd(new Date())+'. '+jaren.map(function(j){return j+': '+(R[j].vast||WD_VASTDB[j]?'vastgezet':'automatisch berekend, nog niet vastgezet');}).join(' · ')+'.',{italic:true,kl:'595959'});rr++;
+  if(WD_REGELS.trap){regel('Het ritme in 4 regels',{bold:true,size:12,kl:'1F3864'});
+    ['1. Per groep een vaste volgorde. Elke week is de volgende monteur aan de beurt; na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.',
+     '2. 60+ draait 3 van de 4 rondes mee. In zijn vrije ronde ("vrij") schuift iedereen na hem een week naar voren. Zo draait 60+ precies 75%.',
+     '3. Tussen twee waakweken zitten altijd minimaal '+(WD_REGELS.tussen+1)+' weken.',
+     '4. De schaduwdienst gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek.'].forEach(function(t){regel(t);});
+    Object.keys(WD_TRAP_START||{}).forEach(function(i){var x=WD_TRAP_START[i];regel(i+' draait mee vanaf week '+(x.k+1)+' van '+x.j+'.');});rr++;}
+  regel('Diensten per week',{bold:true,size:12,kl:'1F3864'});
+  regel('Een waakweek loopt van vrijdag t/m donderdag; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
+  regel('Legenda',{bold:true,size:12,kl:'1F3864'});
+  sl.concat(['SCH','ZA']).forEach(function(x){var c=u.getCell(rr,1);c.value=x==='SCH'?'S':x==='ZA'?'Za':'1';vul(c,KL[x]);fnt(c,{bold:true,kl:'FFFFFF'});c.alignment={horizontal:'center'};regel(NAAM[x]);});
+  [['FFFF00','1 = waakdienst in de tabblad Ritme'],['FFC000','oranje = week met een feestdag (zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
+  var meld=[];jaren.forEach(function(j){wdMetJaar(j,function(){wdCheck(R[j].prep,R[j].plan).forEach(function(f){meld.push(j+': '+f.m);});});});
+  regel('Meldingen van de tool ('+meld.length+')',{bold:true,size:12,kl:'1F3864'});
+  if(!meld.length)regel('Geen.');meld.forEach(function(m){regel(m,{kl:'C00000'});});
+  /* ---- Ritme ---- */
+  var ws=wb.addWorksheet('Ritme',{views:[{state:'frozen',xSplit:2,ySplit:2,showGridLines:false}]});
+  var W0=3,E=W0+NT;ws.getColumn(1).width=11;ws.getColumn(2).width=5;for(var x=0;x<NT;x++)ws.getColumn(W0+x).width=3.6;ws.getColumn(E).width=7;ws.getColumn(E+1).width=7;ws.getColumn(E+2).width=40;
+  var t1=ws.getCell(1,1);t1.value='Ritme waakdienst '+jaren.join(' → ')+': wie na wie, week voor week';fnt(t1,{bold:true,size:14,kl:'1F3864'});
+  jaren.forEach(function(j,ix){var c=ws.getCell(2,W0+(ix?R[J1].plan.length:0));c.value=j+' →';fnt(c,{bold:true,kl:'C00000'});});
+  rr=4;var a0=WD_REGELS.trap&&J1>=WD_BASISJAAR?wdTrapAbs(J1):null;
+  function blok(titel,kl,leden,veld,vrij){
+    var c=ws.getCell(rr,1);c.value=titel;fnt(c,{bold:true,size:12,kl:kl});rr++;
+    kop(ws,rr,['Monteur','60+']);for(var t=0;t<NT;t++){var h=ws.getCell(rr,W0+t);h.value=wl(W[t]);fnt(h,{bold:true,size:8,kl:'FFFFFF'});vul(h,W[t].j===J1?'FF0000':'C00000');h.alignment={horizontal:'center'};h.border=rand;}
+    [jaren[0]+'',jaren[1]?jaren[1]+'':'','Tussenpozen (weken)'].forEach(function(v,k){var h=ws.getCell(rr,E+k);h.value=v;fnt(h,{bold:true,kl:'FFFFFF',size:9});vul(h,'C00000');h.border=rand;});rr++;
+    leden.forEach(function(i){
+      var c1=ws.getCell(rr,1);c1.value=i;fnt(c1,{bold:true});c1.border=rand;var c2=ws.getCell(rr,2);c2.value=f60[i]?'ja':'';fnt(c2);c2.border=rand;
+      var ks=[];
+      for(var t=0;t<NT;t++){var c=ws.getCell(rr,W0+t);c.border=rand;if(veld(W[t])===i){ks.push(t);c.value=1;c.alignment={horizontal:'center'};fnt(c,{size:9});vul(c,W[t].feest?'FFC000':(veld===sch?'BDD7EE':'FFFF00'));if(W[t].feest)c.note=W[t].feest;}}
+      (vrij[i]||[]).forEach(function(t){if(t>=0&&t<NT&&!ws.getCell(rr,W0+t).value){var c=ws.getCell(rr,W0+t);c.value='vrij';fnt(c,{size:7,italic:true,kl:'7F7F7F'});vul(c,'EDEDED');c.alignment={horizontal:'center'};}});
+      var n1=ks.filter(function(t){return W[t].j===J1;}).length;ws.getCell(rr,E).value=n1;ws.getCell(rr,E+1).value=jaren[1]?ks.length-n1:'';
+      ws.getCell(rr,E+2).value=ks.slice(1).map(function(t,q){return t-ks[q];}).join(', ');
+      [E,E+1,E+2].forEach(function(cc){fnt(ws.getCell(rr,cc),{size:9});ws.getCell(rr,cc).border=rand;});
+      rr++;});
+    rr++;
+  }
+  function sch(x){return x.w.SCH;}
+  sl.forEach(function(s){
+    var leden=WD_REGELS.trap?wdTrapLeden(prep,s):WD_POOL.map(function(m){return m.ini;}).filter(function(i){return wdTrapSlot(prep,i)===s;});
+    var vrij={};if(a0!==null&&WD_REGELS.trap)wdTrapRondes(leden,a0+NT+2).forEach(function(e){if(e.soort==='vrij')(vrij[e.i]=vrij[e.i]||[]).push(e.t-a0);});
+    var n60=leden.filter(function(i){return f60[i];});
+    blok(NAAM[s]+' · '+leden.length+' monteurs'+(n60.length?' · 60+: '+n60.join(', '):''),KL[s],leden,function(x){return x.w[s];},vrij);});
+  var sLeden=[];W.forEach(function(x){if(x.w.SCH&&sLeden.indexOf(x.w.SCH)<0)sLeden.push(x.w.SCH);});
+  if(WD_REGELS.trap){var q=WD_TRAP.SCH.filter(function(i){return sLeden.indexOf(i)>=0;});sLeden.forEach(function(i){if(q.indexOf(i)<0)q.push(i);});sLeden=q;}
+  blok('Schaduwdienst (landelijk) · om de beurt, geen 60+',KL.SCH,sLeden,sch,{});
+  /* ---- Jaarrooster per jaar ---- */
+  jaren.forEach(function(j){
+    var js=wb.addWorksheet('Jaarrooster '+j,{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
+    var c=js.getCell(1,1);c.value='Waakdienst jaarrooster '+j;fnt(c,{bold:true,size:14,kl:'1F3864'});
+    kop(js,3,['Week','Van (vr)','T/m (do)','Feestdag'].concat(sl.map(function(s){return NAAM[s];})).concat(['Schaduw','Zara']),'1F3864');
+    [7,13,13,30].concat(sl.map(function(){return 16;})).concat([14,14]).forEach(function(w,i){js.getColumn(i+1).width=w;});
+    var r=4;W.filter(function(x){return x.j===j;}).forEach(function(x){
+      var v=[x.k+1,dd(x.van),dd(x.tot),x.feest].concat(sl.map(function(s){return x.w[s]||'OPEN';})).concat([x.w.SCH||'OPEN',x.za||'']);
+      v.forEach(function(val,i){var cc=js.getCell(r,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i>=4,kl:i>=4?(val==='OPEN'?'C00000':(KL[sl.concat(['SCH','ZA'])[i-4]]||'000000')):'000000'});if(x.feest)vul(cc,'FFF2CC');if(val==='OPEN')vul(cc,'F8CBAD');cc.alignment={horizontal:i===3?'left':'center'};});
+      r++;});
+  });
+  /* ---- Zara ---- */
+  var zs=wb.addWorksheet('Zara',{views:[{state:'frozen',xSplit:1,ySplit:3,showGridLines:false}]});
+  var zc=zs.getCell(1,1);zc.value='Zara-waakdienst '+jaren.join(' en ');fnt(zc,{bold:true,size:14,kl:'1F3864'});
+  kop(zs,3,['Monteur'].concat(W.map(wl)),'5B3A8C');zs.getColumn(1).width=11;for(var t=0;t<NT;t++)zs.getColumn(2+t).width=3.6;
+  var zl=WD_ZPOOL.map(function(m){return m.ini;});
+  zl.forEach(function(i,n){var r=4+n;var c=zs.getCell(r,1);c.value=i;fnt(c,{bold:true});c.border=rand;
+    for(var t=0;t<NT;t++){var cc=zs.getCell(r,2+t);cc.border=rand;if(W[t].za===i){cc.value='Za';vul(cc,'8E5BD1');fnt(cc,{bold:true,size:8,kl:'FFFFFF'});cc.alignment={horizontal:'center'};if(W[t].feest)cc.note=W[t].feest;}}});
+  wb.xlsx.writeBuffer().then(function(buf){
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Waakdienstrooster_'+jaren.join('-')+'.xlsx';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);sbToast('Excel-export gedownload.');});
 }
 function wdMaak(prep,eigen){
   if(prep.vast&&prep.vast.length===WD_N&&!eigen&&!Object.keys(WD_OVERRIDE[prep.key]||{}).length)return {plan:prep.vast.map(function(w){var c={};for(var x in w)c[x]=w[x];return c;}),leeg:0,vast:true};
@@ -5635,7 +5742,7 @@ function wdVakKaart(k){var iv=wdVakIv(),v=wdVakWeek(k);
   var gs={};v.forEach(function(x){if(x.g==='A'){gs.N=gs.M=gs.Z=1;}else gs[x.g]=1;});
   return '<div class="wd-vkbox"><div>'+wdVakPills(v)+'</div><details><summary>Welke gemeentes?</summary>'+['N','M','Z'].filter(function(g){return gs[g];}).map(function(g){return '<div class="wd-vkg"><b>'+WD_VAK_REGIO[g]+':</b> '+WD_VAK_GEM[g]+'</div>';}).join('')+'</details></div>';}
 function wdGNaam(c,g){if(g==='SCH')return 'Schaduw';if(g==='ZA')return 'Zara';if(c.prep.slotDef[g]&&c.prep.slotDef[g].g!==g)return c.prep.slotDef[g].naam;var x=c.prep.o.gebieden.filter(function(y){return y.id===g;})[0];return x?x.naam:g;}
-function wdKleur(key,g){if(g==='SCH')return '#6b6a63';if(g==='ZA')return '#8e5bd1';var c=wdCache[key];if(c&&c.prep.slotDef[g])g=c.prep.slotDef[g].g;return WD_OPZET[key].kleur[g]||'#888';}
+function wdKleur(key,g){if(g==='SCH')return '#6b6a63';if(g==='ZA')return '#8e5bd1';if(key==='D'&&g==='RA2')return WD_KLEUR_RA2;var c=wdCache[key];if(c&&c.prep.slotDef[g])g=c.prep.slotDef[g].g;return WD_OPZET[key].kleur[g]||'#888';}
 function wdMagG(prep,ini,g){return prep.slots.some(function(x){return x.g===g&&wdMag(prep,ini,x.id);});}
 function wdNSlots(prep,g){return prep.slots.filter(function(x){return x.g===g;}).length;}
 function nl1(x){return x.toFixed(1).replace('.',',');}
@@ -5818,7 +5925,7 @@ function viewWaak(){
   var eind=wdWeekEnd(WD_N-1),vj=WD_JAAR>WD_BASISJAAR;
   var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
-  h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'</div>';
+  h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' en '+(WD_JAAR+1)+' als Excel">&#11015; Excel-export</button></div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
   if(WD_TOELICHTING[wdSub])h+='<p class="sub" style="margin:6px 0 10px">'+WD_TOELICHTING[wdSub]+'</p>';
   if(wdSub==='vergelijk')wdSub='kaart';
@@ -6631,7 +6738,7 @@ function wdViewRegels(){
     '<li>Feestdagen eerlijk verdelen: wie al een feestdagweek heeft, komt pas weer aan de beurt als de rest er ook een heeft gehad.</li>'+
     '<li>Kerst, oud & nieuw en nieuwjaar: maximaal één per persoon per rooster, en wie ze vorig jaar had krijgt ze dit jaar niet. Vanaf '+(WD_BASISJAAR+1)+' rekent de tool dat zelf door. Het saldo over de jaren heen telt mee: wie meer draaide dan gemiddeld, krijgt het volgende jaar iets minder.</li>'+
     '<li>Schaduwdienst telt mee voor het totaal aantal diensten per jaar.</li>'+
-    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). Uitzondering: JOMA02 mag ook Randstad 2 (zuid) draaien. JEJO05 draait vast mee in Randstad 2 (zuid).</li></ol></div>'+
+    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). De Randstad heeft twee eigen diensten: Randstad noord (Amsterdam/Utrecht) en Randstad zuid (Den Haag/Rotterdam). JOMA02 en JEJO05 draaien mee in Randstad zuid.</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Ruilen: wat mag <span class="badge b-warn">voorstel</span></div><ol class="wd-ol">'+
     '<li>Ruilen gaat één-op-één: jij neemt zijn week, hij neemt de jouwe. Een dienst weggeven zonder terugdienst kan niet.</li>'+
     '<li>Je ruilt alleen met iemand die het gebied ook mag draaien (eigen gebied of binnen de reistijdgrens).</li>'+
@@ -6713,6 +6820,7 @@ function wdSleepChip(b){
 /* ---------- events ---------- */
 function wdNaarNu(){var el=document.querySelector('.wd-nurij');if(el){var hb=document.querySelector('header.bar');window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-(hb?hb.offsetHeight:0)-60,behavior:'smooth'});}}
 function wireWaak(){
+  document.querySelectorAll('[data-wdxls]').forEach(function(b){b.onclick=function(){wdExcelRitme(b);};});
   document.querySelectorAll('[data-wdnu]').forEach(function(b){b.onclick=wdNaarNu;});
   if(wdScrollNu&&wdSub==='rooster'&&document.querySelector('.wd-nurij')){wdScrollNu=false;setTimeout(wdNaarNu,50);}
   wireVoorstellen();
@@ -7512,7 +7620,7 @@ function viewLog(){
 /* klik in de log: ga naar de plek waar de wijziging is gedaan */
 function logStTxt(w){return String(w).replace(/\bst:([^\s;]+)/g,function(x,t){try{return propNaam({tgt:'st:'+t,day:0});}catch(e){return x;}});}
 function logWat(r){var w=logStTxt(String(r.wat||'').replace(/; raw: .*$/,''));return r.soort==='Waakdienst'?logSlotTxt(w):w;}
-function logSlotTxt(t){var n={RA1:'Randstad 1 (noord)',RA2:'Randstad 2 (zuid)',LN:'Noord',LZ:'Zuid',SCH:'schaduw'};
+function logSlotTxt(t){var n={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',SCH:'schaduw'};
   return String(t).replace(/\b(RA1|RA2|LN|LZ|SCH)\b/g,function(x){return n[x];});}
 function logDoel(r){var w=String(r.waar||'');
   if(r.soort==='Rooster'||r.soort==='Verschuiving'||r.soort==='Voorstel'){var m=w.match(/(\d{4}-\d{2}-\d{2})/);return {t:r.soort,iso:m?m[1]:null};}
