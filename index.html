@@ -6504,7 +6504,6 @@ function wdViewRooster(){
   var c=wdC(),slots=c.prep.sIds.concat(['SCH']),team=wdTeamSet();
   var h='';
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
-  h+='<div class="ctrl" style="margin-bottom:10px"><button onclick="wdPrint()">&#128438; Afdrukken / PDF</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+(wdNuWeek()+1)+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
   else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
