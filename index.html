@@ -912,7 +912,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .wd-tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;padding:6px 6px;border-bottom:0.5px solid var(--border-strong);white-space:nowrap;background:var(--surface);position:sticky;top:0;z-index:3}
 .wd-tbl td{padding:5px 6px;border-bottom:0.5px solid var(--border);vertical-align:middle}
 .wd-scroll{overflow-x:auto;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-height:72vh;overflow-y:auto}
-.wd-vast{position:sticky;top:calc(var(--barh,0px) + 6px);max-height:calc(100vh - var(--barh,0px) - 22px);z-index:5}
+.wd-vast{overflow-y:visible;overflow-x:clip;max-height:none}
+.wd-vast .wd-tbl th{top:var(--barh,0px)}
+@media(max-width:900px){.wd-vast{overflow:auto;max-height:calc(100vh - var(--barh,0px) - 22px)}.wd-vast .wd-tbl th{top:0}}
 .wd-rooster th{position:sticky;top:0;z-index:2}
 .wd-rooster td.wd-wk{white-space:nowrap;font-size:12px}
 .wd-wk span{color:var(--muted);margin-left:4px}
@@ -7932,7 +7934,7 @@ buildLogin();
 window.__t={render:render,setPgView:function(v){pgView=v;render();},PG_A:PG_A,PG_CAT:PG_CAT,pgTot:pgTot,pgSom:pgSom,pgGroeiGemeten:pgGroeiGemeten,pg2027:pg2027,pgNormVoorstel:pgNormVoorstel,pgFteNodig:pgFteNodig,PG_CANC25:PG_CANC25,PG_CANC26:PG_CANC26,PG_OVL:PG_OVL,pgUurGem:pgUurGem,setRole:function(r){role=r;boardView='bord';gView='dag';render();},setView:function(v){boardView=v;render();},setGView:function(v){gView=v;render();},dekkingLoc:dekkingLoc,suggestions:suggestions,columns:columns,M:M,LOC:LOC,curDayGet:function(){return curDay;},todayGet:function(){return TODAY;},setWeekLoc:function(l){weekLoc=l;},getRoster:function(mid){return M.filter(function(m){return m.id===mid;})[0].roster;},weight:weight,stLabel:stLabel,getProposals:function(){return proposals;},setTlMode:function(m){tlMode=m;render();}};
 
 /* hoogte van de bovenbalk bijhouden, zodat tabelkoppen er net onder blijven staan */
-setTimeout(function(){var h=document.querySelector('header.bar');if(!h)return;function z(){document.documentElement.style.setProperty('--barh',h.getBoundingClientRect().height+'px');}z();if(window.ResizeObserver)new ResizeObserver(z).observe(h);window.addEventListener('resize',z);},0);
+setTimeout(function(){var h=document.querySelector('header.bar');if(!h)return;var l=-1;function z(){var x=Math.round(h.getBoundingClientRect().height);if(x!==l){l=x;document.documentElement.style.setProperty('--barh',x+'px');}}z();if(window.ResizeObserver)new ResizeObserver(z).observe(h,{box:'border-box'});window.addEventListener('resize',z);window.addEventListener('scroll',z,{passive:true});setInterval(z,700);},0);
 </script>
 </body>
 </html>
