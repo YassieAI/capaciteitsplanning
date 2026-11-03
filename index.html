@@ -5514,7 +5514,7 @@ function wdExcelRitme(knop){
   document.head.appendChild(sc);
 }
 function wdExcelMaak(){
-  var J1=WD_JAAR,J2=Math.min(WD_JAAR+1,WD_BASISJAAR+WD_JAREN-1),jaren=J2>J1?[J1,J2]:[J1];
+  var J1=WD_JAAR,jaren=[J1];
   var R={},W=[];
   jaren.forEach(function(j){var r=wdPlanJaar(j);R[j]=r;wdMetJaar(j,function(){for(var k=0;k<WD_N;k++)W.push({j:j,k:k,van:wdWeekStart(k),tot:wdWeekEnd(k),feest:WD_FEEST[k]?[].concat(WD_FEEST[k]).join(', '):'',r:r,w:r.plan[k],za:r.za?r.za[k]:null});});});
   var prep=R[J1].prep,NT=W.length,sl=prep.sIds;
@@ -6050,7 +6050,7 @@ function viewWaak(){
   var eind=wdWeekEnd(WD_N-1),vj=WD_JAAR>WD_BASISJAAR;
   var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
-  h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' en '+(WD_JAAR+1)+' als Excel">&#11015; Excel-export</button></div>';
+  h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' als Excel">&#11015; Excel-export</button></div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
   if(WD_TOELICHTING[wdSub])h+='<p class="sub" style="margin:6px 0 10px">'+WD_TOELICHTING[wdSub]+'</p>';
   if(wdSub==='vergelijk')wdSub='kaart';
