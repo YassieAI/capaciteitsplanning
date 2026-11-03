@@ -5552,7 +5552,7 @@ function wdExcelMaak(){
     var c=ws.getCell(rr,1);c.value=titel;fnt(c,{bold:true,size:12,kl:kl});rr++;
     kop(ws,rr,['Monteur','60+']);for(var t=0;t<NT;t++){var h=ws.getCell(rr,W0+t);h.value=wl(W[t]);fnt(h,{bold:true,size:8,kl:'FFFFFF'});vul(h,W[t].j===J1?'FF0000':'C00000');h.alignment={horizontal:'center'};h.border=rand;}
     var kk=[];jaren.forEach(function(j){kk.push('Waak '+j,'Schaduw '+j,'Totaal '+j);});kk.push('Tussenpozen (weken)');
-    kk.forEach(function(v,k){var h=ws.getCell(rr,E+k);h.value=v;fnt(h,{bold:true,kl:'FFFFFF',size:9});vul(h,k<3*NJ&&k%3===2?'7F0000':'C00000');h.border=rand;h.alignment={horizontal:'center',vertical:'middle',wrapText:true};});ws.getRow(rr).height=26;rr++;var r0=rr;
+    kk.forEach(function(v,k){var h=ws.getCell(rr,E+k);h.value=v;fnt(h,{bold:true,kl:'FFFFFF',size:9});vul(h,k<3*NJ?'7F0000':'C00000');h.border=rand;h.alignment={horizontal:'center',vertical:'middle',wrapText:true};});ws.getRow(rr).height=26;rr++;var r0=rr;
     leden.forEach(function(i){
       var c1=ws.getCell(rr,1);c1.value=i;fnt(c1,{bold:true});c1.border=rand;var c2=ws.getCell(rr,2);c2.value=f60[i]?'ja':'';fnt(c2);c2.border=rand;
       var ks=[];
@@ -5560,7 +5560,7 @@ function wdExcelMaak(){
       (vrij[i]||[]).forEach(function(x){var t=x.t;if(t>=0&&t<NT&&!ws.getCell(rr,W0+t).value){var c=ws.getCell(rr,W0+t);c.value=x.s;fnt(c,{size:7,italic:true,kl:'7F7F7F'});vul(c,x.s==='kerst'?'FCE4D6':'EDEDED');c.alignment={horizontal:'center'};if(x.s==='kerst')c.note='Had al kerst/jaarwisseling: slaat deze beurt over';}});
       jaren.forEach(function(j,jx){var y=tel(i,j),cw=ws.getCell(rr,E+3*jx),cs=ws.getCell(rr,E+3*jx+1),ct=ws.getCell(rr,E+3*jx+2);
         cw.value=y.w;cs.value=y.s;ct.value={formula:cw.address+'+'+cs.address,result:y.w+y.s};
-        fnt(cw,{size:9,bold:true});fnt(cs,{size:9});fnt(ct,{size:9,bold:true});vul(ct,'F2F2F2');});
+        [cw,cs,ct].forEach(function(cx){fnt(cx,{size:10,bold:true});vul(cx,'F2F2F2');});});
       ws.getCell(rr,ET).value=ks.slice(1).map(function(t,q){return t-ks[q];}).join(', ');fnt(ws.getCell(rr,ET),{size:9});
       for(var cc=E;cc<=ET;cc++){ws.getCell(rr,cc).border=rand;if(cc<ET)ws.getCell(rr,cc).alignment={horizontal:'center'};}
       rr++;});
