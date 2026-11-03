@@ -5340,6 +5340,8 @@ var WD_TRAP={RA1:['MOBE02','BOHA01','MEAS01','ROMO01','SEBU','ERBR01','ROKR02','
   LN:['JONI','JOKO01','STGA02','BOMU01','BJEU01','LAGA01'],
   LZ:['BASW01','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
   SCH:['JONI','RIFA01','SEBU','NABE','JOKO01','BASW01','ROMA','STGA02','JEZA01','JEJO05','BJEU01','ERMA01','BOHA01','ARZW02','LAGA01','CEMA03','MEAS01','MUGO07']};
+var WD_TRAP_START={SEBU:{j:2027,k:5},ROMA:{j:2027,k:5}}; // draaien pas mee vanaf week 6 (begin februari) 2027
+function wdTrapStart(i){var x=WD_TRAP_START[i];return x?wdTrapAbs(x.j)+x.k:0;}
 function wdTrapWeken(y){return Math.round(wdDagen(wdJaarStart(y),wdJaarStart(y+1))/7);}
 function wdTrapAbs(j){var n=0;for(var y=WD_BASISJAAR;y<j;y++)n+=wdTrapWeken(y);return n;}
 function wdTrapSlot(prep,ini){var h=prep.home[ini];if(h==='RA')return wdVleugel(ini)==='noord'?'RA1':'RA2';return h;}
@@ -5353,7 +5355,8 @@ function wdTrapReeks(leden,n){
   var f60={};WD_POOL.forEach(function(m){if(wdFactor(m)<1)f60[m.ini]=1;});
   var six=leden.filter(function(i){return f60[i];}),off={};six.forEach(function(i,k){off[i]=Math.floor(k*4/six.length);});
   var s=[],r=0;if(!leden.length)return s;
-  while(s.length<n&&r<5000){r++;leden.forEach(function(i){if(off[i]!==undefined&&(r+off[i])%4===0)return;s.push(i);});}
+  var st={};leden.forEach(function(i){st[i]=wdTrapStart(i);});
+  while(s.length<n&&r<5000){r++;leden.forEach(function(i){if(off[i]!==undefined&&(r+off[i])%4===0)return;if(s.length<st[i])return;s.push(i);});}
   return s;
 }
 function wdTrapPlan(prep){
@@ -5369,6 +5372,7 @@ function wdTrapPlan(prep){
   for(var t=0;t<eind;t++){var gj=jr(t),pick=-1;
     for(var x=0;x<q.length;x++){var i=q[x],w=waak[i]||{};
       if(w[t-1]||w[t]||w[t+1])continue;
+      if(t<wdTrapStart(i))continue;
       if(last[i]!==undefined&&t-last[i]<=(WD_REGELS.schTussen||6))continue;
       if((cnt[i+'|'+gj]||0)>=WD_REGELS.maxSch)continue;
       pick=x;break;}
@@ -6613,6 +6617,7 @@ function wdViewRegels(){
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
     '<li>Vast ritme: per groep een vaste volgorde; elke week is de volgende aan de beurt en na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.</li>'+
     '<li>60+ draait 3 van de 4 rondes mee; in zijn vrije ronde schuift iedereen na hem een week naar voren.</li>'+
+    '<li>SEBU en ROMA draaien mee vanaf begin februari 2027 (week 6).</li>'+
     '<li>Schaduwdienst gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek.</li>'+
     '<li>Elke monteur draait minimaal 1 en maximaal '+WD_REGELS.maxSch+' schaduwdiensten per jaar.</li>'+
     '<li>60+ en '+WD_GEEN_SCH.join(', ')+' draaien geen schaduwdienst. Een schaduwweek valt nooit in of direct naast een eigen waakweek, en tussen twee schaduwweken van dezelfde persoon zitten minstens '+WD_REGELS.schTussen+' weken.</li>'+
