@@ -5455,6 +5455,7 @@ function wdTrapHerstel(R,sch,ws,KA,inst,jr,L,prep){
     var goed=nKerst()<k1&&ppl.every(function(p){return viol(p)<=B[p];});if(!goed)terug();return goed;}
   var max=30;
   while(max-->0){var x=stuk();if(!x.length)break;var gelukt=false;
+    x.sort(function(a,b){return (a.sl==='SCH'?0:1)-(b.sl==='SCH'?0:1)||b.t-a.t;}); // eerst schaduw, dan de laatste weken: begin van het jaar blijft zo veel mogelijk staan
     // 1. ruil met één collega uit dezelfde dienst
     x.forEach(function(v){for(var d=1;d<=(v.sl==='SCH'?53:16)&&!gelukt;d++)[v.t-d,v.t+d].forEach(function(u){if(gelukt||u<0||u>L||KA[u]||(v.sl==='SCH'&&jr(u)!==jr(v.t)))return;
         var y=get(v.sl,u);if(!y||y===v.i)return;
