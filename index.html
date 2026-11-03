@@ -5335,13 +5335,13 @@ function wdTel(prep,plan){
    1. Per groep een vaste volgorde; elke week is de volgende aan de beurt, na de laatste begint de eerste weer.
       Het ritme loopt door over de jaarwisseling (geteld vanaf de eerste week van het basisjaar).
    2. 60+ draait 3 van de 4 rondes; in zijn vrije ronde schuift iedereen na hem een week naar voren.
-   3. Schaduw gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek, max 3 per roosterjaar. */
+   3. Schaduw (geen 60+) naar belasting: laagste totaal eerst, max 2/3/4 per roosterjaar afhankelijk van de groep, nooit in of direct naast je eigen waakweek. */
 var WD_TRAP={RA1:['SEBU','MEAS01','JEZA01','BOHA01','MOBE02','ROMO01','ERBR01','ROKR02'], // 60+ achteraan: de rest draait dan precies om de 7 weken
   RA2:['ASER01','JEJO05','ARZW02','MUGO07','NABE','ROMA','JOMA02'],
-  LN:['JONI','JOKO01','STGA02','BOMU01','BJEU01','LAGA01'],
+  LN:['JONI','JOKO01','STGA02','BOMU01','LAGA01','BJEU01'],
   LZ:['BASW01','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
   SCH:['JONI','RIFA01','SEBU','NABE','JOKO01','BASW01','ROMA','STGA02','JEZA01','JEJO05','BJEU01','ERMA01','BOHA01','ARZW02','LAGA01','CEMA03','MEAS01','MUGO07']};
-var WD_TRAP_START={SEBU:{j:2027,k:5},ROMA:{j:2027,k:5}}; // draaien pas mee vanaf week 6 (begin februari) 2027
+var WD_TRAP_START={SEBU:{j:2027,k:9},ROMA:{j:2028,k:0}}; // SEBU vanaf week 10 (begin maart) 2027, ROMA niet in 2027
 function wdTrapStart(i){var x=WD_TRAP_START[i];return x?wdTrapAbs(x.j)+x.k:0;}
 function wdTrapWeken(y){return Math.round(wdDagen(wdJaarStart(y),wdJaarStart(y+1))/7);}
 function wdTrapAbs(j){var n=0;for(var y=WD_BASISJAAR;y<j;y++)n+=wdTrapWeken(y);return n;}
@@ -5379,6 +5379,21 @@ function wdTrapInstap(){
     if(a>0)w[i]=a;if(b>0)s[i]=b;});
   return {w:w,s:s,kerst:c.kerst||{}};
 }
+
+/* schaduw-maximum per monteur: wie veel waakweken draait, doet minder schaduw; wie weinig draait, meer */
+var WD_SCHMAXC={};
+function wdSchVerw(prep,i,J){var N=wdTrapWeken(J),sl=wdTrapSlot(prep,i),l=wdTrapLeden(prep,sl),sw=0,a0=wdTrapAbs(J);
+  function fa(x){var m=WD_POOL.filter(function(p){return p.ini===x;})[0];return m?wdFactor(m):1;}
+  function act(x){return Math.max(0,Math.min(1,(a0+N-wdTrapStart(x))/N));}
+  l.forEach(function(x){sw+=fa(x)*act(x);});return sw?N/sw*fa(i):0;}
+function wdSchMax(prep,i,J){J=J||prep.jaar;
+  if(!WD_SCHMAXC[J]){var M={},b=WD_REGELS.maxSch,a0=wdTrapAbs(J),som=0,E={},N=wdTrapWeken(J);
+    WD_POOL.forEach(function(m){var x=m.ini;if(!wdMag(prep,x,'SCH'))return;var e=wdSchVerw(prep,x,J),act=Math.max(0,Math.min(1,(a0+N-wdTrapStart(x))/N));
+      E[x]=e;M[x]=act<=0?0:Math.min(e>=8.5?b-1:(e<=7.6?b+1:b),Math.ceil((b+1)*act));som+=M[x];});
+    // genoeg schaduw over? anders krijgen de minst belaste monteurs er één bij (max b+1)
+    while(som<N+2){var best=null;Object.keys(M).forEach(function(x){if(M[x]>0&&M[x]<b+1&&(best===null||E[x]<E[best]))best=x;});if(!best)break;M[best]++;som++;}
+    WD_SCHMAXC[J]=M;}
+  var r=WD_SCHMAXC[J][i];return r===undefined?WD_REGELS.maxSch:r;}
 var WD_TRAP_C0=null;
 /* het hele ritme vanaf het basisjaar t/m week L (absoluut), alle groepen + schaduw tegelijk */
 function wdTrapAlles(prep,L){
@@ -5393,28 +5408,74 @@ function wdTrapAlles(prep,L){
   var pool=WD_POOL.map(function(m){return m.ini;});
   var q=WD_TRAP.SCH.filter(function(i){return pool.indexOf(i)>=0&&wdMag(prep,i,'SCH');});
   WD_POOL.forEach(function(m){if(q.indexOf(m.ini)<0&&wdMag(prep,m.ini,'SCH'))q.push(m.ini);});
-  var waak={},last={},cnt={},sch=[];
+  var waak={},last={},cnt={},sch=[],schN={},schF={},lastReg=null;
+  var FA={};(function(){var y2=WD_BASISJAAR,ac=0;while(ac<=L+60){var a2=ac;wdMetJaar(y2,function(){Object.keys(WD_FEEST).forEach(function(k){FA[a2+(+k)]=1;});});ac+=wdTrapWeken(y2);y2++;}})();
   function waakWeek(t){var ky=KA[t];ws.forEach(function(sl){var i=M[sl].volgende(t,ky?function(x){return heeft(ky,x);}:null);R[sl][t]=i;if(i){(waak[i]=waak[i]||{})[t]=1;zet(ky,i);}});}
-  function schWeek(t){var gj=jr(t),pick=-1,nood=-1,ky=KA[t];
+  function schWeek(t){var gj=jr(t),ky=KA[t],c1=[],c2=[],fe=!!FA[t];
     for(var x=0;x<q.length;x++){var i=q[x],w=waak[i]||{};
       if(w[t-1]||w[t]||w[t+1])continue;
       if(t<wdTrapStart(i)||t<(inst.s[i]||0))continue;
       if(last[i]!==undefined&&t-last[i]<=(WD_REGELS.schTussen||6))continue;
-      if((cnt[i+'|'+gj]||0)>=WD_REGELS.maxSch)continue;
-      if(ky&&heeft(ky,i)){if(nood<0)nood=x;continue;}
-      pick=x;break;}
-    if(pick<0)pick=nood;
-    if(pick<0){sch[t]=null;return;}
-    var p=q.splice(pick,1)[0];q.push(p);sch[t]=p;last[p]=t;cnt[p+'|'+gj]=(cnt[p+'|'+gj]||0)+1;zet(ky,p);}
+      if((cnt[i+'|'+gj]||0)>=wdSchMax(prep,i,WD_BASISJAAR+gj))continue;
+      var wk=Object.keys(w).filter(function(z){return +z<=t;}),wf=wk.filter(function(z){return FA[z];}).length;
+      var tot=wk.length+(schN[i]||0),act=Math.max(0,t-wdTrapStart(i))+8;
+      var o={x:x,i:i,fe:wf+(schF[i]||0),rate:Math.round(tot/act*100),reg:wdTrapSlot(prep,i)===lastReg?1:0};
+      if(ky&&heeft(ky,i))c2.push(o);else c1.push(o);}
+    var lst=c1.length?c1:c2;if(!lst.length){sch[t]=null;return;}
+    lst.sort(function(a,b){return (fe?a.fe-b.fe:0)||a.rate-b.rate||a.reg-b.reg||a.x-b.x;});
+    var pk=lst[0],p=pk.i;q.splice(pk.x,1);q.push(p);sch[t]=p;last[p]=t;cnt[p+'|'+gj]=(cnt[p+'|'+gj]||0)+1;schN[p]=(schN[p]||0)+1;if(fe)schF[p]=(schF[p]||0)+1;lastReg=wdTrapSlot(prep,p);zet(ky,p);}
   waakWeek(0);
   for(var t=0;t<L;t++){waakWeek(t+1);schWeek(t);}
+  wdTrapHerstel(R,sch,ws,KA,inst,jr,L,prep);
   ws.forEach(function(sl){ev[sl]=M[sl].ev;});
   return {R:R,sch:sch,ev:ev};
 }
+
+/* kerst/jaarwisseling herstellen: wie twee keer (of twee jaar achter elkaar) kerst/jaarwisseling zou krijgen,
+   ruilt die week met collega's uit dezelfde dienst in weken vlakbij, of (schaduw) een collega neemt de week over.
+   Een ruil mag nergens een rusttijd breken. */
+function wdTrapHerstel(R,sch,ws,KA,inst,jr,L,prep){
+  var T=WD_REGELS.tussen,TS=WD_REGELS.schTussen||6,k0=inst.kerst||{};
+  function get(sl,t){return sl==='SCH'?sch[t]:R[sl][t];}
+  var all=ws.concat(['SCH']),P={};
+  for(var t0=0;t0<=L;t0++)all.forEach(function(sl){var i=get(sl,t0);if(i)(P[i]=P[i]||[]).push({t:t0,s:sl});});
+  function set(sl,t,v){var o=get(sl,t);if(o&&P[o])P[o]=P[o].filter(function(x){return !(x.t===t&&x.s===sl);});
+    if(sl==='SCH')sch[t]=v;else R[sl][t]=v;if(v)(P[v]=P[v]||[]).push({t:t,s:sl});}
+  function weken(i){return P[i]||[];}
+  function viol(i){var w=weken(i),n=0,st=wdTrapStart(i);
+    w.forEach(function(x){if(x.t<st)n++;if(x.s==='SCH'?x.t<(inst.s[i]||0):x.t<(inst.w[i]||0))n++;});
+    w=w.slice().sort(function(p,q){return p.t-q.t;});
+    for(var a=0;a<w.length;a++)for(var b=a+1;b<w.length&&w[b].t-w[a].t<=TS;b++){var d=w[b].t-w[a].t,sa=w[a].s==='SCH',sb=w[b].s==='SCH';
+      if(d===0)n++;else if(!sa&&!sb&&d<=T)n++;else if(sa&&sb&&d<=TS)n++;else if(sa!==sb&&d<2)n++;}return n;}
+  function fout(i,ky){var n=0,p=(ky===WD_BASISJAAR&&k0[i])?1:0;weken(i).forEach(function(q){var y=KA[q.t];if(y===ky)n++;else if(y===ky-1&&ky>WD_BASISJAAR)p++;});
+    return n>1||(n>=1&&p>=1);}
+  function stuk(){var x=[];Object.keys(KA).sort(function(a,b){return a-b;}).forEach(function(t){t=+t;if(t>L)return;all.forEach(function(sl){var i=get(sl,t);if(i&&fout(i,KA[t]))x.push({t:t,sl:sl,i:i});});});return x;}
+  function nKerst(){return stuk().length;}
+  function probeer(ppl,doe,terug){var B={};ppl.forEach(function(p){B[p]=viol(p);});var k1=nKerst();doe();
+    var goed=nKerst()<k1&&ppl.every(function(p){return viol(p)<=B[p];});if(!goed)terug();return goed;}
+  var max=30;
+  while(max-->0){var x=stuk();if(!x.length)break;var gelukt=false;
+    // 1. ruil met één collega uit dezelfde dienst
+    x.forEach(function(v){for(var d=1;d<=(v.sl==='SCH'?53:16)&&!gelukt;d++)[v.t-d,v.t+d].forEach(function(u){if(gelukt||u<0||u>L||KA[u]||(v.sl==='SCH'&&jr(u)!==jr(v.t)))return;
+        var y=get(v.sl,u);if(!y||y===v.i)return;
+        gelukt=probeer([v.i,y],function(){set(v.sl,u,v.i);set(v.sl,v.t,y);},function(){set(v.sl,u,y);set(v.sl,v.t,v.i);});});});
+    // 2. schaduw: een collega neemt de kerstweek over (binnen zijn schaduw-maximum)
+    if(!gelukt)x.forEach(function(v){if(gelukt||v.sl!=='SCH')return;
+      WD_POOL.map(function(m){return m.ini;}).forEach(function(z){if(gelukt||z===v.i||!wdMag(prep,z,'SCH'))return;var nz=weken(z).filter(function(q){return q.s==='SCH'&&jr(q.t)===jr(v.t);}).length;
+        if(nz>=wdSchMax(prep,z,WD_BASISJAAR+jr(v.t)))return;
+        gelukt=probeer([v.i,z],function(){set('SCH',v.t,z);},function(){set('SCH',v.t,v.i);});});});
+    // 3. waak: rondje van drie binnen dezelfde dienst
+    if(!gelukt)x.forEach(function(v){if(gelukt||v.sl==='SCH')return;
+      for(var a=-24;a<=24&&!gelukt;a++)for(var b=-24;b<=24&&!gelukt;b++){var u1=v.t+a,u2=v.t+b;if(!a||!b||a===b||u1<0||u2<0||u1>L||u2>L||KA[u1]||KA[u2])continue;
+        var y1=get(v.sl,u1),y2=get(v.sl,u2);if(!y1||!y2||y1===v.i||y2===v.i||y1===y2)continue;
+        gelukt=probeer([v.i,y1,y2],function(){set(v.sl,u1,v.i);set(v.sl,u2,y1);set(v.sl,v.t,y2);},function(){set(v.sl,u1,y1);set(v.sl,u2,y2);set(v.sl,v.t,v.i);});}});
+    if(!gelukt)break;}
+}
+var WD_TRAP_MEMO={o:null,L:0,A:null};
 function wdTrapPlan(prep){
   var j=prep.jaar,a0=wdTrapAbs(j);
   if(j===WD_BASISJAAR&&prep.carry)WD_TRAP_C0=prep.carry;
-  var A=wdTrapAlles(prep,a0+WD_N),plan=[],leeg=0;
+  var LL=Math.max(a0+WD_N,wdTrapAbs(WD_BASISJAAR+WD_JAREN));if(WD_TRAP_MEMO.o!==WD_JCACHE||WD_TRAP_MEMO.L<a0+WD_N)WD_TRAP_MEMO={o:WD_JCACHE,L:LL,A:wdTrapAlles(prep,LL)};var A=WD_TRAP_MEMO.A,plan=[],leeg=0;
   for(var k=0;k<WD_N;k++){var wk={};prep.sIds.forEach(function(sl){wk[sl]=A.R[sl][a0+k]||null;if(!wk[sl])leeg++;});wk.SCH=A.sch[a0+k]||null;if(!wk.SCH)leeg++;plan.push(wk);}
   return {plan:plan,leeg:leeg,trap:true};
 }
@@ -5453,7 +5514,7 @@ function wdExcelMaak(){
     ['1. Per groep een vaste volgorde. Elke week is de volgende monteur aan de beurt; na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.',
      '2. 60+ draait 3 van de 4 rondes mee. In zijn vrije ronde ("vrij") schuift iedereen na hem een week naar voren. Zo draait 60+ precies 75%.',
      '3. Tussen twee waakweken zitten altijd minimaal '+(WD_REGELS.tussen+1)+' weken.',
-     '4. De schaduwdienst gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek.',
+     '4. De schaduwdienst (geen 60+) gaat ook om de beurt, nooit in of direct naast je eigen waakweek en minimaal 6 weken na je vorige schaduwweek. Wie veel waakweken heeft doet maximaal 2 keer schaduw per jaar, wie weinig heeft maximaal 4 keer, de rest maximaal 3. Bij gelijke belasting komen feestdagweken en regio\'s om de beurt.',
      '5. Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende schuift door. Bij de start van 2027 sluit wie eind 2026 nog dienst had pas aan als er minimaal '+(WD_REGELS.tussen+1)+' weken tussen zitten.'].forEach(function(t){regel(t);});
     Object.keys(WD_TRAP_START||{}).forEach(function(i){var x=WD_TRAP_START[i];regel(i+' draait mee vanaf week '+(x.k+1)+' van '+x.j+'.');});rr++;}
   regel('Diensten per week',{bold:true,size:12,kl:'1F3864'});
@@ -5539,14 +5600,14 @@ function wdCheck(prep,plan){
       var a=lw[i]===undefined?-99:lw[i],b=ls[i]===undefined?-99:ls[i];
       if(!wdGapOk(k,a,b,s==='SCH')){var vorig=Math.max(a,b);add('vast',i,'week '+(k+1)+': '+i+' te kort na dienst in '+wkT(vorig)+(WD_REGELS.schTelt?' (schaduw telt mee)':''));}
       if(s!=='SCH'&&!wdMag(prep,i,s))add('regel',i,'week '+(k+1)+': '+i+' mag '+nm+' niet draaien (reistijd of vleugel)');
-      if(s==='SCH'){nsch[i]=(nsch[i]||0)+1;if(nsch[i]===WD_REGELS.maxSch+1)add('regel',i,'week '+(k+1)+': '+i+' heeft dan meer dan '+WD_REGELS.maxSch+' schaduwdiensten dit jaar');}
+      if(s==='SCH'){nsch[i]=(nsch[i]||0)+1;if(nsch[i]===(WD_REGELS.trap&&prep.jaar>=WD_BASISJAAR?wdSchMax(prep,i):WD_REGELS.maxSch)+1)add('regel',i,'week '+(k+1)+': '+i+' heeft dan meer dan '+(WD_REGELS.trap&&prep.jaar>=WD_BASISJAAR?wdSchMax(prep,i):WD_REGELS.maxSch)+' schaduwdiensten dit jaar');}
       if(s==='SCH'&&!wdMag(prep,i,'SCH'))add('regel',i,'week '+(k+1)+': '+i+' is vrijgesteld van schaduw');
       if(wdIsKerstNj(k)){kn[i]=(kn[i]||0)+1;if(kn[i]>1)add('regel',i,i+(cy&&cy.kerst[i]?' had vorig jaar al kerst/jaarwisseling en nu weer (week '+(k+1)+')':' heeft twee keer kerst/jaarwisseling'));}
     });
     inWk.forEach(function(i){inWk.forEach(function(j){if(i<j&&wdPartner(i).indexOf(j)>=0)add('vast',i,'week '+(k+1)+': '+i+' en '+j+' samen');});});
     Object.keys(wk).forEach(function(s){var i=wk[s];if(!i)return;if(s==='SCH')ls[i]=k;else lw[i]=k;});
   });
-  WD_POOL.forEach(function(m){if(!nsch[m.ini]&&wdMag(prep,m.ini,'SCH'))add('regel',m.ini,m.ini+' heeft dit jaar geen schaduwdienst (minimaal 1)');});
+  WD_POOL.forEach(function(m){if(!nsch[m.ini]&&wdMag(prep,m.ini,'SCH')&&!(WD_REGELS.trap&&prep.jaar>=WD_BASISJAAR&&wdTrapStart(m.ini)>=wdTrapAbs(prep.jaar)+WD_N-8))add('regel',m.ini,m.ini+' heeft dit jaar geen schaduwdienst (minimaal 1)');});
   return fout;
 }
 
@@ -5598,7 +5659,7 @@ function wdPlanJaar(j){
     return res;});}finally{wdPoolSync(WD_JAAR);}
   WD_JCACHE[j]=r;return r;
 }
-function wdLaterWeg(j){Object.keys(WD_JCACHE).forEach(function(y){if(+y>j)delete WD_JCACHE[y];});}
+function wdLaterWeg(j){WD_TRAP_MEMO={o:null,L:0,A:null};Object.keys(WD_JCACHE).forEach(function(y){if(+y>j)delete WD_JCACHE[y];});}
 function wdBouw(){
   WD_JCACHE={};
   var r=wdPlanJaar(WD_JAAR);
@@ -6752,11 +6813,11 @@ function wdViewRegels(){
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
     '<li>Vast ritme: per groep een vaste volgorde; elke week is de volgende aan de beurt en na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.</li>'+
     '<li>60+ draait 3 van de 4 rondes mee; in zijn vrije ronde schuift iedereen na hem een week naar voren.</li>'+
-    '<li>SEBU en ROMA draaien mee vanaf begin februari 2027 (week 6).</li>'+
-    '<li>Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende in de rij schuift door. Zo houdt het ritme stand.</li>'+
+    '<li>SEBU draait mee vanaf begin maart 2027 (week 10). ROMA draait in 2027 niet mee en start in week 1 van 2028.</li>'+
+    '<li>Kerst/jaarwisseling (ook schaduw, want die kan dan worden opgeroepen): wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende in de rij schuift door. Lukt dat niet, dan ruilt de tool die week met een collega uit dezelfde dienst vlak ervoor of erna, zonder rusttijden te breken.</li>'+
     '<li>Overgang 2026 → 2027: wie eind 2026 nog dienst had, sluit pas aan als er minimaal 5 weken tussen zitten.</li>'+
     '<li>Schaduwdienst gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek.</li>'+
-    '<li>Elke monteur draait minimaal 1 en maximaal '+WD_REGELS.maxSch+' schaduwdiensten per jaar.</li>'+
+    '<li>Schaduw naar belasting: wie veel waakweken heeft (krappe groep) doet maximaal '+(WD_REGELS.maxSch-1)+' schaduwdiensten per jaar, wie weinig heeft maximaal '+(WD_REGELS.maxSch+1)+', de rest maximaal '+WD_REGELS.maxSch+'. Elke week krijgt de monteur met de laagste totale belasting (waak + schaduw) de schaduw; feestdagweken gaan eerst naar wie de minste feestdagen had, en de regio wisselt zo veel mogelijk af.</li>'+
     '<li>60+ en '+WD_GEEN_SCH.join(', ')+' draaien geen schaduwdienst. Een schaduwweek valt nooit in of direct naast een eigen waakweek, en tussen twee schaduwweken van dezelfde persoon zitten minstens '+WD_REGELS.schTussen+' weken.</li>'+
     '<li>Drie vaste combinaties nooit in dezelfde week (waak of schaduw): '+WD_VERBODEN.map(function(v){return v[0]+' & '+v[1];}).join(', ')+'.</li>'+
     '<li>Per week één waakdienst per gebied en één landelijke schaduwdienst.</li>'+
