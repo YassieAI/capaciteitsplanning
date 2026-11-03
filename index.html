@@ -5256,7 +5256,9 @@ function wdGapOk(k,lw,ls,isSch){
 /* uitzonderingen: deze monteurs mogen naast hun eigen vleugel ook de andere Randstad-vleugel draaien */
 var WD_EXTRA_VLEUGEL={JOMA02:['zuid']};
 function wdVleugels(ini){var v=[wdVleugel(ini)];(WD_EXTRA_VLEUGEL[ini]||[]).forEach(function(x){if(v.indexOf(x)<0)v.push(x);});return v;}
+var WD_VLEUGEL_VAST={JEJO05:'zuid'}; // afgesproken: JEJO05 (Maarssen) draait mee in Randstad 2 (zuid) om de zuidvleugel te ontlasten
 function wdVleugel(ini){
+  if(WD_VLEUGEL_VAST[ini])return WD_VLEUGEL_VAST[ini];
   if(WD_COLLEGA.wing.noord.indexOf(ini)>=0)return 'noord';
   if(WD_COLLEGA.wing.zuid.indexOf(ini)>=0)return 'zuid';
   var m=wdAlle().filter(function(x){return x.ini===ini;})[0];if(!m)return 'zuid';
@@ -6573,7 +6575,7 @@ function wdViewRegels(){
     '<li>Feestdagen eerlijk verdelen: wie al een feestdagweek heeft, komt pas weer aan de beurt als de rest er ook een heeft gehad.</li>'+
     '<li>Kerst, oud & nieuw en nieuwjaar: maximaal één per persoon per rooster, en wie ze vorig jaar had krijgt ze dit jaar niet. Vanaf '+(WD_BASISJAAR+1)+' rekent de tool dat zelf door. Het saldo over de jaren heen telt mee: wie meer draaide dan gemiddeld, krijgt het volgende jaar iets minder.</li>'+
     '<li>Schaduwdienst telt mee voor het totaal aantal diensten per jaar.</li>'+
-    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). Uitzondering: JOMA02 mag ook Randstad 2 (zuid) draaien.</li></ol></div>'+
+    '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). Uitzondering: JOMA02 mag ook Randstad 2 (zuid) draaien. JEJO05 draait vast mee in Randstad 2 (zuid).</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Ruilen: wat mag <span class="badge b-warn">voorstel</span></div><ol class="wd-ol">'+
     '<li>Ruilen gaat één-op-één: jij neemt zijn week, hij neemt de jouwe. Een dienst weggeven zonder terugdienst kan niet.</li>'+
     '<li>Je ruilt alleen met iemand die het gebied ook mag draaien (eigen gebied of binnen de reistijdgrens).</li>'+
