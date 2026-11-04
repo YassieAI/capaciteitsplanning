@@ -5348,7 +5348,7 @@ function wdTel(prep,plan){
       Het ritme loopt door over de jaarwisseling (geteld vanaf de eerste week van het basisjaar).
    2. 60+ draait 3 van de 4 rondes; in zijn vrije ronde schuift iedereen na hem een week naar voren.
    3. Schaduw (geen 60+) naar belasting: laagste totaal eerst, max 2/3/4 per roosterjaar afhankelijk van de groep, nooit in of direct naast je eigen waakweek. */
-var WD_TRAP={RA1:['SEBU','MEAS01','JEZA01','BOHA01','MOBE02','ROMO01','ERBR01','ROKR02'], // 60+ achteraan: de rest draait dan precies om de 7 weken
+var WD_TRAP={RA1:['SEBU','MEAS01','JEZA01','MOBE02','BOHA01','ROMO01','ERBR01','ROKR02'], // 60+ achteraan: de rest draait dan precies om de 7 weken
   RA2:['ASER01','JEJO05','ARZW02','MUGO07','NABE','JOMA02'],
   LN:['JONI','JOKO01','STGA02','BJEU01','LAGA01','BOMU01'],
   LZ:['BASE','EMMU01','NGHU01','ERMA01','JADR01','CEMA03','RIFA01','WIES01'],
@@ -5375,7 +5375,7 @@ function wdTrapMaker(leden,extra,fw){fw=fw||{};
   function volgende(t,blok){var bewaar={ptr:ptr,r:r,n:ev.length};var x=probeer(t,blok);if(x===null&&blok){ptr=bewaar.ptr;r=bewaar.r;ev.length=bewaar.n;x=probeer(t,null);}return x;}
   function probeer(t,blok){if(!leden.length)return null;var tries=0;
     while(tries<leden.length*2){var i=leden[ptr],rr=r;ptr++;if(ptr>=leden.length){ptr=0;r++;}tries++;
-      if(off[i]!==undefined&&(rr+off[i])%4===0){ev.push({i:i,t:t,soort:'vrij'});continue;}
+      if(off[i]!==undefined&&(leden.indexOf('SEBU')>=0?(rr>=2&&(rr-2+off[i])%4===0):(rr+off[i])%4===0)){ev.push({i:i,t:t,soort:'vrij'});continue;}   /* Randstad noord (met SEBU, die pas in week 10 start): geen vrije ronde in de allereerste ronde, anders draaien er maar 5 mee */
       if(t<st[i]||(last[i]!==undefined&&t-last[i]<=T)||(fw[i]||[]).some(function(f){return f!==t&&Math.abs(f-t)<=T;})){ev.push({i:i,t:t,soort:'wacht'});continue;}
       if(blok&&blok(i)){ev.push({i:i,t:t,soort:'kerst'});continue;}
       last[i]=t;ev.push({i:i,t:t,soort:'dienst'});return i;}
@@ -5539,9 +5539,9 @@ function wdExcelMaak(){
   if(WD_REGELS.trap){regel('Het ritme in 4 regels',{bold:true,size:12,kl:'1F3864'});
     ['1. Per groep een vaste volgorde. Elke week is de volgende monteur aan de beurt; na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.',
      '2. 60+ draait 3 van de 4 rondes mee. In zijn vrije ronde ("vrij") schuift iedereen na hem een week naar voren. Zo draait 60+ precies 75%.',
-     '3. Tussen twee waakweken zitten altijd minimaal '+(WD_REGELS.tussen+1)+' weken.',
+     '3. Tussen twee waakweken zitten altijd minimaal '+WD_REGELS.tussen+' weken.',
      '4. De schaduwdienst (geen 60+) gaat ook om de beurt, nooit in of direct naast je eigen waakweek en minimaal 6 weken na je vorige schaduwweek. Wie veel waakweken heeft doet maximaal 2 keer schaduw per jaar, wie weinig heeft maximaal 4 keer, de rest maximaal 3. Bij gelijke belasting komen feestdagweken en regio\'s om de beurt.',
-     '5. Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende schuift door. Bij de start van 2027 sluit wie eind 2026 nog dienst had pas aan als er minimaal '+(WD_REGELS.tussen+1)+' weken tussen zitten.'].forEach(function(t){regel(t);});
+     '5. Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende schuift door. Bij de start van 2027 sluit wie eind 2026 nog dienst had pas aan als er minimaal '+WD_REGELS.tussen+' weken tussen zitten.'].forEach(function(t){regel(t);});
     Object.keys(WD_TRAP_START||{}).forEach(function(i){var x=WD_TRAP_START[i];regel(i+' draait mee vanaf week '+(x.k+1)+' van '+x.j+'.');});rr++;}
   regel('Diensten per week',{bold:true,size:12,kl:'1F3864'});
   regel('Een waakweek loopt van vrijdag t/m donderdag; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
@@ -6856,7 +6856,7 @@ function wdViewRegels(){
     '<li>60+ draait 3 van de 4 rondes mee; in zijn vrije ronde schuift iedereen na hem een week naar voren.</li>'+
     '<li>SEBU draait mee vanaf begin maart 2027 (week 10). ROMA draait (voorlopig) niet mee in de waakdienst.</li>'+
     '<li>Kerst/jaarwisseling (ook schaduw, want die kan dan worden opgeroepen): wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende in de rij schuift door. Lukt dat niet, dan ruilt de tool die week met een collega uit dezelfde dienst vlak ervoor of erna, zonder rusttijden te breken.</li>'+
-    '<li>Overgang 2026 → 2027: wie eind 2026 nog dienst had, sluit pas aan als er minimaal 5 weken tussen zitten.</li>'+
+    '<li>Overgang 2026 → 2027: wie eind 2026 nog dienst had, sluit pas aan als er minimaal 4 weken tussen zitten.</li>'+
     '<li>Schaduwdienst gaat ook om de beurt (geen 60+), nooit in of direct naast je eigen waakweek.</li>'+
     '<li>Schaduw naar belasting: wie veel waakweken heeft (krappe groep) doet maximaal '+(WD_REGELS.maxSch-1)+' schaduwdiensten per jaar, wie weinig heeft maximaal '+(WD_REGELS.maxSch+1)+', de rest maximaal '+WD_REGELS.maxSch+'. Elke week krijgt de monteur met de laagste totale belasting (waak + schaduw) de schaduw; feestdagweken gaan eerst naar wie de minste feestdagen had, en de regio wisselt zo veel mogelijk af.</li>'+
     '<li>60+ en '+WD_GEEN_SCH.join(', ')+' draaien geen schaduwdienst. Een schaduwweek valt nooit in of direct naast een eigen waakweek, en tussen twee schaduwweken van dezelfde persoon zitten minstens '+WD_REGELS.schTussen+' weken.</li>'+
