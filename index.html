@@ -5555,7 +5555,7 @@ function wdExcelMaak(){
   regel('Een waakweek loopt van vrijdag t/m donderdag; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
   regel('Legenda',{bold:true,size:12,kl:'1F3864'});
   sl.concat(['SCH','ZA']).forEach(function(x){var c=u.getCell(rr,1);c.value=x==='SCH'?'S':x==='ZA'?'Za':'1';vul(c,KL[x]);fnt(c,{bold:true,kl:'FFFFFF'});c.alignment={horizontal:'center'};regel(NAAM[x]);});
-  [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FF9933','S = schaduwdienst (staat bij de monteur in zijn regio en in het schaduwblok)'],['BFBFBF','grijs = week met een feestdag (waak 1 of schaduw S, zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['FFF2CC','h = helpt die week in een andere regio (staat daar als 1)'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
+  [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FF9933','S = schaduwdienst (staat bij de monteur in zijn regio en in het schaduwblok)'],['BFBFBF','grijs = week met een feestdag (waak 1 of schaduw S, zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['FFFF00','H = helpt één keer mee in deze regio (hoort bij een andere regio, staat daar niet als dienst)'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
   var meld=[];jaren.forEach(function(j){wdMetJaar(j,function(){wdCheck(R[j].prep,R[j].plan).forEach(function(f){meld.push(j+': '+f.m);});});});
   regel('Meldingen van de tool ('+meld.length+')',{bold:true,size:12,kl:'1F3864'});
   if(!meld.length)regel('Geen.');meld.forEach(function(m){regel(m,{kl:'C00000'});});
@@ -5576,12 +5576,11 @@ function wdExcelMaak(){
     leden.forEach(function(i){
       var c1=ws.getCell(rr,1),hulp=sid&&sid!=='SCH'&&wdTrapSlot(prep,i)!==sid;c1.value=hulp?i+' (hulp)':i;fnt(c1,{bold:true,kl:hulp?'7F7F7F':'000000'});c1.border=rand;var c2=ws.getCell(rr,2);c2.value=f60[i]?'ja':'';fnt(c2);c2.border=rand;
       var ks=[];
-      for(var t=0;t<NT;t++){var c=ws.getCell(rr,W0+t);c.border=rand;if(veld(W[t])===i){ks.push(t);c.value=veld===sch?'S':1;c.alignment={horizontal:'center'};fnt(c,{size:9,bold:veld===sch});vul(c,W[t].feest?'BFBFBF':(veld===sch?'FF9933':'FFFF00'));if(W[t].feest)c.note=W[t].feest;}
+      for(var t=0;t<NT;t++){var c=ws.getCell(rr,W0+t);c.border=rand;if(veld(W[t])===i){ks.push(t);c.value=veld===sch?'S':(hulp?'H':1);c.alignment={horizontal:'center'};fnt(c,{size:9,bold:veld===sch});vul(c,W[t].feest?'BFBFBF':(veld===sch?'FF9933':'FFFF00'));if(W[t].feest)c.note=W[t].feest;}
         else if(hulp){}
-        else if(veld!==sch&&(function(){var o=null;['RA1','RA2','LN','LZ'].forEach(function(z){if(z!==sid&&W[t].w[z]===i)o=z;});if(!o)return false;c.value='h';c.alignment={horizontal:'center'};fnt(c,{size:8,bold:true,kl:'7F7F7F'});vul(c,'FFF2CC');c.note='Helpt deze week in '+NAAM[o];return true;})()){}
         else if(veld!==sch&&W[t].w.SCH===i){c.value='S';c.alignment={horizontal:'center'};fnt(c,{size:9,bold:true});vul(c,W[t].feest?'BFBFBF':'FF9933');c.note=(W[t].feest?W[t].feest+' · ':'')+'Schaduwdienst';}}
       (vrij[i]||[]).forEach(function(x){var t=x.t;if(t>=0&&t<NT&&!ws.getCell(rr,W0+t).value){var c=ws.getCell(rr,W0+t);c.value=x.s;fnt(c,{size:7,italic:true,kl:'7F7F7F'});vul(c,x.s==='kerst'?'FCE4D6':'EDEDED');c.alignment={horizontal:'center'};if(x.s==='kerst')c.note='Had al kerst/jaarwisseling: slaat deze beurt over';}});
-      jaren.forEach(function(j,jx){var y=tel(i,j),cw=ws.getCell(rr,E+3*jx),cs=ws.getCell(rr,E+3*jx+1),ct=ws.getCell(rr,E+3*jx+2);
+      jaren.forEach(function(j,jx){var y=hulp?{w:0,s:0}:tel(i,j),cw=ws.getCell(rr,E+3*jx),cs=ws.getCell(rr,E+3*jx+1),ct=ws.getCell(rr,E+3*jx+2);
         cw.value=y.w;cs.value=y.s;ct.value={formula:cw.address+'+'+cs.address,result:y.w+y.s};
         [cw,cs,ct].forEach(function(cx){fnt(cx,{size:10,bold:true});vul(cx,'F2F2F2');});});
       ws.getCell(rr,ET).value=ks.slice(1).map(function(t,q){return t-ks[q];}).join(', ');fnt(ws.getCell(rr,ET),{size:9});
