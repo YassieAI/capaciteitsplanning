@@ -1284,7 +1284,9 @@ function celWerk(sts){var i,z=null;for(i=0;i<sts.length;i++){if(zdGroep(sts[i])&
 function celBg(st,cs,werk){var k=afwSoort(st);if(!k)return cs[0];var u=afwUren(st);if(u<=0||u>=8)return cs[0];var p=Math.max(15,Math.min(85,Math.round(u/8*100)));var a=AFW_STERK[k]||cs[0],w=dienstStyle(werk||'dag')[0];return 'linear-gradient(135deg,'+a+' '+p+'%,'+w+' '+p+'%)';}
 /* middag compensatie: de dag voor een Nachtklus is de middag (rechterhelft) compensatie */
 var MC_KLEUR='#a9b6cf'; // lichte tint van de Nachtklus-kleur (#24324a), zodat de tekst leesbaar blijft
-function mcMidag(st,volgend){return volgend==='nacht'&&!!st&&st!=='nacht'&&weight(st)>0;}
+/* ook bij project, opleiding, garage, Zara/Techno enz. de dag ervoor: dan is de middag compensatie (automatisch).
+   Alleen niet als hij die dag toch al vrij, verlof, ziek, niet beschikbaar of compensatie heeft (dan valt er niets te compenseren). */
+function mcMidag(st,volgend){if(volgend!=='nacht'||!st||st==='nacht'||st==='vrij')return false;var k=afwSoort(st);if(k==='verlof'||k==='ziek'||k==='nb'||k==='comp')return weight(st)>0;return true;}
 function mcBg(base,mc){return mc?'linear-gradient(135deg,transparent 50%,'+MC_KLEUR+' 50%),'+base:base;}
 function dienstShow(st,d){var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA ':zg==='techno'?'Techno ':'FF ')+zdUren(st)+'u';return (st==='dag'||st==='dagvroeg'||st==='waak'||st==='sw'||st==='cursus'||st==='nacht')?st:'';}
 var DIENST_LABEL={dagvroeg:'dagvroeg',dag:'dag',waak:'waak',sw:'schaduw waak (sw): gewoon 8:00–16:30, bij inzet 10:30–19:00',cursus:'opleiding (hele dag)',nacht:'Nachtklus (comp. hele dag + middag ervoor)',vrij:'vrij'};
@@ -5415,6 +5417,8 @@ function wdTrapAlles(prep,L){
   var FIX={},FW={},pl0=WD_POOL.map(function(m){return m.ini;});
   (typeof wdVerpl!=='undefined'?wdVerpl:[]).forEach(function(x){if(x.t!=='w'||x.status!=='goed'||x.key!==wdKey||!x.ini||pl0.indexOf(x.ini)<0)return;var jj=x.jaar||WD_BASISJAAR;if(jj<WD_BASISJAAR)return;
     var t=wdTrapAbs(jj)+x.k;(FIX[x.slot]=FIX[x.slot]||{})[t]=x.ini;});
+  // vaste correcties rond de jaarwisseling (zelfde werking als een goedgekeurde overname): wie kerst 2026 had, niet weer jaarwisseling 2027
+  WD_VASTE_RUIL.forEach(function(x){if(pl0.indexOf(x.ini)<0)return;var t=wdTrapAbs(x.jaar)+x.k;FIX[x.slot]=FIX[x.slot]||{};if(!FIX[x.slot][t])FIX[x.slot][t]=x.ini;});
   Object.keys(FIX).forEach(function(sl){Object.keys(FIX[sl]).forEach(function(t){if(sl!=='SCH')(FW[FIX[sl][t]]=FW[FIX[sl][t]]||[]).push(+t);});});
   ws.forEach(function(sl){M[sl]=wdTrapMaker(wdTrapLeden(prep,sl),inst.w,FW);R[sl]=[];});
   // kerstweken (absoluut) → roosterjaar
@@ -5680,9 +5684,31 @@ function wdCarryUit(r){
     if(r.knj[k]&&k>=r.N-5)c.kerst[i]=1;});});
   return c;
 }
+/* echte diensten eind 2026 (bron: FF Q4 2026, Fieldforce-rooster). Getal = week vóór de start van roosterjaar 2027
+   (vr 1 jan 2027): -1 = vr 25 t/m do 31 dec, -2 = 18–24 dec, -3 = 11–17 dec, -4 = 4–10 dec, -5 = 27 nov, -6 = 20 nov, -7 = 13 nov.
+   Het 2027-rooster sluit hierop aan: niemand komt binnen de rustregel na zijn laatste echte dienst. */
+var WD_VASTE_RUIL=[ // Landelijk noord rond de jaarwisseling 2027/28: STGA02 had kerst 2026, dus niet weer de jaarwisseling
+  {jaar:2027,k:47,slot:'LN',ini:'BJEU01'},{jaar:2027,k:48,slot:'LN',ini:'STGA02'},{jaar:2027,k:52,slot:'LN',ini:'BJEU01'}];
+var WD_ECHT_EIND={jaar:2026,bron:'FF Q4 2026',
+  w:{STGA02:-1,BOHA01:-1,ROKR02:-1,NGHU01:-1,MUGO07:-1,ERBR01:-2,LAGA01:-2,JADR01:-2,ARZW02:-3,BOMU01:-3,MOBE02:-3,ERMA01:-3,
+     BJEU01:-4,MEAS01:-4,BASE:-4,SEBU:-4,JONI:-5,ROMO01:-5,EMMU01:-5,ASER01:-5,JOMA02:-6,CEMA03:-6,RIFA01:-7,WIES01:-7},
+  s:{CEMA03:-1,ROMO01:-2,ERBR01:-3,JEJO05:-4,NGHU01:-5,EMMU01:-7}};
+function wdEchtPlan(res,p){var E=WD_ECHT_EIND;if(!E||res.jaar!==E.jaar)return;var N=res.N;
+  for(var o=-7;o<=-1;o++){var k=N+o;if(!res.plan[k])continue;var wk={};
+    Object.keys(E.w).forEach(function(i){if(E.w[i]!==o||!p.tijd[i])return;var sl=wdTrapSlot(p,i);if(sl&&!wk[sl])wk[sl]=i;});
+    Object.keys(E.s).forEach(function(i){if(E.s[i]===o&&p.tijd[i]&&!wk.SCH)wk.SCH=i;});
+    Object.keys(res.plan[k]).forEach(function(sl){res.plan[k][sl]=wk[sl]||null;});}}
+function wdEchtCarry(c,pr){var E=WD_ECHT_EIND;if(!E||!c||c.jaar!==E.jaar)return c;
+  Object.keys(c.lw).forEach(function(i){c.lw[i]=-99;c.ls[i]=-99;});c.laatst={};c.kerst={};
+  // saldo uit de demo-indeling telt niet: 2027 begint eerlijk op nul
+  Object.keys(c.dev).forEach(function(i){c.dev[i]=0;});Object.keys(c.fdev).forEach(function(i){c.fdev[i]=0;});
+  Object.keys(E.w).forEach(function(i){if(c.lw[i]===undefined)return;c.lw[i]=E.w[i];c.laatst[i]={k:E.w[i],s:wdTrapSlot(pr.prep,i)};});
+  Object.keys(E.s).forEach(function(i){if(c.ls[i]===undefined)return;c.ls[i]=E.s[i];if(!c.laatst[i]||E.s[i]>c.laatst[i].k)c.laatst[i]={k:E.s[i],s:'SCH'};});
+  [E.w,E.s].forEach(function(X){Object.keys(X).forEach(function(i){if(pr.knj&&pr.knj[pr.N+X[i]])c.kerst[i]=1;});});
+  return c;}
 function wdPlanJaar(j){
   if(WD_JCACHE[j])return WD_JCACHE[j];
-  var carry=null;if(j>WD_EERSTE){var pr=wdPlanJaar(j-1);carry=wdMetJaar(pr.jaar,function(){wdPoolSync(pr.jaar);try{return wdCarryUit(pr);}finally{wdPoolSync(WD_JAAR);}});}
+  var carry=null;if(j>WD_EERSTE){var pr=wdPlanJaar(j-1);carry=wdMetJaar(pr.jaar,function(){wdPoolSync(pr.jaar);try{return wdEchtCarry(wdCarryUit(pr),pr);}finally{wdPoolSync(WD_JAAR);}});}
   wdPoolSync(j);
   var r;try{r=wdMetJaar(j,function(){
     var p=wdPrep(wdKey,GEO.cells);p.carry=carry;p.vast=wdVastVoor(j);p.jaar=j;
@@ -5693,6 +5719,7 @@ function wdPlanJaar(j){
     var zr=wdZaMaak(j>WD_BASISJAAR?wdPlanJaar(j-1).zc:null);res.za=zr.za;res.zc=zr.c;
     wdRuilen.filter(function(x){return x.key===wdKey&&(x.jaar||WD_BASISJAAR)===j&&x.status==='goed';}).forEach(function(x){try{wdDoeRuil(res,x);}catch(e){}});
     wdVerpl.filter(function(x){return x.t==='w'&&x.key===wdKey&&(x.jaar||WD_BASISJAAR)===j&&x.status==='goed';}).forEach(function(x){if(res.plan[x.k])res.plan[x.k][x.slot]=x.ini;});
+    if(j===WD_EERSTE)wdEchtPlan(res,p); // laatste weken 2026 = echte diensten
     // codes die niet (meer) in de pool zitten (bv. Zara-monteurs uit een oud voorstel of vast rooster) → dienst leeg
     res.plan.forEach(function(wk){Object.keys(wk).forEach(function(sl){if(wk[sl]&&!p.tijd[wk[sl]]){wk[sl]=null;res.leeg++;}});});
     return res;});}finally{wdPoolSync(WD_JAAR);}
