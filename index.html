@@ -5521,7 +5521,7 @@ function wdExcelMaak(){
   jaren.forEach(function(j){var r=wdPlanJaar(j);R[j]=r;wdMetJaar(j,function(){for(var k=0;k<WD_N;k++)W.push({j:j,k:k,van:wdWeekStart(k),tot:wdWeekEnd(k),feest:WD_FEEST[k]?[].concat(WD_FEEST[k]).join(', '):'',r:r,w:r.plan[k],za:r.za?r.za[k]:null});});});
   var prep=R[J1].prep,NT=W.length,sl=prep.sIds;
   var NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',SCH:'Schaduw (landelijk)',ZA:'Zara'};
-  var KL={RA1:'2E8B57',RA2:WD_KLEUR_RA2.slice(1),LN:'3B7DD8',LZ:'C2462F',SCH:'6B6A63',ZA:'8E5BD1'};
+  var KL={RA1:'2E8B57',RA2:WD_KLEUR_RA2.slice(1),LN:'3B7DD8',LZ:'C2462F',SCH:'E07B00',ZA:'8E5BD1'};
   var f60={};WD_POOL.forEach(function(m){if(wdFactor(m)<1)f60[m.ini]=1;});
   var wb=new ExcelJS.Workbook();wb.creator='Capaciteitsplanning Field Force';
   var F='Arial',dun={style:'thin',color:{argb:'FFD0D0D0'}},rand={top:dun,left:dun,bottom:dun,right:dun};
@@ -5547,7 +5547,7 @@ function wdExcelMaak(){
   regel('Een waakweek loopt van vrijdag t/m donderdag; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
   regel('Legenda',{bold:true,size:12,kl:'1F3864'});
   sl.concat(['SCH','ZA']).forEach(function(x){var c=u.getCell(rr,1);c.value=x==='SCH'?'S':x==='ZA'?'Za':'1';vul(c,KL[x]);fnt(c,{bold:true,kl:'FFFFFF'});c.alignment={horizontal:'center'};regel(NAAM[x]);});
-  [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FFC000','oranje = week met een feestdag (zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
+  [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FF9933','S = schaduwdienst (staat bij de monteur in zijn regio en in het schaduwblok)'],['BFBFBF','grijs = week met een feestdag (waak 1 of schaduw S, zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
   var meld=[];jaren.forEach(function(j){wdMetJaar(j,function(){wdCheck(R[j].prep,R[j].plan).forEach(function(f){meld.push(j+': '+f.m);});});});
   regel('Meldingen van de tool ('+meld.length+')',{bold:true,size:12,kl:'1F3864'});
   if(!meld.length)regel('Geen.');meld.forEach(function(m){regel(m,{kl:'C00000'});});
@@ -5568,7 +5568,8 @@ function wdExcelMaak(){
     leden.forEach(function(i){
       var c1=ws.getCell(rr,1);c1.value=i;fnt(c1,{bold:true});c1.border=rand;var c2=ws.getCell(rr,2);c2.value=f60[i]?'ja':'';fnt(c2);c2.border=rand;
       var ks=[];
-      for(var t=0;t<NT;t++){var c=ws.getCell(rr,W0+t);c.border=rand;if(veld(W[t])===i){ks.push(t);c.value=1;c.alignment={horizontal:'center'};fnt(c,{size:9});vul(c,W[t].feest?'FFC000':(veld===sch?'BDD7EE':'FFFF00'));if(W[t].feest)c.note=W[t].feest;}}
+      for(var t=0;t<NT;t++){var c=ws.getCell(rr,W0+t);c.border=rand;if(veld(W[t])===i){ks.push(t);c.value=veld===sch?'S':1;c.alignment={horizontal:'center'};fnt(c,{size:9,bold:veld===sch});vul(c,W[t].feest?'BFBFBF':(veld===sch?'FF9933':'FFFF00'));if(W[t].feest)c.note=W[t].feest;}
+        else if(veld!==sch&&W[t].w.SCH===i){c.value='S';c.alignment={horizontal:'center'};fnt(c,{size:9,bold:true});vul(c,W[t].feest?'BFBFBF':'FF9933');c.note=(W[t].feest?W[t].feest+' · ':'')+'Schaduwdienst';}}
       (vrij[i]||[]).forEach(function(x){var t=x.t;if(t>=0&&t<NT&&!ws.getCell(rr,W0+t).value){var c=ws.getCell(rr,W0+t);c.value=x.s;fnt(c,{size:7,italic:true,kl:'7F7F7F'});vul(c,x.s==='kerst'?'FCE4D6':'EDEDED');c.alignment={horizontal:'center'};if(x.s==='kerst')c.note='Had al kerst/jaarwisseling: slaat deze beurt over';}});
       jaren.forEach(function(j,jx){var y=tel(i,j),cw=ws.getCell(rr,E+3*jx),cs=ws.getCell(rr,E+3*jx+1),ct=ws.getCell(rr,E+3*jx+2);
         cw.value=y.w;cs.value=y.s;ct.value={formula:cw.address+'+'+cs.address,result:y.w+y.s};
@@ -5601,7 +5602,7 @@ function wdExcelMaak(){
     [7,13,13,30].concat(sl.map(function(){return 16;})).concat([14,14]).forEach(function(w,i){js.getColumn(i+1).width=w;});
     var r=4;W.filter(function(x){return x.j===j;}).forEach(function(x){
       var v=[x.k+1,dd(x.van),dd(x.tot),x.feest].concat(sl.map(function(s){return x.w[s]||'OPEN';})).concat([x.w.SCH||'OPEN',x.za||'']);
-      v.forEach(function(val,i){var cc=js.getCell(r,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i>=4,kl:i>=4?(val==='OPEN'?'C00000':(KL[sl.concat(['SCH','ZA'])[i-4]]||'000000')):'000000'});if(x.feest)vul(cc,'FFF2CC');if(val==='OPEN')vul(cc,'F8CBAD');cc.alignment={horizontal:i===3?'left':'center'};});
+      v.forEach(function(val,i){var cc=js.getCell(r,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i>=4,kl:i>=4?(val==='OPEN'?'C00000':(KL[sl.concat(['SCH','ZA'])[i-4]]||'000000')):'000000'});if(x.feest)vul(cc,'D9D9D9');if(val==='OPEN')vul(cc,'F8CBAD');cc.alignment={horizontal:i===3?'left':'center'};});
       r++;});
   });
   /* ---- Zara ---- */
