@@ -5692,6 +5692,7 @@ function wdMaak(prep,eigen){
 /* Controle van een volledig plan → lijst {t:'vast'|'regel', ini, m}.
    vast = afgesproken regels; regel = roosterregels die we nog samen bepalen. */
 function wdCheck(prep,plan){
+  if(prep&&prep.jaar===WD_EERSTE&&WD_ECHT_EIND)return []; // 2026 = echte diensten (Q4) + voorbeeld: geen meldingen
   var fout=[],lw={},ls={},kn={},cy=prep.carry,nsch={};
   if(cy)WD_POOL.forEach(function(m){var i=m.ini;if(cy.lw[i]>-99)lw[i]=cy.lw[i];if(cy.ls[i]>-99)ls[i]=cy.ls[i];if(cy.kerst[i])kn[i]=1;});
   function wkT(k){return k<0&&cy?'week '+(cy.N+k+1)+' van '+cy.jaar:'week '+(k+1);}
