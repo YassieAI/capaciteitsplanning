@@ -5912,10 +5912,12 @@ function wdUitleg(){
   '<div><b>Een dienst verschuiven</b><ol style="margin:4px 0 0 18px;padding:0">'+
    '<li>Ga naar het tabje <b>Ruilen</b>, kies bij <b>Nieuw ruilvoorstel</b> de monteur en klik op de dienst die weg moet. (Klikken op een naam in het Jaarrooster kan ook.)</li>'+
    '<li>Je krijgt drie lijsten: <b>1. ruilen binnen de regels</b>; <b>2. beste van de rest</b>: als het krap is, de ruil die het minst een regel breekt (bijv. 4 weken rust in plaats van 5); <b>3. overnemen</b>: iemand anders draait de week, zonder ruil terug.</li>'+
-   '<li>Klik op <b>Ruil voorstellen</b>, <b>Toch voorstellen</b> of <b>Overname voorstellen</b>. Het voorstel gaat naar Manager R/D; die kan ook een ruil die een regel breekt bewust goedkeuren.</li>'+
-   '<li>Na goedkeuring staat het vast en loopt het ritme er netjes omheen.</li></ol></div>'+
+   '<li>Dezelfde drie lijsten zie je op de <b>Kaart</b>: klik op een speld van een monteur die die week dienst heeft.</li>'+
+   '<li>Klik op <b>Ruilen</b> of <b>Overnemen</b>: het gaat <b>direct door</b>, niet meer langs Manager R/D. Breekt het een regel (lijst 2), dan krijg je eerst een melding.</li>'+
+   '<li>Daarna loopt het ritme er netjes omheen. In het tabje Ruilen zie je wat er veranderd is en door wie.</li></ol></div>'+
   '</div></details>';
 }
+function wdDirect(){return role==='RD'||isTL();} // waakdienst-ruilen en -overnames gaan direct door (niet meer langs Manager R/D)
 function wdVastTxt(j,plan,sl){return 'wd:p|D|'+j+'|'+sl.join(',')+'|'+plan.map(function(w){return sl.map(function(x){return w[x]||'';}).join(',');}).join(';');}
 function wdVastBalk(){
   if(wdKey!=='D')return '';
@@ -6492,7 +6494,8 @@ function wdVoorstelPaneel(c,k,ini){
   var hist='<div class="wd-kv"><span>Vorige dienst van '+ini+'</span><b>'+wkTxt(tl.voor,'eerder')+'</b></div>'+
            '<div class="wd-kv"><span>Volgende dienst van '+ini+'</span><b>'+wkTxt(tl.na,'later')+'</b></div>';
   if(alAan){
-    return h+'<p class="wd-zin"><b>'+ini+'</b> heeft deze week al dienst ('+wdGNaam(c,alAan)+').</p>'+hist+wdStripPlan(c,c.plan,ini,k)+'</div>';
+    var lijst='';if(!wdSel||wdSel.k!==k||wdSel.s!==alAan){var bewaar=wdSel;wdSel={k:k,s:alAan};try{lijst=wdRuilPaneel();}finally{wdSel=bewaar;}}
+    return h+'<p class="wd-zin"><b>'+ini+'</b> heeft deze week dienst ('+wdGNaam(c,alAan)+'). Moet die weg? Hieronder: ruilen, het beste van de rest en wie hem kan overnemen.</p>'+hist+wdStripPlan(c,c.plan,ini,k)+'</div>'+lijst;
   }
   var kand=prep.sIds.filter(function(sl){return wk[sl]!==ini&&wdMag(prep,ini,sl);}).map(function(sl){return wdAnalyse(c,k,ini,sl);});
   if(!kand.length){
@@ -6501,7 +6504,7 @@ function wdVoorstelPaneel(c,k,ini){
   kand.sort(function(a,b){return a.score-b.score;});
   var key=ini+'|'+k;if(wdKiesKey!==key){wdKiesKey=key;wdKiesSl=null;}
   var gekozen=kand.filter(function(a){return a.sl===wdKiesSl;})[0]||kand[0];
-  var A=gekozen,nm=wdGNaam(c,A.sl),dec=(role==='RD');
+  var A=gekozen,nm=wdGNaam(c,A.sl),dec=wdDirect();
   var verdict=A.hard.length?'<span class="badge b-risk">kan niet</span>':A.zacht.length?'<span class="badge b-warn">kan, let op</span>':'<span class="badge b-ok">kan</span>';
   h+='<p class="wd-zin"><b>'+ini+'</b> ('+m.woon+') neemt <b>'+nm+'</b> over'+(A.cur?' van <b>'+A.cur+'</b>':' (nu leeg)')+' '+verdict+'</p>';
   // wanneer eerder / later dienst, met toets op de minimale tussentijd
@@ -6792,16 +6795,16 @@ function wdRuilPaneel(){
   goed.sort(function(a,b){return a.d-b.d;});fout.forEach(function(f){f.e=wdErnst(f.r);});fout.sort(function(a,b){return a.e-b.e||a.d-b.d;});
   h+='<div class="wd-sub2">1. Ruilen binnen de regels ('+goed.length+')</div>';
   if(!goed.length)h+='<div class="empty">Geen ruil die precies binnen de regels past. Kijk bij 2 of 3.</div>';
-  goed.slice(0,8).forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'">Ruil voorstellen</button></div><div class="meta"><span>'+A+' neemt week '+(g.k+1)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+' · '+wdGNaam(c,s)+'</span></div></div>';});
+  goed.slice(0,8).forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'">'+(wdDirect()?'Ruilen':'Ruil voorstellen')+'</button></div><div class="meta"><span>'+A+' neemt week '+(g.k+1)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+' · '+wdGNaam(c,s)+'</span></div></div>';});
   if(goed.length>8)h+='<p class="sub" style="margin-top:6px">+ '+(goed.length-8)+' verdere mogelijkheden verder in het jaar.</p>';
   var rest=fout.filter(function(f){return f.e<9;}).slice(0,6);
-  h+='<div class="wd-sub2">2. Beste van de rest: ruil die net niet past ('+rest.length+')</div><p class="sub" style="margin:0 0 6px">Het rooster is krap. Deze ruilen breken een regel, de lichtste staat bovenaan (bijv. 4 weken rust in plaats van 5). Je kunt ze toch voorstellen; Manager R/D beslist.</p>';
+  h+='<div class="wd-sub2">2. Beste van de rest: ruil die net niet past ('+rest.length+')</div><p class="sub" style="margin:0 0 6px">Het rooster is krap. Deze ruilen breken een regel, de lichtste staat bovenaan (bijv. 4 weken rust in plaats van 5). '+(wdDirect()?'Je kunt ze toch doorvoeren; je krijgt eerst een melding met de regel die je breekt.':'Je kunt ze toch voorstellen; Manager R/D beslist.')+'</p>';
   if(!rest.length)h+='<div class="empty">Ook geen ruil die net niet past.</div>';
-  rest.forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc ghost" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'">Toch voorstellen</button></div><div class="meta"><span>'+A+' neemt week '+(g.k+1)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+'</span></div><div class="meta wd-bad">Let op: '+g.r.map(esc).join(' · ')+'</div></div>';});
+  rest.forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc ghost" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'" data-bad="'+esc(g.r.join(' · '))+'">'+(wdDirect()?'Toch ruilen':'Toch voorstellen')+'</button></div><div class="meta"><span>'+A+' neemt week '+(g.k+1)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+'</span></div><div class="meta wd-bad">Let op: '+g.r.map(esc).join(' · ')+'</div></div>';});
   var ov=wdOverOpties(c,k,s).filter(function(o){return o.e<9;}).slice(0,6);
   h+='<div class="wd-sub2">3. Of laat iemand deze week overnemen ('+ov.length+')</div><p class="sub" style="margin:0 0 6px">Geen ruil terug: '+A+' is deze week vrij en de ander draait hem. Wie de minste diensten heeft staat bovenaan.</p>';
   if(!ov.length)h+='<div class="empty">Niemand kan deze week overnemen.</div>';
-  ov.forEach(function(o){h+='<div class="sugg"><div class="r1"><span class="nm">'+o.x+wdNm(o.x)+' <span class="wd-mut" style="font-weight:400">('+o.tot+' diensten dit jaar)</span></span><button class="acc'+(o.r.length?' ghost':'')+'" data-wdovn="'+k+'|'+s+'|'+o.x+'">'+(o.r.length?'Toch voorstellen':'Overname voorstellen')+'</button></div>'+(o.r.length?'<div class="meta wd-bad">Let op: '+o.r.map(esc).join(' · ')+'</div>':'<div class="meta"><span>past binnen de regels</span></div>')+'</div>';});
+  ov.forEach(function(o){h+='<div class="sugg"><div class="r1"><span class="nm">'+o.x+wdNm(o.x)+' <span class="wd-mut" style="font-weight:400">('+o.tot+' diensten dit jaar)</span></span><button class="acc'+(o.r.length?' ghost':'')+'" data-wdovn="'+k+'|'+s+'|'+o.x+'"'+(o.r.length?' data-bad="'+esc(o.r.join(' · '))+'"':'')+'>'+(o.r.length?(wdDirect()?'Toch overnemen':'Toch voorstellen'):(wdDirect()?'Overnemen':'Overname voorstellen'))+'</button></div>'+(o.r.length?'<div class="meta wd-bad">Let op: '+o.r.map(esc).join(' · ')+'</div>':'<div class="meta"><span>past binnen de regels</span></div>')+'</div>';});
   h+='<details class="wd-det"><summary>Waarom niet met de anderen? (dichtstbijzijnde weken)</summary>';
   fout.slice().sort(function(a,b){return a.d-b.d;}).slice(0,8).forEach(function(f){h+='<div class="wd-nee"><b>'+f.B+'</b> wk '+(f.k+1)+' '+wdGNaam(c,f.s)+' — '+f.r[0]+(f.r.length>1?' (+'+(f.r.length-1)+')':'')+'</div>';});
   h+='</details></div>';
@@ -6813,7 +6816,7 @@ function wdNm(i){var n=wdNaam(i);return n&&n!==i?' · '+esc(n):'';}
 function wdRuilKies(c){
   var team=wdTeamSet(),hier=wdJaarVan(new Date()),nu=(hier&&hier.j===WD_JAAR)?hier.k:0,pool=WD_POOL.map(function(m){return m.ini;}).sort();
   if(team)pool.sort(function(a,b){return (team[b]?1:0)-(team[a]?1:0)||(a<b?-1:1);});
-  var h='<div class="ai" style="margin-bottom:14px"><div class="hd"><span class="dot"></span>Nieuw ruilvoorstel</div>'+
+  var h='<div class="ai" style="margin-bottom:14px"><div class="hd"><span class="dot"></span>'+(wdDirect()?'Dienst ruilen of laten overnemen':'Nieuw ruilvoorstel')+'</div>'+
     '<p class="sub" style="margin:6px 0 8px">Kies wie wil ruilen en welke dienst weg moet. Je ziet dan: 1. ruilen die binnen de regels passen, 2. het beste van de rest als het krap is, 3. wie de week kan overnemen.</p>'+
     '<label style="font-size:13px;color:var(--muted)">Monteur <select id="wdRuilMon" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface)"><option value="">kies…</option>'+
     pool.map(function(i){return '<option value="'+i+'"'+(i===wdRuilMon?' selected':'')+'>'+i+wdNm(i)+(team&&!team[i]?' (ander team)':'')+'</option>';}).join('')+'</select></label>';
@@ -6825,10 +6828,10 @@ function wdRuilKies(c){
   return h;}
 function wdViewRuil(){
   var c=wdC();
-  var h=wdRuilKies(c)+'<div class="wd-sub2" style="margin-top:4px">Ingediende ruilen en wijzigingen</div><p class="sub">Een ruil of overname is een voorstel. Hij gaat pas in als Manager R/D hem goedkeurt in het weekoverleg; tot die tijd blijft het rooster zoals het is.</p>';
+  var h=wdRuilKies(c)+'<div class="wd-sub2" style="margin-top:4px">Ingediende ruilen en wijzigingen</div><p class="sub">'+(wdDirect()?'Ruilen en overnames van de waakdienst gaan <b>direct door</b>; ze hoeven niet meer langs Manager R/D. Hieronder zie je wat er veranderd is en door wie.':'Een ruil of overname is een voorstel. Hij gaat pas in als Manager R/D hem goedkeurt in het weekoverleg; tot die tijd blijft het rooster zoals het is.')+'</p>';
   var lijst=wdRuilen.filter(function(r){return r.key===wdKey&&wdJaarOk(r);});
   var anders=wdVerpl.filter(function(v){return v.key===wdKey&&v.status==='open'&&(!v.t||wdJaarOk(v));});
-  if(!lijst.length&&!anders.length&&!wdVerpl.some(function(v){return v.t==='w'&&v.key===wdKey&&v.status==='goed'&&wdJaarOk(v);}))h+='<div class="empty">Nog geen voorstellen. Maak hierboven een nieuw ruilvoorstel.</div>';
+  if(!lijst.length&&!anders.length&&!wdVerpl.some(function(v){return v.t==='w'&&v.key===wdKey&&v.status==='goed'&&wdJaarOk(v);}))h+='<div class="empty">Nog niets geruild. Kies hierboven een monteur en de dienst die weg moet.</div>';
   if(anders.length){
     h+='<div class="wd-sub2">Verplaatsingen en weekvoorstellen ('+anders.length+')</div>';
     anders.slice().reverse().forEach(function(v){var mm=wdAlle().filter(function(x){return x.ini===v.ini;})[0];
@@ -6884,7 +6887,7 @@ function wdFlexVoorstel(c,f){
   return {lijst:res,n:n,doel:d.doel};
 }
 function wdZetWeek(c,k,sl,ini){
-  var oud=c.plan[k][sl],dec=(role==='RD');
+  var oud=c.plan[k][sl],dec=wdDirect();
   var v={id:propId++,key:wdKey,jaar:WD_JAAR,t:'w',k:k,slot:sl,oud:oud,ini:ini,door:wdRoleNaam(),status:dec?'goed':'open'};
   wdVerpl.push(v);wdOpslaan(v.id,'wd:w|'+[wdJk(),v.k,v.slot,v.oud||'',v.ini].join('|'),v.door,dec?'doorgevoerd':'open');
   if(dec)wdWeekPas(v);
@@ -7069,7 +7072,9 @@ function wdTeamBanner(){
 /* ---------- ruil vastleggen + slepen in het jaarrooster ---------- */
 function wdMaakRuil(k1,s1,k2,s2){var c=wdC();
   var r={id:wdRuilId++,key:wdKey,jaar:WD_JAAR,k1:k1,s1:s1,k2:k2,s2:s2,a:s1==='ZA'?c.za[k1]:c.plan[k1][s1],b:s2==='ZA'?c.za[k2]:c.plan[k2][s2],door:ROLES.filter(function(x){return x.id===role;})[0].naam,status:'open'};
-  r.id=propId++;wdRuilen.push(r);wdOpslaan(r.id,'wd:r|'+[wdJk(),r.k1,r.s1,r.k2,r.s2,r.a,r.b].join('|'),r.door,'open');wdSel=null;wdSub='ruil';sbToast('Ruil '+r.a+' ⇄ '+r.b+' staat bij Te bespreken.');render();}
+  var dec=wdDirect();r.id=propId++;if(dec)r.status='goed';wdRuilen.push(r);wdOpslaan(r.id,'wd:r|'+[wdJk(),r.k1,r.s1,r.k2,r.s2,r.a,r.b].join('|'),r.door,dec?'doorgevoerd':'open');
+  if(dec){wdDoeRuil(c,r);sbToast('Ruil doorgevoerd: '+r.a+' ⇄ '+r.b+'.');}else sbToast('Ruil '+r.a+' ⇄ '+r.b+' staat bij Te bespreken.');
+  wdSel=null;wdSub=wdSub==='kaart'?'kaart':'ruil';render();}
 function wdOpenPaneel(k,s){wdSel={k:k,s:s};render();var el=document.querySelector('.wd-ruil');if(el){var hb=document.querySelector('header.bar');window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-(hb?hb.offsetHeight:0)-10,behavior:'smooth'});}}
 function wdDoelen(k,s){ // alle diensten waarmee (k,s) geruild mag worden → {'k|s': [redenen]}
   var c=wdC(),A=c.plan[k][s],voor={},uit={};wdCheck(c.prep,c.plan).forEach(function(f){voor[f.m]=1;});
@@ -7136,9 +7141,9 @@ function wireWaak(){
   q('[data-wdregok]',function(){var vs=wdRegVerschil();if(!vs.length){WD_REG_C=null;render();return;}
     if(!window.confirm('Deze wijzigingen doorvoeren?\n\n- '+vs.join('\n- ')+'\n\nHet waakdienstrooster '+WD_JAAR+' wordt opnieuw berekend.'))return;
     WD_REGELS.schTelt=WD_REG_C.schTelt;WD_REGELS.geenSch60=WD_REG_C.geenSch60;WD_REGELS.grens=WD_REG_C.grens;WD_REG_C=null;wdBouw();sbToast('Regels toegepast — rooster opnieuw berekend.');render();});
-  q('[data-wdw]',function(b){if(b.dataset.wdtoch&&!confirm('Dit gaat tegen de spelregels in:\n- '+b.dataset.wdtoch.split(' · ').join('\n- ')+'\n\n'+(role==='RD'?'Toch doorvoeren?':'Toch als voorstel indienen?')))return;
+  q('[data-wdw]',function(b){if(b.dataset.wdtoch&&!confirm('Dit gaat tegen de spelregels in:\n- '+b.dataset.wdtoch.split(' · ').join('\n- ')+'\n\n'+(wdDirect()?'Toch doorvoeren?':'Toch als voorstel indienen?')))return;
     var sl=b.dataset.wdw,c=wdC(),k=wdKaartWk,ini=wdKaartIni;if(k==null||!ini)return;
-    var oud=c.plan[k][sl],dec=(role==='RD');
+    var oud=c.plan[k][sl],dec=wdDirect();
     var v={id:propId++,key:wdKey,jaar:WD_JAAR,t:'w',k:k,slot:sl,oud:oud,ini:ini,door:wdRoleNaam(),status:dec?'goed':'open'};
     if(!dec)wdVerpl=wdVerpl.filter(function(x){return !(x.t==='w'&&x.status==='open'&&x.k===k&&x.slot===sl&&x.key===wdKey&&wdJaarOk(x)&&x.door===v.door);});
     wdVerpl.push(v);wdOpslaan(v.id,'wd:w|'+[wdJk(),v.k,v.slot,v.oud||'',v.ini].join('|'),v.door,dec?'doorgevoerd':'open');
@@ -7172,8 +7177,8 @@ function wireWaak(){
   q('[data-wdclose]',function(){wdSel=null;render();});
   var rm=document.getElementById('wdRuilMon');if(rm)rm.onchange=function(){wdRuilMon=rm.value;wdSel=null;render();};
   q('[data-wdrkies]',function(b){var p=b.dataset.wdrkies.split('|');wdSel={k:+p[0],s:p[1]};render();var el=document.querySelector('.wd-ruil');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});});
-  q('[data-wdovn]',function(b){var p=b.dataset.wdovn.split('|'),c=wdC();wdZetWeek(c,+p[0],p[1],p[2]);wdSel=null;wdSub='ruil';sbToast(role==='RD'?'Overname doorgevoerd: '+p[2]+' draait week '+(+p[0]+1)+'.':'Overname '+p[2]+' (week '+(+p[0]+1)+') staat bij Te bespreken.');if(role==='RD')wdBouw();render();});
-  q('[data-wdruil]',function(b){var p=b.dataset.wdruil.split('|');wdMaakRuil(+p[0],p[1],+p[2],p[3]);});
+  q('[data-wdovn]',function(b){if(b.dataset.bad&&!confirm('Dit breekt een regel:\n\n'+b.dataset.bad.split(' · ').join('\n')+'\n\nToch doorvoeren?'))return;var p=b.dataset.wdovn.split('|'),c=wdC();wdZetWeek(c,+p[0],p[1],p[2]);wdSel=null;wdSub='ruil';sbToast(wdDirect()?'Overname doorgevoerd: '+p[2]+' draait week '+(+p[0]+1)+'.':'Overname '+p[2]+' (week '+(+p[0]+1)+') staat bij Te bespreken.');wdSel=null;render();});
+  q('[data-wdruil]',function(b){if(b.dataset.bad&&!confirm('Deze ruil breekt een regel:\n\n'+b.dataset.bad.split(' · ').join('\n')+'\n\nToch doorvoeren?'))return;var p=b.dataset.wdruil.split('|');wdMaakRuil(+p[0],p[1],+p[2],p[3]);});
   q('[data-wdok]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdok;})[0];var c=wdCache[r.key];var bad=wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2);if(bad.length&&!confirm('Deze ruil breekt een regel:\n\n'+bad.join('\n')+'\n\nToch goedkeuren?'))return;wdDoeRuil(c,r);r.status='goed';removeProposal(r.id,'doorgevoerd');render();});
   q('[data-wdnee]',function(b){var r=wdRuilen.filter(function(x){return x.id===+b.dataset.wdnee;})[0];r.status='nee';removeProposal(r.id,'gesloten');render();});
   q('[data-wdin]',function(b){wdRuilen=wdRuilen.filter(function(x){return x.id!==+b.dataset.wdin;});removeProposal(+b.dataset.wdin);render();});
