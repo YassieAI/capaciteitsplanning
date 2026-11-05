@@ -4015,6 +4015,7 @@ function viewWeek(){
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
   if(rMode==='jaarmaken'){if(role==='RD')return '<h2>Rooster</h2>'+rModeKnoppen()+drView();rMode='week';}
   if(rMode==='jaar')return viewRoosterJaar(wcols,alles,monteurs);
+  if(rMode==='monteur')return viewRoosterMonteur(wcols,alles,monteurs);
   var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()||role==='PL'?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>'+(isTL()?'<b>Afwezigheid van vandaag</b> (ziek, compensatie, auto garage, verlof, niet beschikbaar, opleiding, project) voer je <b>direct</b> door. Andere dagen en diensten zijn <b>voorstellen</b> voor Manager R/D (tab Te bespreken). Zakt de bezetting onder de norm, dan krijg je eerst een melding.':'Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.')+'</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel aan (tik er meer aan om ze samen te kiezen), of <strong>sleep over meerdere cellen</strong>; klik op een dag (kop of grafiek) of een monteur voor een hele dag of rij. Zo vul je ze in één keer — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
   html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">';
   html+='<div class="ctrl"><button id="wkPrev"'+(weekStart===0&&winShift<=0?' disabled':'')+'>‹ week</button><span class="daylabel" style="min-width:210px">'+wkLabel+'</span><button id="wkNext"'+(weekStart===7&&winShift>=12?' disabled':'')+'>week ›</button>'+(winShift>0||weekStart===0?'<button id="wkNu">deze week</button>':'')+'</div>';
@@ -4217,9 +4218,9 @@ document.addEventListener('mouseup',function(){if(!mDrag)return;var d=mDrag;mDra
 
 function mPaneel(){
   if(!mSel.length||!(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||plMagNacht()))return '';
-  if(role==='PL')return '<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSel.length+' cel'+(mSel.length===1?'':'len')+' geselecteerd</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='zet'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'zet\',this)" style="border-left:6px solid '+dienstStyle('nacht')[0]+'">Nachtklus</button><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='weg'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'weg\',this)">Nachtklus weghalen</button></div><div class="pendbar"><span id="mPendTxt" style="color:var(--muted)">'+(mPend?'Gekozen: '+mPend.label+' · klik Toepassen':'Kies Nachtklus of Nachtklus weghalen en klik daarna op Toepassen.')+'</span><button class="acc" onclick="mGo()">Toepassen</button></div></div>';
+  if(role==='PL')return '<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSelTxt()+'</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='zet'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'zet\',this)" style="border-left:6px solid '+dienstStyle('nacht')[0]+'">Nachtklus</button><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='weg'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'weg\',this)">Nachtklus weghalen</button></div><div class="pendbar"><span id="mPendTxt" style="color:var(--muted)">'+(mPend?'Gekozen: '+mPend.label+' · klik Toepassen':'Kies Nachtklus of Nachtklus weghalen en klik daarna op Toepassen.')+'</span><button class="acc" onclick="mGo()">Toepassen</button></div></div>';
   var st0='height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)';
-  var h='<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSel.length+' cel'+(mSel.length===1?'':'len')+' geselecteerd</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div>';
+  var h='<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSelTxt()+'</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div>';
   h+=kbOpen(1,'Dienst','wat hij werkt')+'<div style="display:flex;gap:6px;flex-wrap:wrap">';
   ['dagvroeg','dag','waak','sw','nacht','vrij'].forEach(function(d){var cs=dienstStyle(d);h+='<button class="acc ghost mpb'+(mPend&&mPend.soort==='set'&&mPend.arg===d?' pick':'')+'" onclick="mKiesSoort(\'set\',\''+d+'\',this)" style="border-left:6px solid '+(d==='nacht'?cs[0]:cs[1])+'">'+DIENST_LABEL[d]+'</button>';});
   ['zara','techno'].forEach(function(g){var cs=dienstStyle(g+':8');h+='<button class="acc ghost mpb'+(mPend&&mPend.soort==='zd'&&mPend.arg===g?' pick':'')+'" onclick="mKiesSoort(\'zd\',\''+g+'\',this)" style="border-left:6px solid '+cs[1]+'">'+(g==='zara'?'ZARA':'Techno')+'</button>';});
@@ -4278,7 +4279,7 @@ function mToepas(soort,arg){
   sbToast(tlToastTxt(n-nV,nV));
   mSel=[];render();
 }
-function rSetMode(m){rMode=m;editCell=null;editCells=[];render();}
+function rSetMode(m){rMode=m;editCell=null;editCells=[];mSel=[];mPend=null;render();}
 
 /* ---------- Rooster per jaar: per monteur een vakje per week met de belangrijkste dienst ---------- */
 var rJaar=new Date().getFullYear();
@@ -4343,7 +4344,7 @@ function viewRoosterJaar(wcols,alles,monteurs){
   return h+'</tbody></table></div>';
 }
 function rMaandNav(d){rMaandOff=d===0?0:rMaandOff+d;render();}
-function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button><button class="'+(rMode==='jaar'?'active':'')+'" onclick="rSetMode(\'jaar\')">Jaar</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
+function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button><button class="'+(rMode==='jaar'?'active':'')+'" onclick="rSetMode(\'jaar\')">Jaar</button><button class="'+(rMode==='monteur'?'active':'')+'" onclick="rSetMode(\'monteur\')">Per monteur</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
 function rVers(b){if(b){b.disabled=true;b.textContent='Bezig…';}RMND={};PNL={};Promise.resolve(sbLoad({})).then(function(){render();sbToast('Rooster ververst');},function(){render();});}
 function rMaandLaad(key,namen,van,tot){
   if(RMND[key])return RMND[key];
@@ -4401,6 +4402,78 @@ function viewRoosterMaand(wcols,alles,monteurs){
     h+='</tr>';
   });
   h+='</tbody></table></div><p class="sub" style="margin-top:8px">DV = dagvroeg · D = dag · w = waak · sw = schaduw waak · n = Nachtklus · z = ziek · v = verlof · nb = niet beschikbaar · o = opleiding · Z/T = Zara/Techno met uren · g = garage · c = comp · diagonaal rechtsonder in lichte Nachtklus-kleur (mc) = middag compensatie voor een Nachtklus. Een cijfer erachter = aantal uur. Diagonaal gesplitste cel = deeldag afwezig: de letter is de dienst die de monteur dan draait, het cijfer het aantal uur dat die er nog is.'+(kanEd?' Klik op cellen om te selecteren, of <b>sleep met de muis</b> over een stuk van het rooster (bijv. een week voor een paar monteurs). Klik op een datum of monteur voor een hele kolom of rij. De dikke lijn markeert het einde van de week (zondag) en kies dan een dienst.'+(canDecide()?'':' Je wijzigingen gaan als voorstel naar Manager R/D (stippellijn = voorstel open).'):'')+'</p>'+mPaneel();
+  return h;
+}
+
+/* ---------- Rooster per monteur: één monteur in de opmaak van "Mijn rooster", met bewerken ---------- */
+var rpmMid=null;
+function mSelTxt(){var n=mSel.length;if(rMode==='monteur'){var m=rpmMid&&logMon(rpmMid);return n+' dag'+(n===1?'':'en')+' geselecteerd'+(m?' · '+m.ini:'');}return n+' cel'+(n===1?'':'len')+' geselecteerd';}
+function rpmKies(id){rpmMid=(rpmMid===id?null:id);mSel=[];mPend=null;render();}
+/* hele woorden in de tegel, zoals de monteurs hun rooster zien */
+function rpmNaam(st,u){
+  if(!st||st==='vrij')return 'Vrij';
+  var zg=zdGroep(st);if(zg)return (zg==='zara'?'ZARA':zg==='techno'?'Techno':'Dienst')+' · '+(zdUren(st)||8)+' u';
+  var b={dag:'Dagdienst',dagvroeg:'Vroege dienst',waak:'Waakdienst',sw:'Schaduw waak',nacht:'Nachtklus · compensatie'}[st];
+  if(b)return b+(u&&u<8?' · '+u+' u':'');
+  var k=afwSoort(st);
+  if(k){var n={ziek:'Ziek',verlof:'Verlof',nb:'Niet beschikbaar',garage:'Auto garage',comp:'Compensatie',cursus:'Opleiding',project:'Project'}[k]||k,au=afwUren(st);
+    return n+(au>0&&au<8?' · nog '+(8-au)+' u':'');}
+  return stLabel(st)||st;
+}
+function viewRoosterMonteur(wcols,alles,monteurs){
+  var nu=new Date(),eerste=new Date(nu.getFullYear(),nu.getMonth()+rMaandOff,1),j=eerste.getFullYear(),mo=eerste.getMonth();
+  var mnL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  var mnK=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dnL=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||plMagNacht());
+  var h='<h2>Rooster</h2>'+rModeKnoppen();
+  h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
+  wcols.forEach(function(c){h+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
+  h+='</div>'+rZoekHtml()+'</div>';
+  // monteurs als knoppen, per gebied, zoals bij "Wie ben je?"
+  var groepen={},volg=[];
+  monteurs.forEach(function(x){var g=LOCMAP[x.base]?LOCMAP[x.base].naam:x.base;if(!groepen[g]){groepen[g]=[];volg.push(g);}groepen[g].push(x);});
+  if(rpmMid&&!monteurs.some(function(x){return x.id===rpmMid;}))rpmMid=null;
+  var m=rpmMid?logMon(rpmMid):null;
+  if(!monteurs.length)h+='<p class="sub">Geen monteurs in deze selectie.</p>';
+  h+='<div class="rpm-lijst"'+(m?' style="max-height:150px;overflow:auto"':'')+'>';
+  volg.forEach(function(g){h+='<div style="margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">'+esc(g)+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+
+    groepen[g].map(function(x){var act=x.id===rpmMid;return '<button class="acc ghost'+(act?' pick':'')+'" onclick="rpmKies(\''+x.id+'\')" style="min-width:150px;justify-content:flex-start'+(act?';background:var(--accent-bg);font-weight:700':'')+'"><b>'+mCode(x)+'</b>&nbsp;'+esc(x.woonNaam||x.naam||'')+'</button>';}).join('')+'</div></div>';});
+  h+='</div>';
+  if(!m)return h+'<p class="sub" style="margin-top:6px">Klik een monteur aan om zijn rooster te zien en te wijzigen.</p>';
+  // rooster van deze monteur
+  var nd=new Date(j,mo+1,0).getDate(),dMa=new Date(j,mo,1-((new Date(j,mo,1).getDay()+6)%7)),dZo=new Date(j,mo,nd+((7-new Date(j,mo,nd).getDay())%7));
+  var nT=Math.round((dZo-dMa)/864e5)+1;function dOp(q){return new Date(dMa.getFullYear(),dMa.getMonth(),dMa.getDate()+q);}
+  if(ROOSTER_WAS_L===null)wasLaad();
+  var data=rMaandLaad(m.naam+'|'+fmtIsoD(dMa),[m.naam],fmtIsoD(dMa),fmtIsoD(new Date(dZo.getFullYear(),dZo.getMonth(),dZo.getDate()+1)));
+  function stU(dd){var ix=uvIdxVan(dd);if(ix>=0&&ix<=13&&m.roster[ix]!==undefined)return{st:m.roster[ix],u:m.uren&&m.uren[ix]||0,ix:ix,live:1};var ee=(data.d[m.naam]||{})[fmtIsoD(dd)];return{st:ee?ee.st:'vrij',u:ee?ee.u:0,ix:ix};}
+  rMonLijst=[m.id];rMonDagen=[];for(var q=0;q<nT;q++){var dq=dOp(q);rMonDagen.push(dq.getMonth()===mo?fmtIsoD(dq):null);}
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-top:8px"><div><h2 style="margin-bottom:2px">'+mCode(m)+' · '+esc(m.woonNaam||'')+'</h2><p class="sub" style="margin:0">'+(m.naam&&m.naam!==mCode(m)?esc(m.naam)+' · ':'')+'vaste plek '+(LOCMAP[m.base]?LOCMAP[m.base].naam:m.base)+'</p></div><button class="linkbtn" onclick="rpmKies(\''+m.id+'\')">andere monteur kiezen</button></div>';
+  if(TODAY>=0&&TODAY<=13){var st0=m.roster[TODAY],cs0=dienstStyle(st0),l0=locOf(m,TODAY),dt0=dateFor(TODAY);
+    h+='<div style="margin:12px 0;padding:16px;border-radius:14px;background:'+celBg(st0,cs0,'dag')+';color:'+cs0[1]+'"><div style="font-size:13px;opacity:.8">Vandaag · '+dnL[dt0.getDay()]+' '+dt0.getDate()+' '+mnK[dt0.getMonth()]+'</div><div style="font-size:24px;font-weight:700;margin-top:2px">'+rpmNaam(st0,m.uren&&m.uren[TODAY])+'</div><div style="font-size:14px;margin-top:2px">'+(dienstShow(st0,TODAY)?(l0!==m.base&&LOCMAP[l0]?'<b>ingezet bij '+LOCMAP[l0].naam+'</b>':(LOCMAP[l0]?LOCMAP[l0].naam:'')):'&nbsp;')+'</div></div>';}
+  h+='<div class="ctrl" style="margin:6px 0 10px;flex-wrap:wrap"><button onclick="rMaandNav(-1)">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button onclick="rMaandNav(1)">maand ›</button>'+(rMaandOff?'<button onclick="rMaandNav(0)">deze maand</button>':'')+'</div>';
+  if(!data.loaded)h+='<p class="sub">Rooster van '+mnL[mo]+' wordt geladen…</p>';
+  h+='<div class="uv-maand rpm-maand"><div class="uv-mk">wk</div>'+['ma','di','wo','do','vr','za','zo'].map(function(x){return '<div class="uv-mk">'+x+'</div>';}).join('');
+  for(var q1=0;q1<nT;q1++){
+    var dt=dOp(q1),iso=fmtIsoD(dt);
+    if(q1%7===0)h+='<div class="uv-mwk">'+isoWeek(dt)+'</div>';
+    if(dt.getMonth()!==mo){h+='<div class="uv-md uv-buiten"></div>';continue;}
+    var su=stU(dt),st=su.st,cs=dienstStyle(st),werk=!!dienstShow(st,su.ix);
+    var wsts=[];for(var wq=q1-(q1%7),w7=0;w7<7;w7++)wsts.push(stU(dOp(wq+w7)).st);
+    var mc=mcMidag(st,stU(dOp(q1+1)).st);
+    var vp=proposals.filter(function(p){return p.mid===m.id&&p.day===su.ix&&isDienstProp(p)&&p.status==='open';})[0];
+    var mk=mSel.some(function(c){return c.mid===m.id&&c.iso===iso;});
+    var wasM=lfMatch(m.ini,iso)?(LOG_FOCUS.was||'niet vastgelegd'):'';
+    var l=su.live?locOf(m,su.ix):m.base;
+    var bg=(st==='vrij'||!st)?'var(--surface-1)':mcBg(celBg(st,cs,celWerk(wsts)),mc);
+    h+='<div class="uv-md'+(iso===fmtIsoD(nu)?' uv-nu':'')+'"'+(kanEd?' data-mc="'+m.id+'|'+iso+'" data-r="0" data-q="'+q1+'"':'')+' title="'+dnL[dt.getDay()]+' '+dt.getDate()+' '+mnL[mo]+' · '+rpmNaam(st,su.u)+(vp?' · voorstel: '+propNaam(vp):'')+(wasM?' · eerder: '+esc(wasM):'')+'" style="background:'+bg+';color:'+cs[1]+(werk||afwSoort(st)?'':';opacity:.7')+(kanEd?';cursor:pointer;user-select:none':'')+(vp?';outline:1.5px dashed var(--accent);outline-offset:-2px':'')+(mk?';outline:2.5px solid var(--text);outline-offset:-1px;opacity:1':'')+(wasM?';'+lfStijl():'')+'">'+
+      '<div class="uv-mdn">'+dt.getDate()+'</div><div class="uv-mdd">'+rpmNaam(st,su.u)+'</div>'+
+      (mc?'<div class="uv-mdl" style="color:inherit">middag comp.</div>':'')+
+      (werk&&l!==m.base&&LOCMAP[l]?'<div class="uv-mdl">'+LOCMAP[l].naam+'</div>':'')+
+      (vp?'<div class="uv-mdl" style="color:inherit;font-style:italic">voorstel: '+esc(propNaam(vp).replace(/^dienst: /,''))+'</div>':'')+'</div>';
+  }
+  h+='</div>';
+  h+='<p class="sub" style="margin-top:8px">Kleuren zoals in het weekrooster. Zwarte rand = vandaag. Diagonaal = middag compensatie voor een nachtklus of een deeldag afwezig.'+(kanEd?' Klik op een dag om hem te wijzigen, of <b>sleep met de muis</b> over een paar dagen (bijv. ma t/m vr) om ze samen te wijzigen.'+(canDecide()?'':' Afwezigheid van vandaag gaat direct door; de rest gaat als voorstel naar Manager R/D (stippellijn = voorstel open).'):'')+'</p>';
+  h+=mPaneel();
   return h;
 }
 
