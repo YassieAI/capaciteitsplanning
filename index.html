@@ -5650,7 +5650,8 @@ function wdExcelRitme(knop){
 function wdExcelMaak(){
   var J1=WD_JAAR,jaren=[J1];
   var R={},W=[];
-  jaren.forEach(function(j){var r=wdPlanJaar(j);R[j]=r;wdMetJaar(j,function(){for(var k=0;k<WD_N;k++)W.push({j:j,k:k,van:wdWeekStart(k),tot:wdWeekEnd(k),feest:WD_FEEST[k]?[].concat(WD_FEEST[k]).join(', '):'',r:r,w:r.plan[k],za:r.za?r.za[k]:null});});});
+  jaren.forEach(function(j){var r=wdPlanJaar(j);R[j]=r;
+    wdWeergave(j).forEach(function(d){var ro=R[d.oj]||(R[d.oj]=wdPlanJaar(d.oj));W.push({j:j,oj:d.oj,k:d.k,van:d.van,tot:d.tot,feest:d.feest?[].concat(d.feest).join(', '):'',r:ro,w:ro.plan[d.k],za:ro.za?ro.za[d.k]:null});});});
   var prep=R[J1].prep,NT=W.length,sl=prep.sIds;
   var NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',SCH:'Schaduw (landelijk)',ZA:'Zara'};
   var KL={RA1:'2E8B57',RA2:WD_KLEUR_RA2.slice(1),LN:'3B7DD8',LZ:'C2462F',SCH:'E07B00',ZA:'8E5BD1'};
@@ -5691,7 +5692,7 @@ function wdExcelMaak(){
   function tel(i,j){return (TEL[i]&&TEL[i][j])||{w:0,s:0};}
   var t1=ws.getCell(1,1);t1.value='Ritme waakdienst '+jaren.join(' → ')+': wie na wie, week voor week';fnt(t1,{bold:true,size:14,kl:'1F3864'});
   jaren.forEach(function(j,ix){var c=ws.getCell(2,W0+(ix?R[J1].plan.length:0));c.value=j+' →';fnt(c,{bold:true,kl:'C00000'});});
-  rr=4;var a0=WD_REGELS.trap&&J1>=WD_BASISJAAR?wdTrapAbs(J1):null;var TA=a0!==null?wdTrapAlles(prep,a0+NT+2):null;
+  rr=4;var a0=WD_REGELS.trap&&J1>=WD_BASISJAAR?wdTrapAbs(W[0].oj)+W[0].k:null;var TA=a0!==null?wdTrapAlles(prep,a0+NT+2):null;
   var HK={RA1:'RN',RA2:'RZ',LN:'N',LZ:'Z'};
   function elders(x,i,s){var o=null;sl.forEach(function(z){if(z!==s&&x.w[z]===i)o=z;});return o;}
   function blok(titel,kl,leden,veld,vrij,sid){
@@ -6000,7 +6001,7 @@ function wdDirect(){return role==='RD'||isTL();} // waakdienst-ruilen en -overna
 function wdVastTxt(j,plan,sl){return 'wd:p|D|'+j+'|'+sl.join(',')+'|'+plan.map(function(w){return sl.map(function(x){return w[x]||'';}).join(',');}).join(';');}
 function wdVastBalk(){
   if(wdKey!=='D')return '';
-  if(WD_JAAR===WD_EERSTE)return '<div class="wd-bron"><span><b>2026: week 41 t/m 52 (2 okt t/m 24 dec) zijn de echte diensten uit het Fieldforce-rooster (FF Q4 2026).</b> De weken daarvoor zijn een voorbeeld. Het rooster van 2027 sluit hierop aan.</span></div>';
+  if(WD_JAAR===WD_EERSTE)return '<div class="wd-bron"><span><b>2026: week 41 t/m 53 (2 okt t/m 31 dec) zijn de echte diensten uit het Fieldforce-rooster (FF Q4 2026).</b> De weken daarvoor zijn een voorbeeld. Het rooster van 2027 sluit hierop aan.</span></div>';
   var j=WD_JAAR,aangeleverd=!!(WD_COLLEGA.plannen&&WD_COLLEGA.plannen[j])||(j===WD_BASISJAAR&&!!WD_COLLEGA.plan),db=WD_VASTDB[j];
   if(aangeleverd)return '<div class="wd-bron"><span><b>Rooster '+j+' staat vast</b> (aangeleverd rooster). Nieuwe monteurs of andere regels veranderen dit rooster niet; alleen ruilen en overnemen.</span></div>';
   if(db)return '<div class="wd-bron"><span><b>Rooster '+j+' staat vast.</b> Nieuwe monteurs of andere regels veranderen dit rooster niet; alleen ruilen en overnemen.</span>'+(role==='RD'?'<button class="linkbtn" data-wdvastweg="1">Vrijgeven</button>':'')+'</div>';
@@ -6025,6 +6026,12 @@ function wdD(d){return d.getDate()+' '+WD_MND[d.getMonth()];}
 function wdWeekLabel(k){return wdD(wdWeekStart(k))+' – '+wdD(wdWeekEnd(k));}
 /* weeknummer zoals in de kalenders (ISO): het nummer van de donderdag waarmee de waakweek (vr t/m do) eindigt */
 function wdNr(k){return isoWeek(wdWeekEnd(k));}
+/* Weergave per kalenderjaar: een waakweek (vr t/m do) staat in het jaar van de donderdag waarmee hij eindigt, net als het weeknummer.
+   Zo hoort vr 25 t/m do 31 dec 2026 (wk 53) bij 2026 en begint 2027 op vr 1 jan met wk 1. De berekening zelf (wie wanneer dienst heeft) blijft ongewijzigd. */
+function wdWeergave(j){var out=[];
+  [j-1,j,j+1].forEach(function(oj){if(oj<WD_EERSTE||oj>=WD_BASISJAAR+WD_JAREN)return;
+    wdMetJaar(oj,function(){for(var k=0;k<WD_N;k++){var thu=wdWeekEnd(k);if(thu.getFullYear()===j)out.push({oj:oj,k:k,van:wdWeekStart(k),tot:thu,nr:isoWeek(thu),feest:WD_FEEST[k]||null});}});});
+  return out;}
 /* idem voor een week uit een ander roosterjaar */
 function wdNrJ(j,k){return wdMetJaar(+j,function(){return wdNr(k);});}
 
@@ -6253,8 +6260,8 @@ function viewWaak(){
   var jk='<div class="ctrl wd-jaren" style="margin:0 0 8px;flex-wrap:wrap"><span class="wd-lbl" style="margin-right:4px">Roosterjaar</span>';
   for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
-  var eind=wdWeekEnd(WD_N-1),vj=WD_JAAR>WD_BASISJAAR;
-  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdUitleg()+'<p class="sub">Vr '+wdD(WD_START)+' '+WD_START.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+WD_N+' weken · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
+  var dwk=wdWeergave(WD_JAAR),eind=dwk[dwk.length-1].tot,vj=WD_JAAR>WD_BASISJAAR;
+  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdUitleg()+'<p class="sub">Vr '+wdD(dwk[0].van)+' '+dwk[0].van.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+dwk.length+' weken (wk '+dwk[0].nr+' t/m wk '+dwk[dwk.length-1].nr+') · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' als Excel">&#11015; Excel-export</button></div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
@@ -6715,16 +6722,20 @@ function wdViewRooster(){
   if(wdSel)h+=wdRuilPaneel();
   else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
   h+='<div class="wd-scroll"><table class="wd-tbl wd-rooster"><thead><tr><th>Week</th>'+slots.map(function(s){return '<th><i class="wd-sw" style="background:'+wdKleur(wdKey,s)+'"></i>'+wdGNaam(c,s)+'</th>';}).join('')+'<th><i class="wd-sw" style="background:#8e5bd1"></i>Zara</th></tr></thead><tbody>';
-  c.plan.forEach(function(wk,k){
+  function rijHtml(k,own,cc,nr){var wk=cc.plan[k],h='';
     var f=WD_FEEST[k];
-    var isNu=k===wdNuWeek();
+    var xn=wdJaarVan(new Date()),isNu=!!xn&&xn.j===cc.jr&&xn.k===k;
     var vk=wdVakWeek(k),vr=wdVakRij(vk);
-    h+='<tr'+(f||isNu||vr?' class="'+(f?'wd-feestrij':(vr?'wd-vkr'+vr:''))+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk"><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+wdNr(k)+'</button> <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+(vk.length?'<div>'+wdVakPills(vk)+'</div>':'')+'</td>';
+    h+='<tr'+(f||isNu||vr?' class="'+(f?'wd-feestrij':(vr?'wd-vkr'+vr:''))+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk">'+(own?'<button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+nr+'</button>':'<b>'+nr+'</b>')+' <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+(vk.length?'<div>'+wdVakPills(vk)+'</div>':'')+'</td>';
     slots.forEach(function(s){var i=wk[s];
-      var cls='wd-chip'+(team&&wdAlleen&&i&&team[i]?' mine':'')+(team&&wdAlleen&&i&&!team[i]?' dim':'')+(wdSel&&wdSel.k===k&&wdSel.s===s?' sel':'');
-      h+='<td>'+(i?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'"'+(lfWaak(k,s)?' style="'+lfStijl()+'"':'')+'>'+i+'</button>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''):'<span class="wd-bad"'+(lfWaak(k,s)?' style="display:inline-block;padding:4px 12px;border-radius:8px;'+lfStijl()+'"':'')+'>leeg</span>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''))+'</td>';});
-    var zi=c.za&&c.za[k];h+='<td>'+(zi?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZA'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'" title="Zara-waakdienst · klik om te ruilen">'+zi+'</button>':'<span class="wd-bad">leeg</span>')+'</td>';
-    h+='</tr>';});
+      var cls='wd-chip'+(team&&wdAlleen&&i&&team[i]?' mine':'')+(team&&wdAlleen&&i&&!team[i]?' dim':'')+(own&&wdSel&&wdSel.k===k&&wdSel.s===s?' sel':'');
+      h+='<td>'+(i?(own?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'"'+(lfWaak(k,s)?' style="'+lfStijl()+'"':'')+'>'+i+'</button>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''):'<span class="'+cls+'" style="cursor:default" title="Vaste dienst uit het rooster van '+cc.jr+' (staat daar, niet te ruilen)">'+i+'</span>'):'<span class="wd-bad">leeg</span>')+'</td>';});
+    var zi=cc.za&&cc.za[k];h+='<td>'+(zi?(own?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZA'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'" title="Zara-waakdienst · klik om te ruilen">'+zi+'</button>':'<span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi+'</span>'):'<span class="wd-bad">leeg</span>')+'</td>';
+    h+='</tr>';return h;}
+  /* per kalenderjaar: wk 53 van 2026 (25–31 dec) staat onderaan 2026, niet bovenaan 2027 */
+  wdWeergave(WD_JAAR).forEach(function(d){
+    if(d.oj===WD_JAAR)h+=rijHtml(d.k,true,{plan:c.plan,za:c.za,jr:WD_JAAR},d.nr);
+    else h+=wdMetJaar(d.oj,function(){var r2=wdPlanJaar(d.oj);return rijHtml(d.k,false,{plan:r2.plan,za:r2.za,jr:d.oj},d.nr);});});
   h+='</tbody></table></div>';
   return h;
 }
