@@ -5322,6 +5322,7 @@ function wdKalender(j){WD_KJ=j;
 }
 wdKalender(WD_JAAR);
 /* de waakdienst opent op het roosterjaar en de week waarin we nu zitten */
+function wdEersteK(){for(var k=0;k<WD_N;k++)if(wdWeekEnd(k).getFullYear()>=WD_JAAR)return k;return 0;}
 function wdNuWeek(){var x=wdJaarVan(new Date());return x&&x.j===WD_JAAR?x.k:-1;}
 (function(){var xj=wdJaarVan(new Date());if(xj&&xj.j>=WD_EERSTE&&xj.j<WD_BASISJAAR+WD_JAREN&&xj.j!==WD_JAAR){WD_JAAR=xj.j;wdKalender(xj.j);}})();
 var wdScrollNu=true;
@@ -5884,7 +5885,7 @@ function wdBouw(){
 }
 function wdZetJaar(j){
   if(j===WD_JAAR)return;
-  WD_JAAR=j;wdKalender(j);wdPoolSync(j);wdCache={};wdKaartWk=Math.max(0,wdNuWeek());wdScrollNu=true;wdKaartIni=null;wdKaartG=null;wdSel=null;wdKiesKey='';
+  WD_JAAR=j;wdKalender(j);wdPoolSync(j);wdCache={};wdKaartWk=Math.max(wdEersteK(),wdNuWeek());wdScrollNu=true;wdKaartIni=null;wdKaartG=null;wdSel=null;wdKiesKey='';
   if(WP_FC&&WP_FC.fit&&WP_FC.R){var R=WP_FC.R,laatst=R.weken[R.weken.length-1],wk=[];
     for(var k=0;k<WD_N;k++){var fr=wdWeekStart(k),jv=(fr-laatst)/864e5/365.25,f=WP_FC.fit.voorspel(fr,jv),sd=Math.sqrt(f+Math.pow(WP_FC.fit.cv*f,2));wk.push({f:f,lo:Math.max(0,f-1.28*sd),hi:f+1.28*sd});}
     WP_FC.wk=wk;}
@@ -6565,10 +6566,13 @@ function wdEerstTxt(c,ini,e){
   function b(o,l){return o?'<button class="acc ghost" style="margin:3px 6px 3px 0" data-wdwk="'+o.k+'">'+l+' wk '+wdNr(o.k)+' · '+wdGNaam(c,o.sl)+(o.cur?' (nu '+o.cur+')':'')+'</button>':'';}
   return '<div class="wd-sub2">Wel mogelijk voor '+ini+'</div><div>'+b(e.voor,'‹ eerder:')+b(e.na,'later: ›')+'</div>';
 }
+/* weekbalkje per monteur: de weken van het kalenderjaar (donderdag-regel), ook die uit een ander roosterjaar */
+function wdStripSpan(c,pl,d,ini,own,mk,kn){
+  var wk=pl[d.k],sl=null;Object.keys(wk).forEach(function(x){if(wk[x]===ini)sl=x;});
+  return '<span '+(sl?'data-wdkaart="'+ini+'|'+d.k+'|'+d.oj+'" ':'')+'class="'+(own&&d.k===mk?'wd-nw':'')+'" title="wk '+d.nr+' \u00b7 '+wdD(d.van)+' \u2013 '+wdD(d.tot)+(sl?' \u00b7 '+(sl==='SCH'?'schaduw':wdGNaam(c,sl))+' \u00b7 met '+wdMetWie(pl,d.k,ini)+' \u00b7 klik: toon op kaart':'')+'" style="'+(sl?'background:'+wdKleur(wdKey,sl)+';cursor:pointer':'')+(d.feest?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';}
 function wdStripPlan(c,plan,ini,mk){
-  var occ={};plan.forEach(function(wk,k){Object.keys(wk).forEach(function(sl){if(wk[sl]===ini)occ[k]=sl;});});
-  var h='<div class="wd-strip" aria-label="53 weken, gekleurd = dienst">';
-  for(var k=0;k<WD_N;k++){var sl=occ[k];h+='<span '+(sl?'data-wdkaart="'+ini+'|'+k+'" ':'')+'class="'+(k===mk?'wd-nw':'')+'" title="wk '+wdNr(k)+' · '+wdWeekLabel(k)+(sl?' · '+wdGNaam(c,sl)+' · met '+wdMetWie(plan,k,ini)+' · klik: toon op kaart':'')+'" style="'+(sl?'background:'+wdKleur(wdKey,sl)+';cursor:pointer':'')+(wdIsFeest(k)?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';}
+  var h='<div class="wd-strip" aria-label="weken, gekleurd = dienst">';
+  wdWeergave(WD_JAAR).forEach(function(d){var own=d.oj===WD_JAAR;h+=wdStripSpan(c,own?plan:wdPlanJaar(d.oj).plan,d,ini,own,mk);});
   return h+'</div>';
 }
 function wdDelta(a,b){return a===b?'<span class="wd-d-gelijk">'+a+' → '+b+'</span>':'<b>'+a+' → '+b+'</b>';}
@@ -6622,9 +6626,15 @@ function wdVoorstelPaneel(c,k,ini){
 }
 
 function wdViewKaart(){
-  if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=Math.max(0,wdNuWeek());if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';}
+  if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=Math.max(wdEersteK(),wdNuWeek());if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';}
   var c=wdC(),t=wdTel(c.prep,c.plan);
-  var wkNav='<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span><button data-wdwk="'+(wdKaartWk==null?0:Math.max(0,wdKaartWk-1))+'" aria-label="vorige week">‹</button><span class="wd-wklab">'+(wdKaartWk==null?'geen week':'wk '+wdNr(wdKaartWk)+' · '+wdWeekLabel(wdKaartWk)+(wdKaartWk===wdNuWeek()?' · <b style="color:var(--accent)">nu</b>':''))+'</span><button data-wdwk="'+(wdKaartWk==null?0:Math.min(WD_N-1,wdKaartWk+1))+'" aria-label="volgende week">›</button>'+(wdNuWeek()>=0&&wdKaartWk!==wdNuWeek()?'<button data-wdwk="'+wdNuWeek()+'">naar nu</button>':'')+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>'+(wdKaartWk!=null?wdVakKaart(wdKaartWk):'');
+  var wkNav=(function(){var k=wdKaartWk,pv=null,nx=null,lab='geen week';
+    if(k!=null){
+      if(k>0)pv={k:k-1,j:WD_JAAR};else if(WD_JAAR>WD_EERSTE)pv={k:wdMetJaar(WD_JAAR-1,function(){return WD_N;})-1,j:WD_JAAR-1};
+      if(k<WD_N-1)nx={k:k+1,j:WD_JAAR};else if(WD_JAAR<WD_BASISJAAR+WD_JAREN-1)nx={k:0,j:WD_JAAR+1};
+      lab='wk '+wdNr(k)+' \u00b7 '+wdWeekLabel(k)+(wdWeekEnd(k).getFullYear()!==WD_JAAR?' '+wdWeekEnd(k).getFullYear():'')+(k===wdNuWeek()?' \u00b7 <b style="color:var(--accent)">nu</b>':'');}
+    function bt(o,t,a){return '<button '+(o?'data-wdwk="'+o.k+'" data-wdwkj="'+o.j+'"':'disabled')+' aria-label="'+a+'">'+t+'</button>';}
+    return '<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span>'+(k==null?'<button data-wdwk="0" aria-label="vorige week">\u2039</button>':bt(pv,'\u2039','vorige week'))+'<span class="wd-wklab">'+lab+'</span>'+(k==null?'<button data-wdwk="0" aria-label="volgende week">\u203a</button>':bt(nx,'\u203a','volgende week'))+(wdNuWeek()>=0&&wdKaartWk!==wdNuWeek()?'<button data-wdwk="'+wdNuWeek()+'">naar nu</button>':'')+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>';})()+(wdKaartWk!=null?wdVakKaart(wdKaartWk):'');
   var h='<div class="wd-layout"><div class="wd-card wd-mapcard">'+wkNav+'<div class="wd-lwrap"><div id="wdLmap" class="wd-lmap" role="application" aria-label="Kaart van Nederland met waakdienstgebieden"></div></div>'+
     '<div class="wd-legend" style="margin-top:8px">'+c.prep.gIds.map(function(g){return '<button class="wd-lg'+(wdKaartG===g?' on':'')+'" data-wdg="'+g+'"><i style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</button>';}).join('')+
     '<div class="ctrl" style="flex-wrap:wrap;margin-right:8px"><span class="wd-lbl" style="margin-right:4px">Team</span>'+[null,'Noord','Zuid','Zara'].map(function(t){return '<button data-wdteam="'+(t||'')+'" class="'+(wdTeamF===t?'active':'')+'">'+(t||'Alle')+'</button>';}).join('')+'</div>'+
@@ -6703,12 +6713,12 @@ function wdViewQ4(){
 }
 
 function wdZaStrip(ini){var c=wdC(),h='<div class="wd-strip" aria-label="weken, paars = Zara-dienst">';
-  for(var k=0;k<WD_N;k++){var on=c.za&&c.za[k]===ini;h+='<span '+(on?'data-wdkaart="'+ini+'|'+k+'" ':'')+'title="wk '+wdNr(k)+' · '+wdWeekLabel(k)+(on?' · Zara-waakdienst · klik: toon op kaart':'')+'" style="'+(on?'background:#8e5bd1;cursor:pointer':'')+(wdIsFeest(k)?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';}
+  wdWeergave(WD_JAAR).forEach(function(d){var za=d.oj===WD_JAAR?c.za:wdPlanJaar(d.oj).za,on=!!(za&&za[d.k]===ini);
+    h+='<span '+(on?'data-wdkaart="'+ini+'|'+d.k+'|'+d.oj+'" ':'')+'title="wk '+d.nr+' \u00b7 '+wdD(d.van)+' \u2013 '+wdD(d.tot)+(on?' \u00b7 Zara-waakdienst \u00b7 klik: toon op kaart':'')+'" style="'+(on?'background:#8e5bd1;cursor:pointer':'')+(d.feest?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';});
   return h+'</div>';}
 function wdStrip(ini){
-  var c=wdC(),occ={};c.plan.forEach(function(wk,k){Object.keys(wk).forEach(function(s){if(wk[s]===ini)occ[k]=s;});});
-  var h='<div class="wd-strip" aria-label="53 weken, gekleurd = dienst">';
-  for(var k=0;k<WD_N;k++){var s=occ[k];h+='<span '+(s?'data-wdkaart="'+ini+'|'+k+'" ':'')+'title="wk '+wdNr(k)+' · '+wdWeekLabel(k)+(s?' · '+(s==='SCH'?'schaduw':wdGNaam(c,s))+' · met '+wdMetWie(c.plan,k,ini)+' · klik: toon op kaart':'')+'" style="'+(s?'background:'+wdKleur(wdKey,s)+';cursor:pointer':'')+(wdIsFeest(k)?';box-shadow:inset 0 -2px 0 var(--warn-bar)':'')+'"></span>';}
+  var c=wdC(),h='<div class="wd-strip" aria-label="weken, gekleurd = dienst">';
+  wdWeergave(WD_JAAR).forEach(function(d){var own=d.oj===WD_JAAR;h+=wdStripSpan(c,own?c.plan:wdPlanJaar(d.oj).plan,d,ini,own,-1);});
   return h+'</div>';
 }
 /* wie draaien er in week k nog meer dienst (waak + schaduw) naast ini */
@@ -7227,7 +7237,7 @@ function wireWaak(){
   q('[data-wdopen]',function(b){wdKey=b.dataset.wdopen;wdSub='kaart';render();});
   document.querySelectorAll('[data-wdxls]').forEach(function(b){b.onclick=function(){wdExcelRitme(b);};});
   q('[data-wdpin]',function(b){wdKaartIni=b.dataset.wdpin||null;wdKaartG=null;render();});
-  q('[data-wdwk]',function(b){var v=+b.dataset.wdwk;wdKaartWk=v<0?null:v;wdKaartG=null;render();});
+  q('[data-wdwk]',function(b){var v=+b.dataset.wdwk;if(b.dataset.wdwkj&&+b.dataset.wdwkj!==WD_JAAR)wdZetJaar(+b.dataset.wdwkj);wdKaartWk=v<0?null:v;wdKaartG=null;render();});
   q('[data-wddeigen]',function(b){wdDEigen=b.dataset.wddeigen==='1';wdRuilen=wdRuilen.filter(function(r){return r.key!=='D';});var p=wdCache.D.prep;var r=wdMaak(p,wdDEigen);wdCache.D.plan=r.plan;wdCache.D.vast=!!r.vast;render();});
   q('[data-wdsch]',function(b){if(role!=='RD')return;wdRegC().schTelt=b.dataset.wdsch==='1';render();});
   q('[data-wd60]',function(b){if(role!=='RD')return;wdRegC().geenSch60=b.dataset.wd60==='1';render();});
@@ -7244,7 +7254,7 @@ function wireWaak(){
     if(dec){wdWeekPas(v);sbToast(ini+' staat nu in '+wdGNaam(c,sl)+' van week '+(k+1)+'.');}else sbToast('Voorstel verstuurd naar Manager R/D: '+ini+' neemt '+wdGNaam(c,sl)+' over in week '+(k+1)+'.');
     render();});
   q('[data-wdjaar]',function(b){wdZetJaar(+b.dataset.wdjaar);});
-  q('[data-wdkaart]',function(b){var p=b.dataset.wdkaart.split('|');wdSub='kaart';if(p[0])wdKaartIni=p[0];if(p[1]!==''&&p[1]!==undefined)wdKaartWk=+p[1];wdKaartG=null;wdSel=null;render();window.scrollTo({top:0,behavior:'smooth'});});
+  q('[data-wdkaart]',function(b){var p=b.dataset.wdkaart.split('|');wdSub='kaart';if(p[2]&&+p[2]!==WD_JAAR)wdZetJaar(+p[2]);if(p[0])wdKaartIni=p[0];if(p[1]!==''&&p[1]!==undefined)wdKaartWk=+p[1];wdKaartG=null;wdSel=null;render();window.scrollTo({top:0,behavior:'smooth'});});
   q('[data-wdadv]',function(b){var p=b.dataset.wdadv.split('|');wdKaartIni=p[0];wdKiesKey=p[0]+'|'+wdKaartWk;wdKiesSl=p[1];render();});
   q('[data-wdkies]',function(b){wdKiesSl=b.dataset.wdkies;render();});
   q('[data-wdteam]',function(b){wdTeamF=b.dataset.wdteam||null;render();});
