@@ -5678,7 +5678,7 @@ function wdExcelMaak(){
      '5. Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende schuift door. Bij de start van 2027 sluit wie eind 2026 nog dienst had pas aan als er minimaal '+WD_REGELS.tussen+' weken tussen zitten.'].forEach(function(t){regel(t);});
     Object.keys(WD_TRAP_START||{}).forEach(function(i){var x=WD_TRAP_START[i];regel(i+' draait mee vanaf week '+wdMetJaar(x.j,function(){return wdNr(x.k);})+' van '+x.j+'.');});rr++;}
   regel('Diensten per week',{bold:true,size:12,kl:'1F3864'});
-  regel('Een waakweek loopt van vrijdag t/m donderdag; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
+  regel('Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
   regel('Legenda',{bold:true,size:12,kl:'1F3864'});
   sl.concat(['SCH','ZA']).forEach(function(x){var c=u.getCell(rr,1);c.value=x==='SCH'?'S':x==='ZA'?'Za':'1';vul(c,KL[x]);fnt(c,{bold:true,kl:'FFFFFF'});c.alignment={horizontal:'center'};regel(NAAM[x]);});
   [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FF9933','S = schaduwdienst (staat bij de monteur in zijn regio en in het schaduwblok)'],['BFBFBF','grijs = week met een feestdag (waak 1 of schaduw S, zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['2E8B57','RN / RZ / N / Z = deze week draait hij mee met een andere regio (Randstad noord / Randstad zuid / Noord / Zuid). Hij staat alleen bij zijn eigen regio, met een * achter zijn naam, en de regel eronder zegt waar hij meedraait. Bijvoorbeeld MEAS01: hoort bij Randstad zuid en draait één keer mee met Randstad noord.'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
@@ -5983,7 +5983,7 @@ function wdUitleg(){
   return '<details class="wd-det" style="margin:0 0 10px;padding:8px 12px;border:0.5px solid var(--border-strong);border-radius:10px;background:var(--surface)"><summary style="cursor:pointer;font-weight:700">Zo werkt de waakdienst (kort) · en zo verschuif je een dienst</summary>'+
   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px;font-size:13px;line-height:1.5">'+
   '<div><b>Hoe het rooster werkt</b><ul style="margin:4px 0 0 18px;padding:0">'+
-   '<li>Een waakweek loopt van <b>vrijdag t/m donderdag</b>. Week 1 is de week van kerst (2027: vr 25 t/m do 31 dec 2026).</li>'+
+   '<li>Een waakweek loopt van <b>vrijdagavond 19:00 tot vrijdagochtend 07:00</b>; doordeweeks 19:00–07:00, weekend 07:00–07:00. Week 1 is de eerste week van het kalenderjaar (2027: vr 1 jan t/m do 7 jan).</li>'+
    '<li>Elke week is er één waakdienst in <b>Randstad noord, Randstad zuid, Noord en Zuid</b>, plus één <b>landelijke schaduwdienst</b>. Zara heeft een eigen waakdienst.</li>'+
    '<li>Per gebied gaat het <b>om de beurt in een vaste volgorde</b>: in het tabblad Ritme van de Excel zie je dat als een trap.</li>'+
    '<li>Tussen twee waakdiensten van dezelfde monteur zitten <b>minimaal '+WD_REGELS.tussen+' weken</b>.</li>'+
@@ -7111,7 +7111,7 @@ function wdViewRegels(){
   else if(vs.length)top='<div class="ai" style="margin-bottom:12px;border-color:var(--warn,#c98a16)"><div class="hd"><span class="dot"></span><b>Nog niet toegepast:</b>&nbsp;'+vs.join(' · ')+'</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="acc" data-wdregok="1">Bevestigen en rooster herberekenen</button><button class="acc ghost" data-wdregnee="1">Annuleren</button></div></div>';
   else top='<p class="sub" style="margin:0 0 10px">Wijzig een regel en klik daarna op <b>Bevestigen</b>. Tot dan verandert er niets aan het rooster.</p>';
   var h=top+'<div class="wd-grid2"><div class="wd-card"><div class="wd-ct">Vaste regels (afgesproken)</div><ol class="wd-ol">'+
-    '<li>Doordeweeks 19:00–07:00, weekend 07:00–07:00.</li>'+
+    '<li>Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00.</li>'+
     '<li>Een dienst is één week, vrijdag t/m donderdag. Elk roosterjaar start op de eerste vrijdag van januari en loopt tot de eerste vrijdag van het jaar erna (52 of 53 weken). '+WD_JAAR+': vr '+wdD(WD_START)+' t/m do '+wdD(wdWeekEnd(WD_N-1))+' '+wdWeekEnd(WD_N-1).getFullYear()+'.</li>'+
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ heeft factor '+String(WD_REGELS.fac60).replace('.',',')+' en draait naar verhouding minder; jonger factor 1.</li>'+
     '<li>Nieuwe monteur: vul bij Per monteur een code, woonplaats en startdatum in. Het rooster blijft staan; hij neemt vanaf zijn startweek weken over (doel naar rato van de rest van het jaar) en draait vanaf het volgende roosterjaar gewoon mee.</li>'+
