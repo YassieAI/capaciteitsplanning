@@ -1023,6 +1023,39 @@ tr.wp-best td{background:var(--ok-bg)}
 .wd-laad{cursor:pointer}
 .msel-drag{outline:2px solid var(--text)!important;outline-offset:-1px;}.rpm-maand .uv-nu{outline:2.5px solid var(--accent);outline-offset:-1px;box-shadow:0 0 0 3px var(--accent-bg)}.rpm-maand .uv-nu .uv-mdn{color:var(--accent);font-weight:700}.rpm-nu{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;font-size:10px;font-weight:700;padding:0 5px;margin-left:4px;vertical-align:1px}.rm-nu{color:var(--accent)!important;font-weight:700!important}.rm-nu .rm-nul{color:var(--accent)!important}.hm-day.hm-nu{color:var(--accent);font-weight:700;border-left:2px solid var(--accent);border-right:2px solid var(--accent);background:var(--accent-bg)}
 [data-mc]{user-select:none;}
+.wd-modi{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:4px 0 6px}
+.wd-modus{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);font:inherit;color:var(--text);cursor:pointer}
+.wd-modus:hover{border-color:var(--accent)}
+.wd-modus.on{border:2px solid var(--accent);background:var(--accent-bg);padding:9px 11px}
+.wd-modus .wd-mi{font-size:20px;line-height:1;color:var(--accent);font-weight:700}
+.wd-modus small{color:var(--muted);font-size:12px;line-height:1.35}
+.wd-opties{display:flex;flex-direction:column;gap:6px;margin:4px 0}
+.wd-optie{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;padding:8px 10px;border-radius:8px;border:0.5px solid var(--border-strong);background:var(--surface);font:inherit;font-size:13px;color:var(--text);cursor:pointer}
+.wd-optie:hover{border-color:var(--accent)}
+.wd-optie.on{border:2px solid var(--accent);background:var(--accent-bg);padding:7px 9px}
+.wd-optie .nm{font-weight:600}
+.wd-optie .meta{color:var(--muted);font-size:12px}
+.wd-optie.nok .meta{color:var(--risk)}
+.wd-vn{margin-top:10px;padding:12px;border-radius:10px;border:2px solid var(--accent);background:var(--surface)}
+.wd-vn-grid{display:grid;grid-template-columns:minmax(120px,1.3fr) 1fr 28px 1fr;gap:6px 8px;align-items:center}
+.wd-vn-h{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:center}
+.wd-vn-wk b{display:block;font-size:13px}.wd-vn-wk small{color:var(--muted);font-size:12px}
+.wd-vn-p{text-align:center;padding:8px 6px;border-radius:8px;font-weight:700;font-size:14px}
+.wd-vn-p.nu{background:var(--surface-1);color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.wd-vn-p.na{background:#e5f4ea;color:#17663a;border:1px solid #2e8b57}
+.wd-vn-p.gelijk{background:var(--surface-1);color:var(--text);text-decoration:none;border:0}
+.wd-vn-pijl{text-align:center;font-size:18px;color:var(--accent);font-weight:700}
+.wd-vn-tel{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:13px}
+.wd-vn-st{margin-top:8px;font-size:13px;font-weight:600}.wd-vn-st.ok{color:#17663a}.wd-vn-st.bad{color:var(--risk)}
+.wd-dagen{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.wd-dag{padding:6px 9px;border-radius:8px;border:0.5px solid var(--border-strong);background:var(--surface);font:inherit;font-size:12px;cursor:pointer;color:var(--text);text-align:left}
+.wd-dag.on{border:2px solid var(--accent);background:var(--accent-bg);padding:5px 8px;font-weight:600}
+.wd-dag small{display:block;color:var(--muted);font-weight:400}
+.wd-deeltag{display:block;font-size:10.5px;color:#a0522d;font-weight:600;margin-top:2px;line-height:1.3}
+.wd-deelal{margin:8px 0;padding:6px 10px;border-radius:8px;background:#fdf1e7;font-size:12.5px}
+.wd-wijzig{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;border:0.5px solid var(--accent);background:var(--surface);color:var(--accent);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+.wd-wijzig:hover{background:var(--accent-bg)}
+@media (max-width:560px){.wd-vn-grid{grid-template-columns:1fr 1fr 20px 1fr}}
 </style>
 </head>
 <body>
@@ -3397,6 +3430,7 @@ function gewTekst(x){var d=String(x.doel),p=d.split('|'),m=MNAAM[x.monteur],ini=
   if(p[0]==='wd:r')return 'Waakdienst-ruil '+p[6]+' ⇄ '+p[7]+' (wk '+wdNrJ(String(p[1]||'').split('@')[1]||WD_JAAR,+p[2])+' ↔ wk '+wdNrJ(String(p[1]||'').split('@')[1]||WD_JAAR,+p[4])+')';
   if(p[0]==='wd:w')return 'Waakdienst: '+p[5]+' neemt week '+wdNrJ(String(p[1]||'').split('@')[1]||WD_JAAR,+p[2])+' over'+(p[4]?' van '+p[4]:'');
   if(p[0]==='wd:v')return 'Waakdienst: '+p[2]+' naar ander gebied ('+p[4]+')';
+  if(p[0]==='wd:d')return 'Waakdienst: '+p[5]+' neemt deel van week '+wdNrJ(String(p[1]||'').split('@')[1]||WD_JAAR,+p[2])+' over'+(p[4]?' van '+p[4]:'');
   if(p[0].indexOf('wd:')===0)return 'Waakdienst-voorstel';
   if(d.indexOf('st:')===0)return ini+' → '+propNaam({tgt:d,day:0});
   return ini+' → '+(LOCMAP[d]?LOCMAP[d].naam:d);}
@@ -5211,10 +5245,21 @@ function wdAlle(){return WD_POOL.concat(WD_FLEX.filter(function(f){return !WD_PO
 /* Nieuwe monteur = flex-monteur met startdatum {j,k}. In zijn startjaar draait hij niet automatisch mee (het rooster blijft staan,
    hij neemt weken over); vanaf het volgende roosterjaar zit hij gewoon in de pool. */
 var WD_VASTDB={}; // vastgezette jaarroosters: {jaar:{id,plan}}
+/* nieuwe monteur: vast gebied (f.geb = RA1/RA2/LN/LZ), mag helpen in (f.help) en vanaf de startdatum
+   direct meedraaien in de beurt (f.mode 'd') of weken overnemen (f.mode 'o', zoals eerst) */
+var WD_HELP={}, WD_FLEX_REG={};
+function wdFlexRegels(){
+  Object.keys(WD_FLEX_REG).forEach(function(i){delete WD_HOME_VAST[i];delete WD_VLEUGEL_VAST[i];delete WD_HELP[i];delete WD_TRAP_START[i];});WD_FLEX_REG={};
+  WD_FLEX.forEach(function(f){var x=false;
+    if(f.geb){WD_HOME_VAST[f.ini]={D:/^RA/.test(f.geb)?'RA':f.geb};if(/^RA/.test(f.geb))WD_VLEUGEL_VAST[f.ini]=f.geb==='RA1'?'noord':'zuid';x=true;}
+    if(f.help&&f.help.length){WD_HELP[f.ini]=f.help.slice();x=true;}
+    if(f.mode==='d'&&f.start){WD_TRAP_START[f.ini]={j:f.start.j,k:f.start.k};x=true;}
+    if(x)WD_FLEX_REG[f.ini]=1;});}
 function wdPoolSync(j){
+  wdFlexRegels();
   WD_POOL=WD_POOL.filter(function(m){return !m.nieuw;});
-  WD_FLEX.forEach(function(f){if(f.start&&f.start.j<j&&!WD_POOL.some(function(p){return p.ini===f.ini;}))
-    WD_POOL.push({ini:f.ini,woon:f.woon,lat:f.lat,lng:f.lng,f:f.f,nieuw:1});});
+  WD_FLEX.forEach(function(f){if(f.start&&(f.start.j<j||(f.mode==='d'&&f.start.j<=j))&&!WD_POOL.some(function(p){return p.ini===f.ini;}))
+    WD_POOL.push({ini:f.ini,woon:f.woon,lat:f.lat,lng:f.lng,f:f.f,nieuw:1,start:f.start,direct:f.mode==='d'});});
 }
 function wdStartTxt(f){return wdMetJaar(f.start.j,function(){return 'week '+wdNr(f.start.k)+' ('+wdWeekLabel(f.start.k)+') '+f.start.j;});}
 function wdNogNiet(ini,k){var f=WD_FLEX.filter(function(x){return x.ini===ini&&x.start;})[0];if(!f)return false;
@@ -5380,6 +5425,7 @@ function wdFactor(m){return m.f<1?WD_REGELS.fac60:1;}
 function wdMag(prep,ini,s){ // mag ini deze dienst (slot of gebied) draaien?
   if(!prep.tijd[ini])return false; // niet (meer) in de pool, bv. Zara-monteur
   if(s==='SCH'){var m=wdAlle().filter(function(x){return x.ini===ini;})[0];if(WD_GEEN_SCH.indexOf(ini)>=0)return false;return !(WD_REGELS.geenSch60&&m.f<1);}
+  if(WD_HELP[ini]&&WD_HELP[ini].indexOf(s)>=0)return true; // nieuwe monteur mag hier helpen (door de teamleider aangevinkt)
   var sl=prep.slotDef[s];
   if(sl&&sl.wing){ // Randstad 1/2: alleen wie in de Randstad hoort, uit de juiste vleugel
     if(prep.home[ini]!==sl.g)return false;
@@ -5490,6 +5536,7 @@ function wdTrapAbs(j){var n=0;for(var y=WD_BASISJAAR;y<j;y++)n+=wdTrapWeken(y);r
 function wdTrapSlot(prep,ini){var h=prep.home[ini];if(h==='RA')return wdVleugel(ini)==='noord'?'RA1':'RA2';return h;}
 function wdTrapLeden(prep,sl){
   var pool=WD_POOL.map(function(m){return m.ini;});
+  WD_FLEX.forEach(function(f){if(f.mode==='d'&&f.start&&pool.indexOf(f.ini)<0&&prep.tijd[f.ini])pool.push(f.ini);}); // direct meedraaien: zit in de beurt vanaf zijn startweek, ook als het ritme in een eerder jaar wordt opgebouwd
   var l=(WD_TRAP[sl]||[]).filter(function(i){return pool.indexOf(i)>=0&&wdTrapSlot(prep,i)===sl;});
   pool.forEach(function(i){if(l.indexOf(i)<0&&wdTrapSlot(prep,i)===sl)l.push(i);}); // nieuwe monteurs achteraan
   return l;
@@ -5559,6 +5606,7 @@ function wdTrapAlles(prep,L){
   var pool=WD_POOL.map(function(m){return m.ini;});
   var q=WD_TRAP.SCH.filter(function(i){return pool.indexOf(i)>=0&&wdMag(prep,i,'SCH');});
   WD_POOL.forEach(function(m){if(q.indexOf(m.ini)<0&&wdMag(prep,m.ini,'SCH'))q.push(m.ini);});
+  WD_FLEX.forEach(function(f){if(f.mode==='d'&&f.start&&q.indexOf(f.ini)<0&&wdMag(prep,f.ini,'SCH'))q.push(f.ini);}); // direct meedraaien: ook schaduw vanaf de startweek
   var waak={},last={},cnt={},sch=[],schN={},schF={},lastReg=null;
   var FA={};(function(){var y2=WD_BASISJAAR,ac=0;while(ac<=L+60){var a2=ac;wdMetJaar(y2,function(){Object.keys(WD_FEEST).forEach(function(k){FA[a2+(+k)]=1;});});ac+=wdTrapWeken(y2);y2++;}})();
   function waakWeek(t){var ky=KA[t];ws.forEach(function(sl){var fx=FIX[sl]&&FIX[sl][t],i;if(fx){i=fx;M[sl].zet(i,t);}else i=M[sl].volgende(t,ky?function(x){return heeft(ky,x);}:null);R[sl][t]=i;if(i){(waak[i]=waak[i]||{})[t]=1;zet(ky,i);}});}
@@ -5749,7 +5797,15 @@ function wdExcelMaak(){
     var r=4;W.filter(function(x){return x.j===j;}).forEach(function(x){
       var v=[isoWeek(x.tot),dd(x.van),dd(x.tot),x.feest].concat(sl.map(function(s){var ii=x.w[s];if(!ii)return 'OPEN';var hs=wdTrapSlot(prep,ii);return hs&&hs!==s&&hs!=='SCH'?ii+' (hulp uit '+NAAM[hs].toLowerCase()+')':ii;})).concat([x.w.SCH||'OPEN',x.za||'']);
       v.forEach(function(val,i){var cc=js.getCell(r,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i>=4,kl:i>=4?(val==='OPEN'?'C00000':(KL[sl.concat(['SCH','ZA'])[i-4]]||'000000')):'000000'});if(x.feest)vul(cc,'D9D9D9');if(val==='OPEN')vul(cc,'F8CBAD');cc.alignment={horizontal:i===3?'left':'center'};});
+      sl.concat(['SCH']).forEach(function(s2,si){var dl=wdDeelVan(x.oj,x.k,s2);if(!dl.length)return;var cc=js.getCell(r,5+si);
+        cc.value=cc.value+' (deel: '+dl.map(function(q){return q.ini;}).join(', ')+')';cc.note=wdMetJaar(x.oj,function(){return dl.map(function(q){return q.ini+' neemt over: '+wdDeelTxt(q);}).join('\n');});vul(cc,'FDE9D9');});
       r++;});
+    var DL=[];W.filter(function(x){return x.j===j;}).forEach(function(x){wdDeelVan(x.oj,x.k).forEach(function(q){DL.push({x:x,q:q});});});
+    if(DL.length){var ds=wb.addWorksheet('Deeloverdrachten '+j,{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
+      var dc=ds.getCell(1,1);dc.value='Deel overgenomen (dag of uren) · '+j+' · telt naar rato: 1 dag = 1/7 week';fnt(dc,{bold:true,size:14,kl:'1F3864'});
+      kop(ds,3,['Week','Dag en tijd','Dienst','Vaste monteur','Neemt over','Telt als (week)','Door'],'A0522D');[7,44,20,14,14,14,22].forEach(function(w,i){ds.getColumn(i+1).width=w;});
+      DL.forEach(function(o,n){var q=o.q,vals=[isoWeek(o.x.tot),wdMetJaar(o.x.oj,function(){return wdDeelTxt(q);}),NAAM[q.slot]||q.slot,q.oud,q.ini,Math.round(wdMetJaar(o.x.oj,function(){return wdDeelFrac(q);})*100)/100,q.door||''];
+        vals.forEach(function(val,i){var cc=ds.getCell(4+n,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i===4});cc.alignment={horizontal:i===1||i===6?'left':'center'};});});}
   });
   /* ---- Zara ---- */
   var zs=wb.addWorksheet('Zara',{views:[{state:'frozen',xSplit:1,ySplit:3,showGridLines:false}]});
@@ -5899,7 +5955,7 @@ function wdOpslaan(id,doel,door,status){
 }
 function wdRoleNaam(){return ROLES.filter(function(x){return x.id===role;})[0].naam;}
 function wdOpenAantal(){return wdRuilen.filter(function(r){return r.status==='open'&&wdJaarOk(r);}).length+wdVerpl.filter(function(r){return r.status==='open'&&(!r.t||wdJaarOk(r));}).length;}
-function wdSigStr(){return WD_FLEX.map(function(f){return f.ini+(f.start?'@'+f.start.j+'-'+f.start.k:'');}).join('+')+'~'+Object.keys(WD_VASTDB).map(function(k){return k+':'+WD_VASTDB[k].id;}).join(',')+'#'+wdRuilen.map(function(r){return r.id+r.status;}).join(',')+'|'+wdVerpl.map(function(r){return r.id+r.status;}).join(',');}
+function wdSigStr(){return WD_FLEX.map(function(f){return f.ini+(f.start?'@'+f.start.j+'-'+f.start.k:'')+(f.geb||'')+(f.help||[]).join('.')+(f.mode||'');}).join('+')+'~'+Object.keys(WD_VASTDB).map(function(k){return k+':'+WD_VASTDB[k].id;}).join(',')+'#'+wdRuilen.map(function(r){return r.id+r.status;}).join(',')+'|'+wdVerpl.map(function(r){return r.id+r.status;}).join(',')+'|'+WD_DEEL.map(function(r){return r.id;}).join(',');}
 /* waarschuwing bij een weekvoorstel: staat de monteur al te kort ervoor/erna in een dienst? */
 /* wat stond er eerst? (goedgekeurd weekvoorstel of ruil) */
 function wdWasBij(k,sl){var r=null;
@@ -6642,7 +6698,7 @@ function wdViewKaart(){
     '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+wdVerschoven();
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+wdNr(wdKaartWk)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
-      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
+      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+wdDeelVan(WD_JAAR,wdKaartWk,sl).map(function(x){return '<div class="wd-deeltag" style="margin:-2px 0 6px 18px;font-size:12px">½ '+x.ini+' neemt over: '+wdDeelTxt(x)+'</div>';}).join('')+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
       (function(){var zi=c.za&&c.za[wdKaartWk],zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zm?'<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+zm.woon:'leeg')+'</b></div>';})()+'</div>';}
   if(wdKaartIni&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za)[zm.ini],zo=0;
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+zm.woon+' · Zara-waakdienst, woonplaats maakt niet uit</div>'+
@@ -6652,7 +6708,7 @@ function wdViewKaart(){
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
       h+='<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</span><b>'+c.prep.tijd[m.ini][g]+' min · '+(thuis?'<span class="badge b-ok">thuis</span>':ok?'<span class="badge b-ruim">mag</span>':'<span class="badge b-risk">te ver</span>')+'</b></div>';});
     if(wdKaartWk!=null)h+=wdVoorstelPaneel(c,wdKaartWk,m.ini);
-    h+='<div class="wd-kv"><span>Diensten '+WD_JAAR+'</span><b>'+x.waak+' waak + '+x.sch+' schaduw = '+x.tot+'</b></div>'+wdStrip(m.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';}
+    h+='<div class="wd-kv"><span>Diensten '+WD_JAAR+'</span><b>'+x.waak+' waak + '+x.sch+' schaduw = '+x.tot+(function(){var v=wdDeelTel(WD_JAAR)[m.ini]||0;return Math.abs(v)>0.001?' <span class="wd-mut">('+(v>0?'+':'−')+wdN2(Math.abs(v))+' deel)</span>':'';})()+'</b></div>'+wdStrip(m.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';}
   h+='<div class="wd-card"><div class="wd-ct">Per gebied</div><table class="wd-tbl"><thead><tr><th>Gebied</th><th>Woont</th><th>Inzetbaar</th><th>Waak / pers.</th><th>Aanrij</th></tr></thead><tbody>';
   c.prep.gIds.forEach(function(g){var woont=WD_POOL.filter(function(m){return c.prep.home[m.ini]===g;}).length;var inz=WD_POOL.filter(function(m){return wdMagG(c.prep,m.ini,g);}).length;var ns=wdNSlots(c.prep,g);
     var tr=0,n=0;c.plan.forEach(function(wk){c.prep.sIds.forEach(function(sl){if(wdG(c.prep,sl)===g&&wk[sl]){tr+=c.prep.tijd[wk[sl]][g];n++;}});});
@@ -6730,16 +6786,16 @@ function wdViewRooster(){
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+wdNr(wdNuWeek())+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
-  else h+='<p class="sub">Klik een weeknummer om die week op de kaart te zien. Klik een dienst om te zien wie er die week nog meer dienst heeft en met wie geruild mag worden, of <b>sleep</b> een dienst op een andere: groen = ruil mag. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
+  else h+='<p class="sub">Kan iemand niet? Klik <b>✎ Wijzigen</b> bij de week. <span style="color:#a0522d;font-weight:600">½</span> = deel overgenomen. Tip: sleep een dienst op een andere om snel te ruilen. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
   h+='<div class="wd-scroll"><table class="wd-tbl wd-rooster"><thead><tr><th>Week</th>'+slots.map(function(s){return '<th><i class="wd-sw" style="background:'+wdKleur(wdKey,s)+'"></i>'+wdGNaam(c,s)+'</th>';}).join('')+'<th><i class="wd-sw" style="background:#8e5bd1"></i>Zara</th></tr></thead><tbody>';
   function rijHtml(k,own,cc,nr){var wk=cc.plan[k],h='';
     var f=WD_FEEST[k];
     var xn=wdJaarVan(new Date()),isNu=!!xn&&xn.j===cc.jr&&xn.k===k;
     var vk=wdVakWeek(k),vr=wdVakRij(vk);
-    h+='<tr'+(f||isNu||vr?' class="'+(f?'wd-feestrij':(vr?'wd-vkr'+vr:''))+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk">'+(own?'<button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+nr+'</button>':'<b>'+nr+'</b>')+' <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+(vk.length?'<div>'+wdVakPills(vk)+'</div>':'')+'</td>';
+    h+='<tr'+(f||isNu||vr?' class="'+(f?'wd-feestrij':(vr?'wd-vkr'+vr:''))+(isNu?' wd-nurij':'')+'"':'')+'><td class="wd-wk">'+(own?'<button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="|'+k+'" title="Toon week op kaart">'+nr+'</button>':'<b>'+nr+'</b>')+' <span>'+wdWeekLabel(k)+'</span>'+(isNu?' <span class="badge b-ruim" style="margin-left:4px">nu</span>':'')+(f?'<span class="wd-fb" title="'+f.join(', ')+'">'+f[0]+'</span>':'')+(vk.length?'<div>'+wdVakPills(vk)+'</div>':'')+(own&&(wdDirect()||role==='RD')?'<div><button class="wd-wijzig" data-wdwijzig="'+k+'" title="Ruilen, hele week of deel laten overnemen">✎ Wijzigen</button></div>':'')+'</td>';
     slots.forEach(function(s){var i=wk[s];
       var cls='wd-chip'+(team&&wdAlleen&&i&&team[i]?' mine':'')+(team&&wdAlleen&&i&&!team[i]?' dim':'')+(own&&wdSel&&wdSel.k===k&&wdSel.s===s?' sel':'');
-      h+='<td>'+(i?(own?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'"'+(lfWaak(k,s)?' style="'+lfStijl()+'"':'')+'>'+i+'</button>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''):'<span class="'+cls+'" style="cursor:default" title="Vaste dienst uit het rooster van '+cc.jr+' (staat daar, niet te ruilen)">'+i+'</span>'):'<span class="wd-bad">leeg</span>')+'</td>';});
+      h+='<td>'+(i?(own?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'"'+(lfWaak(k,s)?' style="'+lfStijl()+'"':'')+'>'+i+'</button>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''):'<span class="'+cls+'" style="cursor:default" title="Vaste dienst uit het rooster van '+cc.jr+' (staat daar, niet te ruilen)">'+i+'</span>'):'<span class="wd-bad">leeg</span>')+wdDeelVan(cc.jr,k,s).map(function(x){return '<span class="wd-deeltag" title="Deel overgenomen, telt naar rato">½ '+x.ini+': '+wdDeelTxt(x)+'</span>';}).join('')+'</td>';});
     var zi=cc.za&&cc.za[k];h+='<td>'+(zi?(own?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZA'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'" title="Zara-waakdienst · klik om te ruilen">'+zi+'</button>':'<span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi+'</span>'):'<span class="wd-bad">leeg</span>')+'</td>';
     h+='</tr>';return h;}
   /* per kalenderjaar: wk 53 van 2026 (25–31 dec) staat onderaan 2026, niet bovenaan 2027 */
@@ -6886,32 +6942,117 @@ function wdOverOpties(c,k,s){var A=c.plan[k][s],voor={},uit=[];wdCheck(c.prep,c.
     wdCheck(c.prep,na).forEach(function(f){if(!voor[f.m]&&f.m.indexOf(x)>=0)r.push(f.m);});
     uit.push({x:x,r:r,e:wdErnst(r),tot:t[x]?t[x].tot:0});});
   uit.sort(function(a,b){return a.e-b.e||a.tot-b.tot;});return uit;}
+/* ---------- deel overnemen: een collega neemt één of meer dagen of een paar uur van een waakweek over ----------
+   Telt naar rato: 1 dag = 1/7 week, een paar uur = dat deel van de dienst die dag. Het rooster zelf (wie de week heeft) verandert niet. */
+var WD_DEEL=[], wdModus='ruil', wdKeus=null, wdKeusKey='', wdDeelF={x:'',d:[],tv:'',tt:''};
+var WD_DAGN=['vr','za','zo','ma','di','wo','do'];
+function wdFeestOp(dt){return wdFeestLijst(dt.getFullYear()).some(function(f){return f[0].getMonth()===dt.getMonth()&&f[0].getDate()===dt.getDate();});}
+/* waakdienst op dag d (0 = vrijdag) van week k: doordeweeks 19:00–07:00, weekend en feestdag 07:00–07:00 */
+function wdDeelVenster(k,d){var s0=wdWeekStart(k),dt=new Date(s0.getFullYear(),s0.getMonth(),s0.getDate()+d),we=d===1||d===2||wdFeestOp(dt);
+  var a=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),we?7:19),b=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+1,7);return {dt:dt,a:a,b:b,u:(b-a)/36e5};}
+function wdHm(d){return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function wdDeelUren(v,tv,tt){
+  function t(x){var m=/^(\d{1,2}):(\d{2})$/.exec(x||'');if(!m)return null;var r=new Date(v.dt.getFullYear(),v.dt.getMonth(),v.dt.getDate(),+m[1],+m[2]);if(r<v.a)r=new Date(r.getTime()+864e5);return r;}
+  var a=t(tv)||v.a,b=t(tt)||v.b;if(b<=a)b=new Date(b.getTime()+864e5);if(a<v.a)a=v.a;if(b>v.b)b=v.b;return Math.max(0,(b-a)/36e5);}
+function wdDeelEen(x){return x.d.length===1&&!!(x.tv||x.tt);}
+function wdDeelFrac(x){var f=0;(x.d||[]).forEach(function(d){var v=wdDeelVenster(x.k,d),u=wdDeelEen(x)?wdDeelUren(v,x.tv,x.tt):v.u;f+=Math.min(1,u/v.u)/7;});return f;}
+function wdDeelDag(k,d){var v=wdDeelVenster(k,d);return WD_DAGN[d]+' '+wdD(v.dt);}
+function wdDeelTxt(x){return x.d.map(function(d){var v=wdDeelVenster(x.k,d),t=WD_DAGN[d]+' '+wdD(v.dt);return t+' '+(wdDeelEen(x)?(x.tv||wdHm(v.a))+'–'+(x.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b));}).join(', ');}
+function wdDeelVan(j,k,sl){return WD_DEEL.filter(function(x){return x.key===wdKey&&x.jaar===j&&x.k===k&&(sl==null||x.slot===sl);});}
+function wdDeelTel(j){var t={};WD_DEEL.forEach(function(x){if(x.key!==wdKey||x.jaar!==j)return;var f=wdMetJaar(j,function(){return wdDeelFrac(x);});t[x.ini]=(t[x.ini]||0)+f;if(x.oud)t[x.oud]=(t[x.oud]||0)-f;});return t;}
+function wdN2(v){return String(Math.round(v*100)/100).replace('.',',');}
+function wdDeelDoel(x){return 'wd:d|'+[x.key+(x.jaar!==WD_BASISJAAR?'@'+x.jaar:''),x.k,x.slot,x.oud||'',x.ini,x.d.join('.'),(x.tv||'')+'-'+(x.tt||'')].join('|');}
+function wdDeelZet(f,v){wdDeelF[f]=v;if(f==='x')wdKeus='deel';render();var el=document.querySelector('.wd-vn');if(el&&f==='x')el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function wdDeelMaak(){var c=wdC(),k=wdSel.k,sl=wdSel.s,A=c.plan[k][sl],F=wdDeelF;if(!F.x||!F.d.length)return;
+  var een=F.d.length===1;
+  var x={id:propId++,key:wdKey,jaar:WD_JAAR,k:k,slot:sl,oud:A,ini:F.x,d:F.d.slice().sort(function(a,b){return a-b;}),tv:een?F.tv:'',tt:een?F.tt:'',door:wdRoleNaam()};
+  WD_DEEL.push(x);wdOpslaan(x.id,wdDeelDoel(x),x.door,'doorgevoerd');
+  sbToast(x.ini+' neemt '+wdDeelTxt(x)+' over van '+A+' (week '+wdNr(k)+').');
+  wdSel=null;wdKeus=null;wdDeelF={x:'',d:[],tv:'',tt:''};render();}
+function wdDeelWeg(id){var x=WD_DEEL.filter(function(z){return z.id===id;})[0];if(!x)return;
+  if(!confirm('Deeloverdracht intrekken?\n\n'+x.ini+' neemt '+wdMetJaar(x.jaar,function(){return wdDeelTxt(x);})+' over van '+x.oud+'.\n\nDaarna draait '+x.oud+' weer de hele week.'))return;
+  WD_DEEL=WD_DEEL.filter(function(z){return z.id!==id;});wdOpslaan(x.id,wdDeelDoel(x),wdRoleNaam(),'ingetrokken');sbToast('Deeloverdracht ingetrokken.');render();}
+/* voor/na: links hoe het nu is, rechts hoe het wordt */
+function wdVNHtml(titel,rows,tots,bad,knop){
+  var h='<div class="wd-vn"><div class="wd-sub2" style="margin-top:0">'+titel+'</div><div class="wd-vn-grid"><div class="wd-vn-h"></div><div class="wd-vn-h">NU</div><div class="wd-vn-h"></div><div class="wd-vn-h">NA</div>';
+  rows.forEach(function(r){h+='<div class="wd-vn-wk"><b>'+r.t+'</b><small>'+r.sub+'</small></div><div class="wd-vn-p nu">'+r.nu+'</div><div class="wd-vn-pijl">→</div><div class="wd-vn-p na">'+r.na+'</div>';});
+  h+='</div><div class="wd-vn-tel"><span class="wd-mut">Diensten '+WD_JAAR+':</span>'+tots.map(function(x){var g=Math.abs(x.a-x.b)<0.001;return '<span><b>'+x.i+'</b> '+wdN2(x.a)+' → '+(g?wdN2(x.b)+' <span class="wd-mut">(gelijk)</span>':'<b>'+wdN2(x.b)+'</b>')+'</span>';}).join('')+'</div>';
+  h+=bad&&bad.length?'<div class="wd-vn-st bad">⚠ Let op: '+bad.map(esc).join(' · ')+'</div>':'<div class="wd-vn-st ok">✔ Past binnen de regels</div>';
+  return h+'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+knop+'<button class="acc ghost" data-wdkeus="">Terug</button></div></div>';}
 function wdRuilPaneel(){
   if(wdSel.s==='ZA')return wdZaPaneel();
-  var c=wdC(),k=wdSel.k,s=wdSel.s,A=c.plan[k][s];
-  var h='<div class="ai wd-ruil"><div class="r1" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="hd"><span class="dot"></span>Week '+wdNr(k)+' · '+wdWeekLabel(k)+' · '+wdGNaam(c,s)+': '+A+wdNm(A)+'</div><span style="display:flex;gap:6px"><button class="acc ghost" data-wdkaart="'+A+'|'+k+'">Toon op kaart</button><button class="acc ghost" data-wdclose="1">Sluiten</button></span></div>';
-  h+='<div class="wd-sub2">Ook dienst deze week</div><div class="wd-chips">'+Object.keys(c.plan[k]).filter(function(x){return x!==s;}).map(function(x){var i=c.plan[k][x];return '<span class="wd-tag"><i class="wd-sw" style="background:'+wdKleur(wdKey,x)+'"></i>'+wdGNaam(c,x)+': <b>'+(i||'leeg')+'</b></span>';}).join('')+'</div>';
+  var c=wdC(),k=wdSel.k,s=wdSel.s,dec=wdDirect();
+  var kop='<div class="r1" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="hd"><span class="dot"></span>Week '+wdNr(k)+' · '+wdWeekLabel(k)+(s?' · '+wdGNaam(c,s)+': '+c.plan[k][s]+wdNm(c.plan[k][s]):'')+'</div><span style="display:flex;gap:6px">'+(s?'<button class="acc ghost" data-wdkaart="'+c.plan[k][s]+'|'+k+'">Toon op kaart</button>':'')+'<button class="acc ghost" data-wdclose="1">Sluiten</button></span></div>';
+  if(!s){ // knop Wijzigen bij een week: eerst kiezen welke dienst
+    var wk0=c.plan[k];
+    return '<div class="ai wd-ruil">'+kop+'<div class="wd-sub2">Welke dienst wil je wijzigen?</div><div class="wd-chips">'+c.prep.sIds.concat(['SCH']).filter(function(x){return wk0[x];}).map(function(x){return '<button class="wd-chip" data-wdrkies="'+k+'|'+x+'" style="padding:7px 11px"><i class="wd-sw" style="background:'+wdKleur(wdKey,x)+'"></i>'+wdGNaam(c,x)+': <b>'+wk0[x]+'</b></button>';}).join('')+(c.za&&c.za[k]?'<button class="wd-chip" data-wdza="'+k+'" style="padding:7px 11px;border-color:#8e5bd1"><i class="wd-sw" style="background:#8e5bd1"></i>Zara: <b>'+c.za[k]+'</b></button>':'')+'</div></div>';}
+  var A=c.plan[k][s],key=k+'|'+s;if(wdKeusKey!==key){wdKeusKey=key;wdKeus=null;wdDeelF={x:'',d:[],tv:'',tt:''};}
+  var h='<div class="ai wd-ruil">'+kop;
   var mag=wdIsMine(A)||role==='RD'||rAlleRegios(); // teamleiders Noord en Zuid nemen elkaar over
-  if(!mag){h+='<div class="empty" style="margin-top:10px">'+A+' zit niet in jouw team. Een ruil voorstellen kan de teamleider van '+A+' of Manager R/D.</div></div>';return h;}
-  var goed=[],fout=[],voor={};wdCheck(c.prep,c.plan).forEach(function(f){voor[f.m]=1;});
-  c.plan.forEach(function(wk,k2){Object.keys(wk).forEach(function(s2){if(k2===k&&s2===s)return;var B=wk[s2];if(!B||B===A)return;
-    var r=wdRuilCheck(c,k,s,k2,s2,voor);(r.length?fout:goed).push({k:k2,s:s2,B:B,r:r,d:Math.abs(k2-k)});});});
-  goed.sort(function(a,b){return a.d-b.d;});fout.forEach(function(f){f.e=wdErnst(f.r);});fout.sort(function(a,b){return a.e-b.e||a.d-b.d;});
-  h+='<div class="wd-sub2">1. Ruilen binnen de regels ('+goed.length+')</div>';
-  if(!goed.length)h+='<div class="empty">Geen ruil die precies binnen de regels past. Kijk bij 2 of 3.</div>';
-  goed.slice(0,8).forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'">'+(wdDirect()?'Ruilen':'Ruil voorstellen')+'</button></div><div class="meta"><span>'+A+' neemt week '+wdNr(g.k)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+' · '+wdGNaam(c,s)+'</span></div></div>';});
-  if(goed.length>8)h+='<p class="sub" style="margin-top:6px">+ '+(goed.length-8)+' verdere mogelijkheden verder in het jaar.</p>';
-  var rest=fout.filter(function(f){return f.e<9;}).slice(0,6);
-  h+='<div class="wd-sub2">2. Beste van de rest: ruil die net niet past ('+rest.length+')</div><p class="sub" style="margin:0 0 6px">Het rooster is krap. Deze ruilen breken een regel, de lichtste staat bovenaan (bijv. 4 weken rust in plaats van 5). '+(wdDirect()?'Je kunt ze toch doorvoeren; je krijgt eerst een melding met de regel die je breekt.':'Je kunt ze toch voorstellen; Manager R/D beslist.')+'</p>';
-  if(!rest.length)h+='<div class="empty">Ook geen ruil die net niet past.</div>';
-  rest.forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc ghost" data-wdruil="'+k+'|'+s+'|'+g.k+'|'+g.s+'" data-bad="'+esc(g.r.join(' · '))+'">'+(wdDirect()?'Toch ruilen':'Toch voorstellen')+'</button></div><div class="meta"><span>'+A+' neemt week '+wdNr(g.k)+' ('+wdWeekLabel(g.k)+') · '+wdGNaam(c,g.s)+'</span><span>'+g.B+' neemt week '+(k+1)+'</span></div><div class="meta wd-bad">Let op: '+g.r.map(esc).join(' · ')+'</div></div>';});
-  var ov=wdOverOpties(c,k,s).filter(function(o){return o.e<9;}).slice(0,6);
-  h+='<div class="wd-sub2">3. Of laat iemand deze week overnemen ('+ov.length+')</div><p class="sub" style="margin:0 0 6px">Geen ruil terug: '+A+' is deze week vrij en de ander draait hem. Wie de minste diensten heeft staat bovenaan.</p>';
-  if(!ov.length)h+='<div class="empty">Niemand kan deze week overnemen.</div>';
-  ov.forEach(function(o){h+='<div class="sugg"><div class="r1"><span class="nm">'+o.x+wdNm(o.x)+' <span class="wd-mut" style="font-weight:400">('+o.tot+' diensten dit jaar)</span></span><button class="acc'+(o.r.length?' ghost':'')+'" data-wdovn="'+k+'|'+s+'|'+o.x+'"'+(o.r.length?' data-bad="'+esc(o.r.join(' · '))+'"':'')+'>'+(o.r.length?(wdDirect()?'Toch overnemen':'Toch voorstellen'):(wdDirect()?'Overnemen':'Overname voorstellen'))+'</button></div>'+(o.r.length?'<div class="meta wd-bad">Let op: '+o.r.map(esc).join(' · ')+'</div>':'<div class="meta"><span>past binnen de regels</span></div>')+'</div>';});
-  h+='<details class="wd-det"><summary>Waarom niet met de anderen? (dichtstbijzijnde weken)</summary>';
-  fout.slice().sort(function(a,b){return a.d-b.d;}).slice(0,8).forEach(function(f){h+='<div class="wd-nee"><b>'+f.B+'</b> wk '+wdNr(f.k)+' '+wdGNaam(c,f.s)+' — '+f.r[0]+(f.r.length>1?' (+'+(f.r.length-1)+')':'')+'</div>';});
-  h+='</details></div>';
+  if(!mag){h+='<div class="empty" style="margin-top:10px">'+A+' zit niet in jouw team. Ruilen of laten overnemen kan de teamleider van '+A+' of Manager R/D.</div></div>';return h;}
+  h+='<div class="wd-sub2">Deze week ook dienst</div><div class="wd-chips">'+Object.keys(c.plan[k]).filter(function(x){return x!==s;}).map(function(x){var i=c.plan[k][x];return '<span class="wd-tag"><i class="wd-sw" style="background:'+wdKleur(wdKey,x)+'"></i>'+wdGNaam(c,x)+': <b>'+(i||'leeg')+'</b></span>';}).join('')+'</div>';
+  var dl=wdDeelVan(WD_JAAR,k,s);
+  if(dl.length)h+='<div class="wd-deelal">½ Al overgenomen: '+dl.map(function(x){return '<b>'+x.ini+'</b> '+wdDeelTxt(x)+' <button class="linkbtn" data-wddeelweg="'+x.id+'">intrekken</button>';}).join(' · ')+'</div>';
+  var MO=[['ruil','⇄','Ruilen',A+' en een collega wisselen een week om.'],
+          ['over','→','Hele week overnemen','Een collega draait de hele week, '+A+' is vrij.'],
+          ['deel','½','Deel overnemen','Een collega neemt een dag of een paar uur over.']];
+  h+='<div class="wd-sub2" style="font-size:14px;color:var(--text)">'+A+' kan week '+wdNr(k)+' niet? Kies wat je wilt doen:</div><div class="wd-modi">'+MO.map(function(m){return '<button class="wd-modus'+(wdModus===m[0]?' on':'')+'" data-wdmodus="'+m[0]+'"><span class="wd-mi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+'</div>';
+  var t=wdTel(c.prep,c.plan),dt=wdDeelTel(WD_JAAR);function tot(i){return (t[i]?t[i].tot:0)+(dt[i]||0);}
+  function opt(id,nm,meta,bad){return '<button class="wd-optie'+(wdKeus===id?' on':'')+(bad?' nok':'')+'" data-wdkeus="'+id+'"><span><span class="nm">'+nm+'</span><br><span class="meta">'+meta+'</span></span><span class="wd-mut" style="font-size:12px;white-space:nowrap">'+(wdKeus===id?'gekozen ✓':'kies ›')+'</span></button>';}
+  var wkTxt=function(kk){return 'wk '+wdNr(kk)+' · '+wdWeekLabel(kk);};
+  if(wdModus==='ruil'){
+    var goed=[],fout=[],voor={};wdCheck(c.prep,c.plan).forEach(function(f){voor[f.m]=1;});
+    c.plan.forEach(function(wk,k2){Object.keys(wk).forEach(function(s2){if(k2===k&&s2===s)return;var B=wk[s2];if(!B||B===A)return;
+      var r=wdRuilCheck(c,k,s,k2,s2,voor);(r.length?fout:goed).push({k:k2,s:s2,B:B,r:r,d:Math.abs(k2-k)});});});
+    goed.sort(function(a,b){return a.d-b.d;});fout.forEach(function(f){f.e=wdErnst(f.r);});fout.sort(function(a,b){return a.e-b.e||a.d-b.d;});
+    var rest=fout.filter(function(f){return f.e<9;}).slice(0,6),G=goed.slice(0,8),alle=G.concat(rest);
+    h+='<div class="wd-sub2">Met wie wil '+A+' ruilen?</div>';
+    if(!G.length)h+='<div class="empty">Geen ruil die helemaal past. Hieronder staan ruilen met een kleine regelbreuk.</div>';
+    h+='<div class="wd-opties">'+G.map(function(g){return opt('r|'+g.k+'|'+g.s,g.B+wdNm(g.B),A+' gaat naar '+wkTxt(g.k),false);}).join('')+'</div>';
+    if(goed.length>8)h+='<p class="sub" style="margin:4px 0">+ '+(goed.length-8)+' verdere mogelijkheden verder in het jaar.</p>';
+    if(rest.length){var openR=wdKeus&&rest.some(function(g){return wdKeus==='r|'+g.k+'|'+g.s;});
+      h+='<details class="wd-det"'+(openR||!G.length?' open':'')+'><summary>Ruilen met een regelbreuk ('+rest.length+')</summary><div class="wd-opties">'+rest.map(function(g){return opt('r|'+g.k+'|'+g.s,g.B+wdNm(g.B),A+' gaat naar '+wkTxt(g.k)+' · let op: '+esc(g.r[0])+(g.r.length>1?' (+'+(g.r.length-1)+')':''),true);}).join('')+'</div></details>';}
+    var gk=alle.filter(function(g){return wdKeus==='r|'+g.k+'|'+g.s;})[0];
+    if(gk)h+=wdVNHtml(A+' en '+gk.B+' ruilen. Zo wordt het:',
+      [{t:'Week '+wdNr(k),sub:wdWeekLabel(k)+' · '+wdGNaam(c,s),nu:A,na:gk.B},{t:'Week '+wdNr(gk.k),sub:wdWeekLabel(gk.k)+' · '+wdGNaam(c,gk.s),nu:gk.B,na:A}],
+      [{i:A,a:tot(A),b:tot(A)},{i:gk.B,a:tot(gk.B),b:tot(gk.B)}],gk.r,
+      '<button class="acc" data-wdruil="'+k+'|'+s+'|'+gk.k+'|'+gk.s+'"'+(gk.r.length?' data-bad="'+esc(gk.r.join(' · '))+'"':'')+'>'+(gk.r.length?(dec?'Toch ruilen':'Toch voorstellen'):(dec?'Ja, ruilen':'Ruil voorstellen'))+'</button>');
+  } else if(wdModus==='over'){
+    var ov=wdOverOpties(c,k,s).filter(function(o){return o.e<9;}),okL=ov.filter(function(o){return !o.r.length;}).slice(0,8),nokL=ov.filter(function(o){return o.r.length;}).slice(0,6);
+    h+='<div class="wd-sub2">Wie neemt week '+wdNr(k)+' over van '+A+'? <span class="wd-mut" style="font-weight:400">minste diensten bovenaan</span></div>';
+    if(!okL.length)h+='<div class="empty">Niemand past zonder regelbreuk. Kijk hieronder.</div>';
+    h+='<div class="wd-opties">'+okL.map(function(o){return opt('o|'+o.x,o.x+wdNm(o.x),wdN2(tot(o.x))+' diensten dit jaar · past',false);}).join('')+'</div>';
+    if(nokL.length){var openO=wdKeus&&nokL.some(function(o){return wdKeus==='o|'+o.x;});
+      h+='<details class="wd-det"'+(openO||!okL.length?' open':'')+'><summary>Overnemen met een regelbreuk ('+nokL.length+')</summary><div class="wd-opties">'+nokL.map(function(o){return opt('o|'+o.x,o.x+wdNm(o.x),wdN2(tot(o.x))+' diensten · let op: '+esc(o.r[0]),true);}).join('')+'</div></details>';}
+    var ok=ov.filter(function(o){return wdKeus==='o|'+o.x;})[0];
+    if(ok)h+=wdVNHtml(ok.x+' neemt week '+wdNr(k)+' over. Zo wordt het:',
+      [{t:'Week '+wdNr(k),sub:wdWeekLabel(k)+' · '+wdGNaam(c,s),nu:A,na:ok.x}],
+      [{i:A,a:tot(A),b:tot(A)-1},{i:ok.x,a:tot(ok.x),b:tot(ok.x)+1}],ok.r,
+      '<button class="acc" data-wdovn="'+k+'|'+s+'|'+ok.x+'"'+(ok.r.length?' data-bad="'+esc(ok.r.join(' · '))+'"':'')+'>'+(ok.r.length?(dec?'Toch overnemen':'Toch voorstellen'):(dec?'Ja, '+ok.x+' neemt over':'Overname voorstellen'))+'</button>');
+  } else {
+    if(!dec){h+='<div class="empty" style="margin-top:8px">Dit kan een teamleider of Manager R/D.</div></div>';return h;}
+    var F=wdDeelF,g=wdG(c.prep,s);
+    var kand=wdAlle().filter(function(m){return m.ini!==A&&c.prep.tijd[m.ini]&&wdMag(c.prep,m.ini,s);}).map(function(m){
+      var ook=Object.keys(c.plan[k]).filter(function(z){return z!==s&&c.plan[k][z]===m.ini;})[0];return {x:m.ini,ook:ook,min:s==='SCH'?0:(c.prep.tijd[m.ini][g]||0)};});
+    kand.sort(function(a,b){return (a.ook?1:0)-(b.ook?1:0)||a.min-b.min||(a.x<b.x?-1:1);});
+    h+='<div class="wd-sub2">Wie neemt welk deel over?</div>';
+    h+='<label style="font-size:13px;color:var(--muted)">Collega <select onchange="wdDeelZet(\'x\',this.value)" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface);min-width:240px"><option value="">kies…</option>'+kand.map(function(o){return '<option value="'+o.x+'"'+(F.x===o.x?' selected':'')+'>'+o.x+wdNm(o.x)+(s!=='SCH'?' · '+o.min+' min':'')+(o.ook?' · heeft deze week al '+wdGNaam(c,o.ook):'')+'</option>';}).join('')+'</select></label>';
+    h+='<div style="margin-top:10px;font-size:13px;color:var(--muted)">Welke dag(en)?</div><div class="wd-dagen">'+[0,1,2,3,4,5,6].map(function(d){var v=wdDeelVenster(k,d);return '<button class="wd-dag'+(F.d.indexOf(d)>=0?' on':'')+'" data-wddag="'+d+'"><b>'+WD_DAGN[d]+' '+wdD(v.dt)+'</b><small>'+wdHm(v.a)+'–'+wdHm(v.b)+'</small></button>';}).join('')+'</div>';
+    if(F.d.length===1){var v1=wdDeelVenster(k,F.d[0]);
+      var tijden=[];for(var tt0=v1.a.getTime();tt0<=v1.b.getTime();tt0+=18e5)tijden.push(wdHm(new Date(tt0)));
+      function tsel(w,sel){return '<select onchange="wdDeelZet(\''+w+'\',this.value)" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)">'+tijden.map(function(x){return '<option value="'+x+'"'+(x===sel?' selected':'')+'>'+x+'</option>';}).join('')+'</select>';}
+      h+='<div style="font-size:13px;color:var(--muted);margin-top:6px">Alleen een paar uur? Van '+tsel('tv',F.tv||wdHm(v1.a))+' tot '+tsel('tt',F.tt||wdHm(v1.b))+'</div>';}
+    if(F.x&&F.d.length){
+      var x0={k:k,d:F.d.slice().sort(function(a,b){return a-b;}),tv:F.d.length===1?F.tv:'',tt:F.d.length===1?F.tt:''},fr=wdDeelFrac(x0),kk=kand.filter(function(o){return o.x===F.x;})[0],bad=[];
+      if(kk&&kk.ook)bad.push(F.x+' heeft deze week ook '+wdGNaam(c,kk.ook));
+      if(x0.d.length===1&&(x0.tv||x0.tt)&&wdDeelUren(wdDeelVenster(k,x0.d[0]),x0.tv,x0.tt)<=0)bad.push('de tijden vallen buiten de dienst van die dag');
+      h+=wdVNHtml(F.x+' neemt dit deel over. Zo wordt het:',
+        x0.d.map(function(d){var v=wdDeelVenster(k,d),een=x0.d.length===1&&(x0.tv||x0.tt);return {t:WD_DAGN[d]+' '+wdD(v.dt),sub:(een?(x0.tv||wdHm(v.a))+'–'+(x0.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b))+' · '+wdGNaam(c,s),nu:A,na:F.x};}),
+        [{i:A,a:tot(A),b:tot(A)-fr},{i:F.x,a:tot(F.x),b:tot(F.x)+fr}],bad,
+        '<button class="acc" data-wddeelok="1"'+(bad.length?' data-bad="'+esc(bad.join(' · '))+'"':'')+'>Ja, '+F.x+' neemt over</button>')+
+        '<p class="wd-uit">De rest van de week blijft bij '+A+'.</p>';}
+  }
+  h+='</div>';
   return h;
 }
 function wdDoeRuil(c,r){if(r.s1==='ZA'){var za=c.za,x=za[r.k1];za[r.k1]=za[r.k2];za[r.k2]=x;wdLaterWeg(r.jaar||WD_BASISJAAR);return;}var a=c.plan[r.k1][r.s1],b=c.plan[r.k2][r.s2];c.plan[r.k1][r.s1]=b;c.plan[r.k2][r.s2]=a;wdLaterWeg(r.jaar||WD_BASISJAAR);}
@@ -6921,7 +7062,7 @@ function wdRuilKies(c){
   var team=wdTeamSet(),hier=wdJaarVan(new Date()),nu=(hier&&hier.j===WD_JAAR)?hier.k:0,pool=WD_POOL.map(function(m){return m.ini;}).sort();
   if(team)pool.sort(function(a,b){return (team[b]?1:0)-(team[a]?1:0)||(a<b?-1:1);});
   var h='<div class="ai" style="margin-bottom:14px"><div class="hd"><span class="dot"></span>'+(wdDirect()?'Dienst ruilen of laten overnemen':'Nieuw ruilvoorstel')+'</div>'+
-    '<p class="sub" style="margin:6px 0 8px">Kies wie wil ruilen en welke dienst weg moet. Je ziet dan: 1. ruilen die binnen de regels passen, 2. het beste van de rest als het krap is, 3. wie de week kan overnemen.</p>'+
+    '<p class="sub" style="margin:6px 0 8px">Wie kan er niet? Kies de monteur en daarna de week.</p>'+
     '<label style="font-size:13px;color:var(--muted)">Monteur <select id="wdRuilMon" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface)"><option value="">kies…</option>'+
     pool.map(function(i){return '<option value="'+i+'"'+(i===wdRuilMon?' selected':'')+'>'+i+wdNm(i)+(team&&!team[i]?' (ander team)':'')+'</option>';}).join('')+'</select></label>';
   if(wdRuilMon){var d=[];c.plan.forEach(function(wk,k){if(k<nu)return;Object.keys(wk).forEach(function(sl){if(wk[sl]===wdRuilMon)d.push({k:k,s:sl});});});
@@ -6935,7 +7076,7 @@ function wdViewRuil(){
   var h=wdRuilKies(c)+'<div class="wd-sub2" style="margin-top:4px">Ingediende ruilen en wijzigingen</div><p class="sub">'+(wdDirect()?'Ruilen en overnames van de waakdienst gaan <b>direct door</b>; ze hoeven niet meer langs Manager R/D. Hieronder zie je wat er veranderd is en door wie.':'Een ruil of overname is een voorstel. Hij gaat pas in als Manager R/D hem goedkeurt in het weekoverleg; tot die tijd blijft het rooster zoals het is.')+'</p>';
   var lijst=wdRuilen.filter(function(r){return r.key===wdKey&&wdJaarOk(r);});
   var anders=wdVerpl.filter(function(v){return v.key===wdKey&&v.status==='open'&&(!v.t||wdJaarOk(v));});
-  if(!lijst.length&&!anders.length&&!wdVerpl.some(function(v){return v.t==='w'&&v.key===wdKey&&v.status==='goed'&&wdJaarOk(v);}))h+='<div class="empty">Nog niets geruild. Kies hierboven een monteur en de dienst die weg moet.</div>';
+  if(!lijst.length&&!anders.length&&!WD_DEEL.some(function(x){return x.key===wdKey&&x.jaar===WD_JAAR;})&&!wdVerpl.some(function(v){return v.t==='w'&&v.key===wdKey&&v.status==='goed'&&wdJaarOk(v);}))h+='<div class="empty">Nog niets geruild. Kies hierboven een monteur en de dienst die weg moet.</div>';
   if(anders.length){
     h+='<div class="wd-sub2">Verplaatsingen en weekvoorstellen ('+anders.length+')</div>';
     anders.slice().reverse().forEach(function(v){var mm=wdAlle().filter(function(x){return x.ini===v.ini;})[0];
@@ -6944,6 +7085,9 @@ function wdViewRuil(){
         '<div style="display:flex;gap:6px;margin-top:8px">'+(role==='RD'?'<button class="acc ghost" data-vvb="v|'+v.id+'">Bekijk voor/na</button><button class="acc" data-vwvok="'+v.id+'">Goedkeuren</button><button class="acc ghost" data-vwvnee="'+v.id+'">Afwijzen</button>':'<button class="acc ghost" data-vwvnee="'+v.id+'">Intrekken</button>')+'</div></div>';});
   }
   h+=wdGedaanHtml(c);
+  var dls=WD_DEEL.filter(function(x){return x.key===wdKey&&x.jaar===WD_JAAR;});
+  if(dls.length){h+='<div class="wd-sub2">Deel overgenomen ('+dls.length+')</div>';
+    dls.slice().reverse().forEach(function(x){h+='<div class="sugg"><div class="r1"><span class="nm">½ '+x.ini+' neemt over van '+x.oud+' · week '+wdNr(x.k)+' · '+wdGNaam(c,x.slot)+'</span><span class="badge b-ok">doorgevoerd</span></div><div class="meta"><span>'+wdDeelTxt(x)+' · telt als '+wdN2(wdDeelFrac(x))+' dienst</span><span>door '+tlBadge(x.door)+'</span></div>'+(wdDirect()||role==='RD'?'<div style="margin-top:6px"><button class="acc ghost" data-wddeelweg="'+x.id+'">Intrekken</button></div>':'')+'</div>';});}
   lijst.slice().reverse().forEach(function(r){
     var bad=r.status==='open'?wdRuilCheck(c,r.k1,r.s1,r.k2,r.s2):[];
     h+='<div class="sugg"><div class="r1"><span class="nm">'+r.a+' ⇄ '+r.b+'</span><span class="badge '+(r.status==='open'?'b-warn':r.status==='goed'?'b-ok':'b-risk')+'">'+(r.status==='open'?'te bespreken':r.status==='goed'?'goedgekeurd':'afgewezen')+'</span></div>'+
@@ -7006,20 +7150,27 @@ function wdFlexVoorHtml(c,f){
   return h;
 }
 function wdFlexKaart(c,t){
-  var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct"><i class="wd-sw" style="background:#c98a16"></i>Flex- en nieuwe monteurs ('+WD_FLEX.length+')</div><p class="wd-uitleg" style="margin:0 0 8px"><b>Flex</b>: iemand die één of meer weken meedraait. Je vult alleen een code en een woonplaats in. Flex draait niet automatisch mee en telt niet mee in de verdeling: hij staat op de kaart en je kunt hem een week laten overnemen (klik zijn speld, kies een week). <b>Nieuwe monteur</b>: vul ook een startdatum in. Het rooster verandert dan niet; vanaf zijn startweek neemt hij weken over (de tool stelt weken voor, naar rato van de rest van het jaar) en vanaf het volgende roosterjaar zit hij gewoon in de verdeling.</p>';
-  WD_FLEX.forEach(function(f){var x=t[f.ini]||{tot:0};
-    h+='<div class="wd-kv"><span><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+f.ini+'|" title="Toon op kaart">'+esc(f.ini)+'</button> · woont in '+esc(f.woon)+' · factor '+String(f.f).replace('.',',')+'</span><b>'+x.tot+' '+(x.tot===1?'dienst':'diensten')+(wdFlexMag()?' <button class="linkbtn" data-wdflexdel="'+f.id+'">verwijderen</button>':'')+'</b></div>';
+  var mag=wdFlexMag();
+  var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct"><i class="wd-sw" style="background:#c98a16"></i>Nieuwe en flex-monteurs ('+WD_FLEX.length+')</div>';
+  WD_FLEX.forEach(function(f){var x=t[f.ini]||{tot:0},st='';
     if(f.start){
-      h+='<div class="wd-uitleg" style="margin:-2px 0 8px">Nieuwe monteur · start '+wdStartTxt(f)+'.';
-      if(WD_JAAR===f.start.j){var d=wdFlexDoel(c,f);h+=' Doel naar rato: ca. '+nl1(d.doel)+' diensten over '+d.rest+' weken (nu '+x.tot+').'+(wdFlexMag()?' <button class="linkbtn" data-wdflexvoor="'+esc(f.ini)+'">Stel weken voor</button>':'');
-        if(wdFlexVoor&&wdFlexVoor.ini===f.ini)h+=wdFlexVoorHtml(c,f);}
-      else if(WD_JAAR>f.start.j)h+=' Draait dit jaar gewoon mee in de verdeling.';
-      else h+=' Nog niet gestart in '+WD_JAAR+'.';
-      h+='</div>';}
+      if(f.mode==='d'){var vj=wdVastVoor(WD_JAAR);st=WD_JAAR<f.start.j?'nog niet gestart in '+WD_JAAR:(vj&&WD_JAAR===f.start.j?'rooster '+WD_JAAR+' staat vast: neem weken over':'draait mee in de beurt');}
+      else if(WD_JAAR===f.start.j){var d=wdFlexDoel(c,f);st='neemt weken over, doel ca. '+nl1(d.doel)+' diensten (nu '+x.tot+')';}
+      else st=WD_JAAR>f.start.j?'draait mee in de beurt':'nog niet gestart in '+WD_JAAR;}
+    h+='<div class="wd-kv"><span><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+f.ini+'|" title="Toon op kaart">'+esc(f.ini)+'</button> · '+esc(f.woon)+(f.geb?' · '+(WD_GEB_NAAM[f.geb]||f.geb):'')+(f.help&&f.help.length?' · helpt in '+f.help.map(function(y){return WD_GEB_NAAM[y]||y;}).join(', '):'')+(f.start?' · vanaf '+wdStartTxt(f):' · flex')+'</span><b>'+x.tot+' '+(x.tot===1?'dienst':'diensten')+(mag?' <button class="linkbtn" data-wdflexdel="'+f.id+'">verwijderen</button>':'')+'</b></div>'+(st?'<div class="wd-uitleg" style="margin:-2px 0 6px">'+st+(f.start&&f.mode!=='d'&&WD_JAAR===f.start.j&&mag?' · <button class="linkbtn" data-wdflexvoor="'+esc(f.ini)+'">Stel weken voor</button>':'')+'</div>':'');
+    if(f.start&&f.mode!=='d'&&WD_JAAR===f.start.j&&wdFlexVoor&&wdFlexVoor.ini===f.ini)h+=wdFlexVoorHtml(c,f);
   });
-  if(!WD_FLEX.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen flex-monteurs.</div>';
-  if(wdFlexMag())h+='<div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats" style="width:160px"><datalist id="wdFxLijst">'+Object.keys(WOON).map(function(w){return '<option value="'+w+'">';}).join('')+'</datalist><select id="wdFxF"><option value="1">Factor 1</option><option value="0.75">Factor 0,75 (60+)</option></select><label class="wd-mut" style="font-size:12px">Startdatum (alleen nieuwe monteur) <input type="date" id="wdFxStart" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label><button class="acc" data-wdflexadd="1">Toevoegen</button></div><div id="wdFxMsg" class="sub" style="margin-top:6px"></div>';
-  else h+='<p class="sub" style="margin:0">Flex-monteurs toevoegen kan Manager R/D of een teamleider.</p>';
+  if(!WD_FLEX.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen nieuwe of flex-monteurs.</div>';
+  if(mag)h+='<div class="wd-sub2" style="margin-top:10px">Monteur toevoegen</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats" style="width:150px"><datalist id="wdFxLijst">'+Object.keys(WOON).map(function(w){return '<option value="'+w+'">';}).join('')+'</datalist>'+
+    '<select id="wdFxGeb" title="Gebied"><option value="">Gebied: automatisch</option>'+c.prep.sIds.map(function(x){return '<option value="'+x+'">'+wdGNaam(c,x)+'</option>';}).join('')+'</select>'+
+    '<label class="wd-mut" style="font-size:12px">Vanaf <input type="date" id="wdFxStart" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label><button class="acc" data-wdflexadd="1">Toevoegen</button></div>'+
+    '<p class="sub" style="margin:4px 0 0;font-size:12px">Met startdatum: nieuwe monteur die vast meedraait. Zonder: flex, voor losse weken.</p>'+
+    '<details class="wd-det" style="margin-top:6px"><summary>Meer opties</summary><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px"><label class="wd-mut" style="font-size:12px">Factor <select id="wdFxF"><option value="1">1</option><option value="0.75">0,75 (60+)</option></select></label>'+
+    '<span class="wd-mut" style="font-size:12px">Mag ook helpen in:</span>'+c.prep.sIds.map(function(x){return '<label style="font-size:12px;display:inline-flex;align-items:center;gap:3px"><input type="checkbox" class="wdFxHelp" value="'+x+'">'+wdGNaam(c,x)+'</label>';}).join('')+
+    '<label class="wd-mut" style="font-size:12px">Bij startdatum <select id="wdFxMode"><option value="d">direct meedraaien</option><option value="o">weken overnemen</option></select></label></div></details>'+
+    '<div id="wdFxMsg" class="sub" style="margin-top:6px"></div>'+
+    '<details class="wd-det" style="margin-top:4px"><summary>Uitleg</summary><p class="wd-uitleg" style="margin:6px 0 0"><b>Direct meedraaien</b>: hij komt meteen in de beurt, collega’s schuiven op. <b>Weken overnemen</b>: het rooster blijft staan, hij neemt losse weken over en draait volgend jaar mee. <b>Flex</b>: alleen als invaller, via zijn speld op de kaart.</p></details>';
+  else h+='<p class="sub" style="margin:0">Toevoegen kan Manager R/D of een teamleider.</p>';
   return h+'</div>';
 }
 function wdZoekPlaats(naam){ // → promise {lat,lng,woon}
@@ -7029,7 +7180,9 @@ function wdZoekPlaats(naam){ // → promise {lat,lng,woon}
     var d=j&&j.response&&j.response.docs&&j.response.docs[0];if(!d||!d.centroide_ll)throw new Error('niet gevonden');
     var m=/POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll);return {lat:+m[2],lng:+m[1],woon:d.woonplaatsnaam||naam};});
 }
-function wdFlexToevoegen(ini,woonIn,f,startIso){
+function wdFlexDoelTxt(f){return 'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].concat((f.start||f.geb||(f.help&&f.help.length)||f.mode)?[f.start?f.start.j+'-'+f.start.k:'',f.geb||'',(f.help||[]).join('.'),f.mode||'']:[]).join('|');}
+var WD_GEB_NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid'};
+function wdFlexToevoegen(ini,woonIn,f,startIso,geb,help,mode){
   ini=String(ini||'').trim().toUpperCase();woonIn=String(woonIn||'').trim();
   if(!/^[A-Z0-9]{2,6}$/.test(ini))return Promise.reject(new Error('Code: 2 tot 6 letters of cijfers'));
   if(!woonIn)return Promise.reject(new Error('Vul een woonplaats in'));
@@ -7039,15 +7192,15 @@ function wdFlexToevoegen(ini,woonIn,f,startIso){
     if(!xj||xj.j<WD_BASISJAAR||xj.j>=WD_BASISJAAR+WD_JAREN)return Promise.reject(new Error('Startdatum moet in '+WD_BASISJAAR+' t/m '+(WD_BASISJAAR+WD_JAREN-1)+' liggen'));
     start={j:xj.j,k:xj.k};}
   return wdZoekPlaats(woonIn).then(function(pl){
-    var id=propId++,fl={id:id,ini:ini,woon:pl.woon,lat:pl.lat,lng:pl.lng,f:+f||1,flex:1,start:start};
+    var id=propId++,fl={id:id,ini:ini,woon:pl.woon,lat:pl.lat,lng:pl.lng,f:+f||1,flex:1,start:start,geb:geb||'',help:(help||[]).filter(function(x){return x&&x!==geb;}),mode:start?(mode==='d'?'d':'o'):''};
     WD_FLEX.push(fl);wdPoolSync(WD_JAAR);wdCache={};
-    wdOpslaan(id,'wd:f|'+[ini,pl.woon,pl.lat.toFixed(4),pl.lng.toFixed(4),fl.f].concat(start?[start.j+'-'+start.k]:[]).join('|'),wdRoleNaam(),'doorgevoerd');
+    wdOpslaan(id,wdFlexDoelTxt(fl),wdRoleNaam(),'doorgevoerd');
     return fl;});
 }
 function wdFlexWeg(id){
   var f=WD_FLEX.filter(function(x){return x.id===id;})[0];if(!f)return;
   WD_FLEX=WD_FLEX.filter(function(x){return x.id!==id;});wdPoolSync(WD_JAAR);wdCache={};
-  wdOpslaan(id,'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].concat(f.start?[f.start.j+'-'+f.start.k]:[]).join('|'),wdRoleNaam(),'ingetrokken');
+  wdOpslaan(id,wdFlexDoelTxt(f),wdRoleNaam(),'ingetrokken');
 }
 var wdMonQ=''; // zoekterm Per monteur
 function wdMonFilter(q){wdMonQ=q||'';var v=wdMonQ.trim().toLowerCase(),tb=document.getElementById('wdMonTbl');if(!tb)return;
@@ -7057,12 +7210,13 @@ function wdMonFilter(q){wdMonQ=q||'';var v=wdMonQ.trim().toLowerCase(),tb=docume
    + eerlijk deel van alle schaduwdiensten, beide naar inzetbaarheidsfactor */
 function wdDoelPer(c){
   var p=c.prep,t=wdTel(p,c.plan),fs={},tot={},d={};
-  WD_POOL.forEach(function(m){var g=p.home[m.ini];fs[g]=(fs[g]||0)+wdFactor(m);tot[g]=(tot[g]||0)+(t[m.ini]?t[m.ini].tot:0);});
-  WD_POOL.forEach(function(m){var g=p.home[m.ini];d[m.ini]=fs[g]?tot[g]*wdFactor(m)/fs[g]:0;});
+  function fac(m){if(m.start&&m.start.j>WD_JAAR)return 0;if(m.start&&m.start.j===WD_JAAR)return wdFactor(m)*(WD_N-m.start.k)/WD_N;return wdFactor(m);}
+  WD_POOL.forEach(function(m){var g=p.home[m.ini];fs[g]=(fs[g]||0)+fac(m);tot[g]=(tot[g]||0)+(t[m.ini]?t[m.ini].tot:0);});
+  WD_POOL.forEach(function(m){var g=p.home[m.ini];d[m.ini]=fs[g]?tot[g]*fac(m)/fs[g]:0;});
   return d;
 }
 function wdViewMonteur(){
-  var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),D=wdDoelPer(c);
+  var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),D=wdDoelPer(c),DT=wdDeelTel(WD_JAAR);
   var rijen=WD_POOL.slice().filter(function(m){return !team||!wdAlleen||team[m.ini];});
   var h=wdFlexKaart(c,t);
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen</button></div>';
@@ -7079,9 +7233,9 @@ function wdViewMonteur(){
     groep.sort(function(a,b){var va=isRA?wdVleugel(a.ini):'',vb=isRA?wdVleugel(b.ini):'';return (va<vb?-1:va>vb?1:0)||(a.ini<b.ini?-1:1);});
     var gg=gem(groep),nsl=c.prep.slots.filter(function(sl){return sl.g===g;}).length;
     h+='<tr class="wd-grp" data-grp="'+g+'"><td colspan="'+ncol+'" style="background:var(--surface-1);font-weight:600"><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+' · '+groep.length+' monteurs · '+nsl+' dienst'+(nsl===1?'':'en')+' per week <span class="wd-mut" style="font-weight:400;margin-left:8px">gem. waak '+nl1(gg.w)+' · schaduw '+nl1(gg.s)+' · totaal '+nl1(gg.t)+'</span></td></tr>';
-    groep.forEach(function(m){var x=t[m.ini],doel=D[m.ini]||0,afw=x.tot-doel;
+    groep.forEach(function(m){var x=t[m.ini],doel=D[m.ini]||0,dv=DT[m.ini]||0,afw=x.tot+dv-doel;
       var z=(m.ini+' '+wdNaam(m.ini)+' '+m.woon).toLowerCase();
-      h+='<tr data-z="'+esc(z)+'" data-g="'+g+'"><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span></td><td>'+m.woon+'</td><td><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+(isRA?' · '+wdVleugels(m.ini).join('/'):'')+'</td><td>'+String(wdFactor(m)).replace('.',',')+'</td><td><b>'+x.waak+'</b></td><td><b>'+x.sch+'</b></td><td><b>'+x.tot+'</b></td><td class="'+(Math.abs(afw)>=2?'wd-bad':'')+'" title="'+(afw>=0?'+':'−')+nl1(Math.abs(afw))+' t.o.v. doel">'+nl1(doel)+'</td><td>'+x.feest+'</td>'+(c.prep.carry?'<td>'+(function(v){return (v>0.05?'+':v<-0.05?'−':'')+nl1(Math.abs(v));})(c.prep.carry.dev[m.ini]||0)+'</td>':'')+'<td>'+wdStrip(m.ini)+'</td></tr>';});
+      h+='<tr data-z="'+esc(z)+'" data-g="'+g+'"><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span></td><td>'+m.woon+'</td><td><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+(isRA?' · '+wdVleugels(m.ini).join('/'):'')+'</td><td>'+String(wdFactor(m)).replace('.',',')+'</td><td><b>'+x.waak+'</b></td><td><b>'+x.sch+'</b></td><td><b>'+x.tot+'</b>'+(Math.abs(dv)>0.001?' <small style="color:#a0522d;font-weight:600" title="Deel overgenomen (dagen/uren), telt naar rato">'+(dv>0?'+':'−')+wdN2(Math.abs(dv))+'</small>':'')+'</td><td class="'+(Math.abs(afw)>=2?'wd-bad':'')+'" title="'+(afw>=0?'+':'−')+nl1(Math.abs(afw))+' t.o.v. doel">'+nl1(doel)+'</td><td>'+x.feest+'</td>'+(c.prep.carry?'<td>'+(function(v){return (v>0.05?'+':v<-0.05?'−':'')+nl1(Math.abs(v));})(c.prep.carry.dev[m.ini]||0)+'</td>':'')+'<td>'+wdStrip(m.ini)+'</td></tr>';});
     var sw=0,ss=0,st=0,sf=0;groep.forEach(function(m){var x=t[m.ini];sw+=x.waak;ss+=x.sch;st+=x.tot;sf+=x.feest;});
     h+='<tr data-g="'+g+'" data-z="" class="wd-tot" style="background:var(--surface-1)"><td colspan="4" style="text-align:right"><b>Totaal '+wdGNaam(c,g)+'</b></td><td><b>'+sw+'</b></td><td><b>'+ss+'</b></td><td><b>'+st+'</b></td><td></td><td></td>'+(c.prep.carry?'<td></td>':'')+'<td></td></tr>';
     if(isRA)['noord','zuid'].forEach(function(vl){var a=0,b=0,c2=0,f2=0;groep.forEach(function(m){if(wdVleugel(m.ini)!==vl)return;var x=t[m.ini];a+=x.waak;b+=x.sch;c2+=x.tot;f2+=x.feest;});
@@ -7262,7 +7416,7 @@ function wireWaak(){
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
   q('[data-wdflexadd]',function(){var msg=document.getElementById('wdFxMsg');if(msg)msg.textContent='Even zoeken…';
-    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
+    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value,(document.getElementById('wdFxGeb')||{}).value,[].map.call(document.querySelectorAll('.wdFxHelp:checked'),function(x){return x.value;}),(document.getElementById('wdFxMode')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
   q('[data-wdflexvoor]',function(b){var f=WD_FLEX.filter(function(x){return x.ini===b.dataset.wdflexvoor;})[0];if(!f)return;var r=wdFlexVoorstel(wdC(),f);wdFlexVoor={ini:f.ini,lijst:r.lijst,n:r.n};render();});
   q('[data-wdflexvoorweg]',function(){wdFlexVoor=null;render();});
   q('[data-wdflexvoorok]',function(){var c=wdC(),fv=wdFlexVoor;if(!fv)return;var n=0;
@@ -7279,6 +7433,12 @@ function wireWaak(){
   q('[data-wdflexdel]',function(b){var f=WD_FLEX.filter(function(x){return x.id===+b.dataset.wdflexdel;})[0];if(!f)return;if(window.confirm('Flex-monteur '+f.ini+' verwijderen? Weken die hij had overgenomen worden weer leeg.')){wdFlexWeg(f.id);render();}});
   q('[data-wdza]',function(b){wdOpenPaneel(+b.dataset.wdza,'ZA');});
   q('[data-wdclose]',function(){wdSel=null;render();});
+  q('[data-wdmodus]',function(b){wdModus=b.dataset.wdmodus;wdKeus=null;render();});
+  q('[data-wdkeus]',function(b){wdKeus=b.dataset.wdkeus||null;if(!wdKeus&&wdModus==='deel')wdDeelF.x='';render();var el=document.querySelector('.wd-vn');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});});
+  q('[data-wddag]',function(b){var d=+b.dataset.wddag,a=wdDeelF.d,i=a.indexOf(d);if(i>=0)a.splice(i,1);else a.push(d);wdDeelF.tv='';wdDeelF.tt='';render();});
+  q('[data-wddeelok]',function(b){if(b.dataset.bad&&!confirm('Let op:\n\n'+b.dataset.bad.split(' · ').join('\n')+'\n\nToch doorvoeren?'))return;wdDeelMaak();});
+  q('[data-wddeelweg]',function(b){wdDeelWeg(+b.dataset.wddeelweg);});
+  q('[data-wdwijzig]',function(b){wdModus='ruil';wdOpenPaneel(+b.dataset.wdwijzig,null);});
   var rm=document.getElementById('wdRuilMon');if(rm)rm.onchange=function(){wdRuilMon=rm.value;wdSel=null;render();};
   q('[data-wdrkies]',function(b){var p=b.dataset.wdrkies.split('|');wdSel={k:+p[0],s:p[1]};render();var el=document.querySelector('.wd-ruil');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});});
   q('[data-wdovn]',function(b){if(b.dataset.bad&&!confirm('Dit breekt een regel:\n\n'+b.dataset.bad.split(' · ').join('\n')+'\n\nToch doorvoeren?'))return;var p=b.dataset.wdovn.split('|'),c=wdC();wdZetWeek(c,+p[0],p[1],p[2]);wdSel=null;wdSub='ruil';sbToast(wdDirect()?'Overname doorgevoerd: '+p[2]+' draait week '+wdNr(+p[0])+'.':'Overname '+p[2]+' (week '+wdNr(+p[0])+') staat bij Te bespreken.');wdSel=null;render();});
@@ -7682,15 +7842,16 @@ async function sbLoad(opts){
     try{
       var wr=await sb.from('stuur_voorstellen').select('id,doel,door,status').like('doel','wd:%').in('status',['open','doorgevoerd']);
       if(!wr.error){
-        wdRuilen=[];wdVerpl=[];WD_FLEX=[];WD_VASTDB={};
+        wdRuilen=[];wdVerpl=[];WD_FLEX=[];WD_VASTDB={};WD_DEEL=[];
         (wr.data||[]).sort(function(a,b){return Number(a.id)-Number(b.id);}).forEach(function(row){
           var p=String(row.doel).split('|'),st=row.status==='open'?'open':'goed',id=Number(row.id);
           var kj=String(p[1]||'').split('@');p[1]=kj[0];var jr=kj[1]?+kj[1]:WD_BASISJAAR;
           if(id>=propId)propId=id+1;
           if(p[0]==='wd:r'&&p.length>=8)wdRuilen.push({id:id,key:p[1],jaar:jr,k1:+p[2],s1:p[3],k2:+p[4],s2:p[5],a:p[6],b:p[7],door:String(row.door||'').slice(0,40),status:st});
           else if(p[0]==='wd:w'&&p.length>=6)wdVerpl.push({id:id,key:p[1],jaar:jr,t:'w',k:+p[2],slot:p[3],oud:p[4],ini:p[5],door:String(row.door||'').slice(0,40),status:st});
-          else if(p[0]==='wd:f'&&p.length>=6&&st==='goed'&&!WD_POOL.some(function(x){return x.ini===p[1]&&!x.nieuw;})){var sp=/^(\d{4})-(\d+)$/.exec(p[6]||'');WD_FLEX.push({id:id,ini:p[1],woon:p[2],lat:+p[3],lng:+p[4],f:+p[5]||1,flex:1,start:sp?{j:+sp[1],k:+sp[2]}:null});}
+          else if(p[0]==='wd:f'&&p.length>=6&&st==='goed'&&!WD_POOL.some(function(x){return x.ini===p[1]&&!x.nieuw;})){var sp=/^(\d{4})-(\d+)$/.exec(p[6]||'');WD_FLEX.push({id:id,ini:p[1],woon:p[2],lat:+p[3],lng:+p[4],f:+p[5]||1,flex:1,start:sp?{j:+sp[1],k:+sp[2]}:null,geb:p[7]||'',help:String(p[8]||'').split('.').filter(Boolean),mode:p[9]||(sp?'o':'')});}
           else if(p[0]==='wd:p'&&p.length>=5&&st==='goed'){var psl=String(p[3]).split(',');WD_VASTDB[+p[2]]={id:id,plan:String(p[4]).split(';').map(function(w){var cs=w.split(','),o={};psl.forEach(function(sx,ix){o[sx]=cs[ix]||null;});return o;})};}
+          else if(p[0]==='wd:d'&&p.length>=8&&st==='goed'){var tm=String(p[7]).split('-');WD_DEEL.push({id:id,key:p[1],jaar:jr,k:+p[2],slot:p[3],oud:p[4],ini:p[5],d:String(p[6]).split('.').filter(function(z){return z!=='';}).map(Number),tv:tm[0]||'',tt:tm[1]||'',door:String(row.door||'').slice(0,40)});}
           else if(p[0]==='wd:v'&&p.length>=5)wdVerpl.push({id:id,key:p[1],ini:p[2],van:p[3],naar:p[4],door:String(row.door||'').slice(0,40),status:st});
         });
         wdVerpl.filter(function(x){return !x.t&&x.status==='goed'&&WD_KEYS.indexOf(x.key)>=0;}).forEach(function(x){WD_OVERRIDE[x.key]=WD_OVERRIDE[x.key]||{};WD_OVERRIDE[x.key][x.ini]=x.naar;});
@@ -7821,6 +7982,7 @@ metLog('wdOpslaan',function(id,doel,door,status){var p=String(doel).split('|'),s
   var kj=String(p[1]||'').split('@'),jr=kj[1]||WD_JAAR;
   if(p[0]==='wd:r')return ['Waakdienst','Waakdienst · '+jr+' · wk '+wdNrJ(jr,+p[2]),'Ruil '+p[6]+' ⇄ '+p[7]+' (wk '+wdNrJ(jr,+p[2])+' ↔ wk '+wdNrJ(jr,+p[4])+') '+st];
   if(p[0]==='wd:w')return ['Waakdienst','Waakdienst · '+jr+' · wk '+wdNrJ(jr,+p[2]),p[5]+' neemt '+p[3]+' over'+(p[4]?' van '+p[4]:'')+' ('+st+')'];
+  if(p[0]==='wd:d')return ['Waakdienst','Waakdienst · '+jr+' · wk '+wdNrJ(jr,+p[2]),p[5]+' neemt deel over'+(p[4]?' van '+p[4]:'')+' ('+st+')'];
   if(p[0]==='wd:v')return ['Waakdienst','Waakdienst · kaart',p[2]+' verplaatst van '+p[3]+' naar '+p[4]+' ('+st+')'];
   if(p[0]==='wd:f')return ['Waakdienst','Waakdienst · flex','Flex-monteur '+p[1]+' ('+p[2]+') '+(status==='ingetrokken'?'verwijderd':'toegevoegd')];
   return null;});
