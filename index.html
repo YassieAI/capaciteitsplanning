@@ -5726,7 +5726,7 @@ function wdExcelMaak(){
      '5. Kerst/jaarwisseling: wie die vorig jaar of dit rooster al had, slaat die beurt over; de volgende schuift door. Bij de start van 2027 sluit wie eind 2026 nog dienst had pas aan als er minimaal '+WD_REGELS.tussen+' weken tussen zitten.'].forEach(function(t){regel(t);});
     Object.keys(WD_TRAP_START||{}).forEach(function(i){var x=WD_TRAP_START[i];regel(i+' draait mee vanaf week '+wdMetJaar(x.j,function(){return wdNr(x.k);})+' van '+x.j+'.');});rr++;}
   regel('Diensten per week',{bold:true,size:12,kl:'1F3864'});
-  regel('Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00. Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
+  regel('Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00 (in Zuid zaterdag en zondag 07:00–23:00). Per week: Randstad noord (Amsterdam/Utrecht), Randstad zuid (Den Haag/Rotterdam), Noord, Zuid, een landelijke schaduwdienst en een eigen Zara-waakdienst.');rr++;
   regel('Legenda',{bold:true,size:12,kl:'1F3864'});
   sl.concat(['SCH','ZA']).forEach(function(x){var c=u.getCell(rr,1);c.value=x==='SCH'?'S':x==='ZA'?'Za':'1';vul(c,KL[x]);fnt(c,{bold:true,kl:'FFFFFF'});c.alignment={horizontal:'center'};regel(NAAM[x]);});
   [['FFFF00','1 = waakdienst (tabblad Ritme)'],['FF9933','S = schaduwdienst (staat bij de monteur in zijn regio en in het schaduwblok)'],['BFBFBF','grijs = week met een feestdag (waak 1 of schaduw S, zie opmerking in de cel)'],['EDEDED','vrij = vrije ronde van 60+'],['2E8B57','RN / RZ / N / Z = deze week draait hij mee met een andere regio (Randstad noord / Randstad zuid / Noord / Zuid). Hij staat alleen bij zijn eigen regio, met een * achter zijn naam, en de regel eronder zegt waar hij meedraait. Bijvoorbeeld MEAS01: hoort bij Randstad zuid en draait één keer mee met Randstad noord.'],['FCE4D6','kerst = had vorig jaar of dit rooster al kerst/jaarwisseling, slaat deze beurt over']].forEach(function(x){var c=u.getCell(rr,1);vul(c,x[0]);regel(x[1]);});rr++;
@@ -6039,7 +6039,7 @@ function wdUitleg(){
   return '<details class="wd-det" style="margin:0 0 10px;padding:8px 12px;border:0.5px solid var(--border-strong);border-radius:10px;background:var(--surface)"><summary style="cursor:pointer;font-weight:700">Zo werkt de waakdienst (kort) · en zo verschuif je een dienst</summary>'+
   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px;font-size:13px;line-height:1.5">'+
   '<div><b>Hoe het rooster werkt</b><ul style="margin:4px 0 0 18px;padding:0">'+
-   '<li>Een waakweek loopt van <b>vrijdagavond 19:00 tot vrijdagochtend 07:00</b>; doordeweeks 19:00–07:00, weekend 07:00–07:00. Week 1 is de eerste week van het kalenderjaar (2027: vr 1 jan t/m do 7 jan).</li>'+
+   '<li>Een waakweek loopt van <b>vrijdagavond 19:00 tot vrijdagochtend 07:00</b>; doordeweeks 19:00–07:00, weekend 07:00–07:00 (in Zuid zaterdag en zondag 07:00–23:00). Week 1 is de eerste week van het kalenderjaar (2027: vr 1 jan t/m do 7 jan).</li>'+
    '<li>Elke week is er één waakdienst in <b>Randstad noord, Randstad zuid, Noord en Zuid</b>, plus één <b>landelijke schaduwdienst</b>. Zara heeft een eigen waakdienst.</li>'+
    '<li>Per gebied gaat het <b>om de beurt in een vaste volgorde</b>: in het tabblad Ritme van de Excel zie je dat als een trap.</li>'+
    '<li>Tussen twee waakdiensten van dezelfde monteur zitten <b>minimaal '+WD_REGELS.tussen+' weken</b>.</li>'+
@@ -6947,17 +6947,17 @@ function wdOverOpties(c,k,s){var A=c.plan[k][s],voor={},uit=[];wdCheck(c.prep,c.
 var WD_DEEL=[], wdModus='ruil', wdKeus=null, wdKeusKey='', wdDeelF={x:'',d:[],tv:'',tt:''};
 var WD_DAGN=['vr','za','zo','ma','di','wo','do'];
 function wdFeestOp(dt){return wdFeestLijst(dt.getFullYear()).some(function(f){return f[0].getMonth()===dt.getMonth()&&f[0].getDate()===dt.getDate();});}
-/* waakdienst op dag d (0 = vrijdag) van week k: doordeweeks 19:00–07:00, weekend en feestdag 07:00–07:00 */
-function wdDeelVenster(k,d){var s0=wdWeekStart(k),dt=new Date(s0.getFullYear(),s0.getMonth(),s0.getDate()+d),we=d===1||d===2||wdFeestOp(dt);
-  var a=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),we?7:19),b=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+1,7);return {dt:dt,a:a,b:b,u:(b-a)/36e5};}
+/* waakdienst op dag d (0 = vrijdag) van week k: doordeweeks 19:00–07:00, weekend en feestdag 07:00–07:00; in Zuid (LZ) zaterdag en zondag 07:00–23:00 */
+function wdDeelVenster(k,d,sl){var s0=wdWeekStart(k),dt=new Date(s0.getFullYear(),s0.getMonth(),s0.getDate()+d),we=d===1||d===2||wdFeestOp(dt);
+  var a=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),we?7:19),b=(sl==='LZ'&&(d===1||d===2))?new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),23):new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+1,7);return {dt:dt,a:a,b:b,u:(b-a)/36e5};}
 function wdHm(d){return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function wdDeelUren(v,tv,tt){
   function t(x){var m=/^(\d{1,2}):(\d{2})$/.exec(x||'');if(!m)return null;var r=new Date(v.dt.getFullYear(),v.dt.getMonth(),v.dt.getDate(),+m[1],+m[2]);if(r<v.a)r=new Date(r.getTime()+864e5);return r;}
   var a=t(tv)||v.a,b=t(tt)||v.b;if(b<=a)b=new Date(b.getTime()+864e5);if(a<v.a)a=v.a;if(b>v.b)b=v.b;return Math.max(0,(b-a)/36e5);}
 function wdDeelEen(x){return x.d.length===1&&!!(x.tv||x.tt);}
-function wdDeelFrac(x){var f=0;(x.d||[]).forEach(function(d){var v=wdDeelVenster(x.k,d),u=wdDeelEen(x)?wdDeelUren(v,x.tv,x.tt):v.u;f+=Math.min(1,u/v.u)/7;});return f;}
-function wdDeelDag(k,d){var v=wdDeelVenster(k,d);return WD_DAGN[d]+' '+wdD(v.dt);}
-function wdDeelTxt(x){return x.d.map(function(d){var v=wdDeelVenster(x.k,d),t=WD_DAGN[d]+' '+wdD(v.dt);return t+' '+(wdDeelEen(x)?(x.tv||wdHm(v.a))+'–'+(x.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b));}).join(', ');}
+function wdDeelFrac(x){var f=0;(x.d||[]).forEach(function(d){var v=wdDeelVenster(x.k,d,x.slot),u=wdDeelEen(x)?wdDeelUren(v,x.tv,x.tt):v.u;f+=Math.min(1,u/v.u)/7;});return f;}
+function wdDeelDag(k,d,sl){var v=wdDeelVenster(k,d,sl);return WD_DAGN[d]+' '+wdD(v.dt);}
+function wdDeelTxt(x){return x.d.map(function(d){var v=wdDeelVenster(x.k,d,x.slot),t=WD_DAGN[d]+' '+wdD(v.dt);return t+' '+(wdDeelEen(x)?(x.tv||wdHm(v.a))+'–'+(x.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b));}).join(', ');}
 function wdDeelVan(j,k,sl){return WD_DEEL.filter(function(x){return x.key===wdKey&&x.jaar===j&&x.k===k&&(sl==null||x.slot===sl);});}
 function wdDeelTel(j){var t={};WD_DEEL.forEach(function(x){if(x.key!==wdKey||x.jaar!==j)return;var f=wdMetJaar(j,function(){return wdDeelFrac(x);});t[x.ini]=(t[x.ini]||0)+f;if(x.oud)t[x.oud]=(t[x.oud]||0)-f;});return t;}
 function wdN2(v){return String(Math.round(v*100)/100).replace('.',',');}
@@ -7036,18 +7036,18 @@ function wdRuilPaneel(){
       var ook=Object.keys(c.plan[k]).filter(function(z){return z!==s&&c.plan[k][z]===m.ini;})[0];return {x:m.ini,ook:ook,min:s==='SCH'?0:(c.prep.tijd[m.ini][g]||0)};});
     kand.sort(function(a,b){return (a.ook?1:0)-(b.ook?1:0)||a.min-b.min||(a.x<b.x?-1:1);});
     h+='<div class="wd-sub2">Wie neemt welk deel over?</div>';
-    h+='<label style="font-size:13px;color:var(--muted)">Collega <select onchange="wdDeelZet(\'x\',this.value)" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface);min-width:240px"><option value="">kies…</option>'+kand.map(function(o){return '<option value="'+o.x+'"'+(F.x===o.x?' selected':'')+'>'+o.x+wdNm(o.x)+(s!=='SCH'?' · '+o.min+' min':'')+(o.ook?' · heeft deze week al '+wdGNaam(c,o.ook):'')+'</option>';}).join('')+'</select></label>';
-    h+='<div style="margin-top:10px;font-size:13px;color:var(--muted)">Welke dag(en)?</div><div class="wd-dagen">'+[0,1,2,3,4,5,6].map(function(d){var v=wdDeelVenster(k,d);return '<button class="wd-dag'+(F.d.indexOf(d)>=0?' on':'')+'" data-wddag="'+d+'"><b>'+WD_DAGN[d]+' '+wdD(v.dt)+'</b><small>'+wdHm(v.a)+'–'+wdHm(v.b)+'</small></button>';}).join('')+'</div>';
-    if(F.d.length===1){var v1=wdDeelVenster(k,F.d[0]);
+    h+='<label style="font-size:13px;color:var(--muted)">Collega <select onchange="wdDeelZet(\'x\',this.value)" style="height:32px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface);min-width:240px"><option value="">kies…</option>'+kand.map(function(o){return '<option value="'+o.x+'"'+(F.x===o.x?' selected':'')+'>'+o.x+wdNm(o.x)+(o.ook?' · heeft deze week al '+wdGNaam(c,o.ook):'')+'</option>';}).join('')+'</select></label>';
+    h+='<div style="margin-top:10px;font-size:13px;color:var(--muted)">Welke dag(en)?</div><div class="wd-dagen">'+[0,1,2,3,4,5,6].map(function(d){var v=wdDeelVenster(k,d,s);return '<button class="wd-dag'+(F.d.indexOf(d)>=0?' on':'')+'" data-wddag="'+d+'"><b>'+WD_DAGN[d]+' '+wdD(v.dt)+'</b><small>'+wdHm(v.a)+'–'+wdHm(v.b)+'</small></button>';}).join('')+'</div>';
+    if(F.d.length===1){var v1=wdDeelVenster(k,F.d[0],s);
       var tijden=[];for(var tt0=v1.a.getTime();tt0<=v1.b.getTime();tt0+=18e5)tijden.push(wdHm(new Date(tt0)));
       function tsel(w,sel){return '<select onchange="wdDeelZet(\''+w+'\',this.value)" style="height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)">'+tijden.map(function(x){return '<option value="'+x+'"'+(x===sel?' selected':'')+'>'+x+'</option>';}).join('')+'</select>';}
       h+='<div style="font-size:13px;color:var(--muted);margin-top:6px">Alleen een paar uur? Van '+tsel('tv',F.tv||wdHm(v1.a))+' tot '+tsel('tt',F.tt||wdHm(v1.b))+'</div>';}
     if(F.x&&F.d.length){
-      var x0={k:k,d:F.d.slice().sort(function(a,b){return a-b;}),tv:F.d.length===1?F.tv:'',tt:F.d.length===1?F.tt:''},fr=wdDeelFrac(x0),kk=kand.filter(function(o){return o.x===F.x;})[0],bad=[];
+      var x0={k:k,slot:s,d:F.d.slice().sort(function(a,b){return a-b;}),tv:F.d.length===1?F.tv:'',tt:F.d.length===1?F.tt:''},fr=wdDeelFrac(x0),kk=kand.filter(function(o){return o.x===F.x;})[0],bad=[];
       if(kk&&kk.ook)bad.push(F.x+' heeft deze week ook '+wdGNaam(c,kk.ook));
-      if(x0.d.length===1&&(x0.tv||x0.tt)&&wdDeelUren(wdDeelVenster(k,x0.d[0]),x0.tv,x0.tt)<=0)bad.push('de tijden vallen buiten de dienst van die dag');
+      if(x0.d.length===1&&(x0.tv||x0.tt)&&wdDeelUren(wdDeelVenster(k,x0.d[0],s),x0.tv,x0.tt)<=0)bad.push('de tijden vallen buiten de dienst van die dag');
       h+=wdVNHtml(F.x+' neemt dit deel over. Zo wordt het:',
-        x0.d.map(function(d){var v=wdDeelVenster(k,d),een=x0.d.length===1&&(x0.tv||x0.tt);return {t:WD_DAGN[d]+' '+wdD(v.dt),sub:(een?(x0.tv||wdHm(v.a))+'–'+(x0.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b))+' · '+wdGNaam(c,s),nu:A,na:F.x};}),
+        x0.d.map(function(d){var v=wdDeelVenster(k,d,s),een=x0.d.length===1&&(x0.tv||x0.tt);return {t:WD_DAGN[d]+' '+wdD(v.dt),sub:(een?(x0.tv||wdHm(v.a))+'–'+(x0.tt||wdHm(v.b)):wdHm(v.a)+'–'+wdHm(v.b))+' · '+wdGNaam(c,s),nu:A,na:F.x};}),
         [{i:A,a:tot(A),b:tot(A)-fr},{i:F.x,a:tot(F.x),b:tot(F.x)+fr}],bad,
         '<button class="acc" data-wddeelok="1"'+(bad.length?' data-bad="'+esc(bad.join(' · '))+'"':'')+'>Ja, '+F.x+' neemt over</button>')+
         '<p class="wd-uit">De rest van de week blijft bij '+A+'.</p>';}
@@ -7265,7 +7265,7 @@ function wdViewRegels(){
   else if(vs.length)top='<div class="ai" style="margin-bottom:12px;border-color:var(--warn,#c98a16)"><div class="hd"><span class="dot"></span><b>Nog niet toegepast:</b>&nbsp;'+vs.join(' · ')+'</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="acc" data-wdregok="1">Bevestigen en rooster herberekenen</button><button class="acc ghost" data-wdregnee="1">Annuleren</button></div></div>';
   else top='<p class="sub" style="margin:0 0 10px">Wijzig een regel en klik daarna op <b>Bevestigen</b>. Tot dan verandert er niets aan het rooster.</p>';
   var h=top+'<div class="wd-grid2"><div class="wd-card"><div class="wd-ct">Vaste regels (afgesproken)</div><ol class="wd-ol">'+
-    '<li>Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00.</li>'+
+    '<li>Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00 (in Zuid zaterdag en zondag 07:00–23:00).</li>'+
     '<li>Een dienst is één week, vrijdag t/m donderdag. Elk roosterjaar start op de eerste vrijdag van januari en loopt tot de eerste vrijdag van het jaar erna (52 of 53 weken). '+WD_JAAR+': vr '+wdD(WD_START)+' t/m do '+wdD(wdWeekEnd(WD_N-1))+' '+wdWeekEnd(WD_N-1).getFullYear()+'.</li>'+
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ heeft factor '+String(WD_REGELS.fac60).replace('.',',')+' en draait naar verhouding minder; jonger factor 1.</li>'+
     '<li>Nieuwe monteur: vul bij Per monteur een code, woonplaats en startdatum in. Het rooster blijft staan; hij neemt vanaf zijn startweek weken over (doel naar rato van de rest van het jaar) en draait vanaf het volgende roosterjaar gewoon mee.</li>'+
