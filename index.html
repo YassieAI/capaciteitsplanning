@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://service.pdok.nl; connect-src 'self' https://ggcsuhfxacmihzpvtliw.supabase.co wss://ggcsuhfxacmihzpvtliw.supabase.co; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://service.pdok.nl; connect-src 'self' https://api.pdok.nl https://ggcsuhfxacmihzpvtliw.supabase.co wss://ggcsuhfxacmihzpvtliw.supabase.co; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7199,7 +7199,7 @@ function wdFlexKaart(c,t){
      ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']].map(function(m,i){
       return '<button type="button" class="wd-fxk'+(i===0?' on':'')+'" data-fx="soort" data-v="'+m[0]+'" onclick="wdFxKies(\'soort\',\''+m[0]+'\')"><span class="wd-fxi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+
     '</div><input type="hidden" id="wdFxMode" value="d">'+
-    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats" style="width:150px"><datalist id="wdFxLijst">'+Object.keys(WOON).map(function(w){return '<option value="'+w+'">';}).join('')+'</datalist>'+
+    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
     '<span id="wdFxStartW"><label class="wd-mut" style="font-size:13px">Startdatum <input type="date" id="wdFxStart" onchange="wdFxUpd()" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label></span></div>'+
     '<div class="wd-fxst">3. In welk gebied?</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="">'+
     '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">60+ (geen schaduw)</button></div><input type="hidden" id="wdFxF" value="1">'+
@@ -7230,8 +7230,17 @@ function wdFxKies(w,v){
   document.querySelectorAll('[data-fx="'+w+'"]').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});
   if(w==='soort'){var sw=document.getElementById('wdFxStartW');sw.style.display=v==='f'?'none':'';if(v==='f')document.getElementById('wdFxStart').value='';}
   wdFxUpd();}
-function wdZoekPlaats(naam){ // → promise {lat,lng,woon}
-  var k=Object.keys(WOON).filter(function(w){return w.toLowerCase()===naam.toLowerCase().replace(/\s+/g,'');})[0];
+/* woonplaats zoeken in alle woonplaatsen van Nederland (PDOK Locatieserver), terwijl je typt */
+var WD_FX_SUG={},wdFxT=null,PDOK_LS='https://api.pdok.nl/bzk/locatieserver/search/v3_1/';
+function wdFxZoek(q){clearTimeout(wdFxT);q=String(q||'').trim();if(q.length<2||WD_FX_SUG[q])return;
+  wdFxT=setTimeout(function(){fetch(PDOK_LS+'suggest?fq=type:woonplaats&rows=10&q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){
+    var dl=document.getElementById('wdFxLijst');if(!dl)return;var docs=(j&&j.response&&j.response.docs)||[];
+    dl.innerHTML=docs.map(function(d){var n=d.weergavenaam;WD_FX_SUG[n]=d.id;return '<option value="'+esc(n)+'">';}).join('');}).catch(function(){});},200);}
+function wdPdokPunt(d,naam){var m=/POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll||'');if(!m)throw new Error('niet gevonden');return {lat:+m[2],lng:+m[1],woon:d.woonplaatsnaam||naam};}
+function wdZoekPlaats(naam){ // → promise {lat,lng,woon}; elke woonplaats in Nederland
+  naam=String(naam||'').trim();
+  if(WD_FX_SUG[naam])return fetch(PDOK_LS+'lookup?id='+encodeURIComponent(WD_FX_SUG[naam])).then(function(r){return r.json();}).then(function(j){var d=j&&j.response&&j.response.docs&&j.response.docs[0];if(!d)throw new Error('niet gevonden');return wdPdokPunt(d,naam);});
+  var k=naam.indexOf(',')<0&&Object.keys(WOON).filter(function(w){return w.toLowerCase()===naam.toLowerCase().replace(/\s+/g,'');})[0];
   if(k)return Promise.resolve({lat:WOON[k][0],lng:WOON[k][1],woon:k});
   return fetch('https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?rows=1&fq=type:woonplaats&q='+encodeURIComponent(naam)).then(function(r){return r.json();}).then(function(j){
     var d=j&&j.response&&j.response.docs&&j.response.docs[0];if(!d||!d.centroide_ll)throw new Error('niet gevonden');
