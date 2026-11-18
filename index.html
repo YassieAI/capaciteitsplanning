@@ -6387,7 +6387,7 @@ function drMaak(j,modus){
     (res.za||[]).forEach(function(i,k){if(i)(ZA[i]=ZA[i]||[]).push(wdWeekStart(k));});});}
   voeg(r);if(rn)voeg(rn);
   var pool=WD_POOL.slice(),regio={},fac={};
-  pool.forEach(function(m){regio[m.ini]=prep.home[m.ini];fac[m.ini]=wdFactor(m);});
+  pool.forEach(function(m){regio[m.ini]=prep.home[m.ini];fac[m.ini]=m.f<1?0.75:1;}); // voor de dagvroeg telt 60+ zwaarder (ook nu 60+ elke waakronde meedraait)
   var dvAl={};DR_DVALLEEN.forEach(function(x){var mm=M.filter(function(q){return q.ini===x[0];})[0];if(mm&&!pool.some(function(p){return p.ini===x[0];})){pool.push({ini:x[0],woon:mm.woonNaam,lat:mm.lat,lng:mm.lng,f:1});regio[x[0]]=x[1];fac[x[0]]=1;dvAl[x[0]]=1;}});
   // maandagen van het jaar; een week telt als er minstens één werkdag in het jaar valt
   var MA=[],mIdx={},werk=[];
@@ -6428,7 +6428,7 @@ function drMaak(j,modus){
     var jong=pool.filter(function(m){return fac[m.ini]===1&&WD_GEEN_SCH.indexOf(m.ini)<0&&!dvAl[m.ini];});
     var gemS=jong.length?jong.reduce(function(s,m){return s+(S[m.ini]||[]).filter(function(f){return f>=start&&f<=eind;}).length;},0)/jong.length:0;
     st.nX=Math.round(gemS);
-    pool.filter(function(m){return fac[m.ini]<1;}).forEach(function(m){var i=m.ini;
+    pool.filter(function(m){return fac[m.ini]<1&&WD_SCH_WEL.indexOf(m.ini)<0;}).forEach(function(m){var i=m.ini; // 60+ die wel schaduw draaien (JOMA02, ASER01) krijgen geen extra dagvroeg
       for(var x=0;x<st.nX;x++){var best=null,bs=-1e9;
         for(var k2=0;k2<MA.length;k2++){if(!werk[k2]||blok[i][k2]||heeft(i,k2)||heeft(i,k2-1)||heeft(i,k2+1))continue;
           var md=99;for(var q2=0;q2<MA.length;q2++){if(blok[i][q2]||heeft(i,q2)){var a=Math.abs(q2-k2);if(a<md)md=a;}}
