@@ -1009,16 +1009,16 @@ tr.wp-best td{background:var(--ok-bg)}
 
 .wd-lwrap{position:relative}
 .wd-lmap{height:max(600px,68vh);background:#eef1f4;border-radius:10px;overflow:hidden;z-index:0}
-.wd-lmap .wd-lpin{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:grab;text-shadow:0 0 2px rgba(0,0,0,.55)}
+.wd-lmap .wd-lpin{width:38px;height:38px;margin:-7px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;letter-spacing:-.2px;white-space:nowrap;font-weight:800;color:#fff;cursor:grab;text-shadow:0 0 3px rgba(0,0,0,.8),0 1px 2px rgba(0,0,0,.6)}
 .wd-lmap .wd-lpin.moved{border:2px dashed #1a1a19}
 .wd-lmap .wd-lpin.off{opacity:.85}
-.wd-lmap .wd-lpin.on{width:38px;height:38px;margin:-7px;font-size:12px;border-width:3px;box-shadow:0 0 0 2px #1a1a19,0 2px 8px rgba(0,0,0,.45)}
+.wd-lmap .wd-lpin.on{width:48px;height:48px;margin:-12px;font-size:12px;border-width:3px;box-shadow:0 0 0 2px #1a1a19,0 2px 8px rgba(0,0,0,.45)}
 .wd-lmap .wd-lpin.uit{opacity:.3;transform:scale(.75)}
-.wd-lmap .wd-plab{position:absolute;top:34px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#fff;color:#1a1a19;border:2px solid #1a1a19;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none}
-.wd-lmap .wd-lpin.sch{color:#1a1a19;border:2px dashed #1a1a19}
-.wd-lmap .wd-lpin.sel{width:42px;height:42px;margin:-9px;font-size:12px;opacity:1!important;transform:none;border:4px solid #fff;box-shadow:0 0 0 4px #e11d48,0 0 0 8px rgba(225,29,72,.3),0 3px 10px rgba(0,0,0,.55);animation:wdPuls 1.6s ease-out infinite}
+.wd-lmap .wd-plab{position:absolute;top:44px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#fff;color:#1a1a19;border:2px solid #1a1a19;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none}
+.wd-lmap .wd-lpin.sch{color:#1a1a19;border:2px dashed #1a1a19;text-shadow:none}
+.wd-lmap .wd-lpin.sel{width:52px;height:52px;margin:-14px;font-size:13px;opacity:1!important;transform:none;border:4px solid #fff;box-shadow:0 0 0 4px #e11d48,0 0 0 8px rgba(225,29,72,.3),0 3px 10px rgba(0,0,0,.55);animation:wdPuls 1.6s ease-out infinite}
 @keyframes wdPuls{0%,100%{box-shadow:0 0 0 4px #e11d48,0 0 0 8px rgba(225,29,72,.3),0 3px 10px rgba(0,0,0,.55)}50%{box-shadow:0 0 0 4px #e11d48,0 0 0 14px rgba(225,29,72,.08),0 3px 10px rgba(0,0,0,.55)}}
-.wd-lmap .wd-slab{position:absolute;bottom:38px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#e11d48;color:#fff;border-radius:8px;padding:2px 9px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none}
+.wd-lmap .wd-slab{position:absolute;bottom:48px;left:12px;transform:translateX(-50%);white-space:nowrap;background:#e11d48;color:#fff;border-radius:8px;padding:2px 9px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none}
 .wd-lmap .wd-lpin.sel.other{opacity:1}
 .wd-lmap .wd-lpin.other{opacity:.7}
 .wd-lmap .wd-stand{position:absolute;transform:translate(-50%,10px);white-space:nowrap;font-size:11px;color:#333;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
@@ -6337,7 +6337,9 @@ function wdKpi(key){
 }
 
 /* ---------- hoofdweergave ---------- */
+var wdTzInit=false;
 function viewWaak(){
+  if(role==='TZ'&&!wdTzInit){wdTzInit=true;wdSub='rooster';} // Teamleider Zara: begint bij de Zara-waakdienst
   var c=wdC();
   var open=wdOpenAantal();
   if(wdSub==='voorspel')wdSub='kaart';
@@ -6702,7 +6704,7 @@ function wdVoorstelPaneel(c,k,ini){
 }
 
 function wdViewKaart(){
-  if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=Math.max(wdEersteK(),wdNuWeek());if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';}
+  if(!wdKaartAuto){wdKaartAuto=true;if(wdKaartWk==null)wdKaartWk=Math.max(wdEersteK(),wdNuWeek());if(role==='TN')wdTeamF='Noord';else if(role==='TS')wdTeamF='Zuid';else if(role==='TZ')wdTeamF='Zara';}
   var c=wdC(),t=wdTel(c.prep,c.plan);
   var wkNav=(function(){var k=wdKaartWk,pv=null,nx=null,lab='geen week';
     if(k!=null){
@@ -6718,7 +6720,7 @@ function wdViewKaart(){
     '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+wdVerschoven();
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+wdNr(wdKaartWk)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
-      c.prep.sIds.concat(['SCH']).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+wdDeelVan(WD_JAAR,wdKaartWk,sl).map(function(x){return '<div class="wd-deeltag" style="margin:-2px 0 6px 18px;font-size:12px">½ '+x.ini+' neemt over: '+wdDeelTxt(x)+'</div>';}).join('')+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
+      (role==='TZ'?[]:c.prep.sIds.concat(['SCH'])).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+wdDeelVan(WD_JAAR,wdKaartWk,sl).map(function(x){return '<div class="wd-deeltag" style="margin:-2px 0 6px 18px;font-size:12px">½ '+x.ini+' neemt over: '+wdDeelTxt(x)+'</div>';}).join('')+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
       (function(){var zi=c.za&&c.za[wdKaartWk],zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zm?'<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+zm.woon:'leeg')+'</b></div>';})()+'</div>';}
   if(wdKaartIni&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za)[zm.ini],zo=0;
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+zm.woon+' · Zara-waakdienst, woonplaats maakt niet uit</div>'+
@@ -6801,7 +6803,7 @@ function wdStrip(ini){
 function wdMetWie(plan,k,ini){var l=[];Object.keys(plan[k]).forEach(function(sl){var i=plan[k][sl];if(i&&i!==ini)l.push(i+(sl==='SCH'?' (schaduw)':''));});return l.join(', ')||'niemand';}
 
 function wdViewRooster(){
-  var c=wdC(),slots=c.prep.sIds.concat(['SCH']),team=wdTeamSet();
+  var c=wdC(),slots=role==='TZ'?[]:c.prep.sIds.concat(['SCH']),team=wdTeamSet(); // Teamleider Zara ziet alleen de Zara-waakdienst
   var h='';
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+wdNr(wdNuWeek())+')</button></div>';
