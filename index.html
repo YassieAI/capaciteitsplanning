@@ -4061,7 +4061,7 @@ function viewWeek(){
   var rijAl=function(m){var n=0;for(var d=weekStart;d<weekStart+7;d++)if(editCells.some(function(c){return c.mid===m.id&&c.day===d;}))n++;return n===7;};
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
   if(rMode==='jaarmaken'){if(role==='RD')return '<h2>Rooster</h2>'+rModeKnoppen()+drView();rMode='week';}
-  if(rMode==='jaar'&&isTL())rMode='maand';
+  if(rMode==='jaar')rMode='maand';
   if(rMode==='jaar')return viewRoosterJaar(wcols,alles,monteurs);
   if(rMode==='monteur')return viewRoosterMonteur(wcols,alles,monteurs);
   var html='<h2>Rooster</h2>'+rModeKnoppen()+(canDecide()||role==='PL'?'':'<div class="ai" style="margin-bottom:10px"><div class="hd"><span class="dot"></span>'+(isTL()?'<b>Afwezigheid van vandaag</b> (ziek, compensatie, auto garage, verlof, niet beschikbaar, opleiding, project) voer je <b>direct</b> door. Andere dagen en diensten zijn <b>voorstellen</b> voor Manager R/D (tab Te bespreken). Zakt de bezetting onder de norm, dan krijg je eerst een melding.':'Wijzigingen die je hier maakt zijn <b>voorstellen</b>: ze gaan naar Manager R/D (tab Te bespreken) en worden pas na akkoord doorgevoerd.')+'</div></div>')+'<p class="sub">Zie wie welke dienst draait en schuif binnen het team. Tik een cel aan (tik er meer aan om ze samen te kiezen), of <strong>sleep over meerdere cellen</strong>; klik op een dag (kop of grafiek) of een monteur voor een hele dag of rij. Zo vul je ze in één keer — over dagen én over monteurs. De keuzes verschijnen direct onder de rij die je aanklikt.</p>';
@@ -4392,7 +4392,7 @@ function viewRoosterJaar(wcols,alles,monteurs){
   return h+'</tbody></table></div>';
 }
 function rMaandNav(d){rMaandOff=d===0?0:rMaandOff+d;render();}
-function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button>'+(isTL()?'':'<button class="'+(rMode==='jaar'?'active':'')+'" onclick="rSetMode(\'jaar\')">Jaar</button>')+'<button class="'+(rMode==='monteur'?'active':'')+'" onclick="rSetMode(\'monteur\')">Per monteur</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
+function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button>'+'<button class="'+(rMode==='monteur'?'active':'')+'" onclick="rSetMode(\'monteur\')">Per monteur</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
 function rVers(b){if(b){b.disabled=true;b.textContent='Bezig…';}RMND={};PNL={};Promise.resolve(sbLoad({})).then(function(){render();sbToast('Rooster ververst');},function(){render();});}
 function rMaandLaad(key,namen,van,tot){
   if(RMND[key])return RMND[key];
@@ -6372,7 +6372,7 @@ var DR_MODUS='hybride60', DR_JAAR=null, DR_VOORB=null, DR_BEZIG=false;
 var DR_VASTE=[['JEJO05',2,'project'],['JADR01',4,null],['T07',5,null],['ERMI01',1,null],['ERMI01',2,null],['ERMI01',3,null]]; // ERMI01 werkt alleen do en vr (dag)
 var DR_DVALLEEN=[['HEMO01','LZ']]; // draait wel mee met dagvroeg, niet met waak/schaduw
 var DR_MODI={
-  hybride60:{naam:'Hybride + 60+ extra',uitleg:'Dagvroeg in de week (ma t/m vr) vóór je eigen waakweek. Valt die samen met je eigen schaduwweek, dan neemt een collega uit dezelfde regio het over (wie het minst dagvroeg had, 60+ telt zwaarder). 60+ monteurs krijgen extra dagvroegweken in plaats van de schaduw die zij niet doen. Een waakruil verandert de dagvroeg niet.'}};
+  hybride60:{naam:'Hybride, gelijk verdeeld',uitleg:'Dagvroeg in de week (ma t/m vr) vóór je eigen waakweek. Valt die samen met je eigen schaduwweek, dan neemt een collega uit dezelfde regio het over (wie het minst dagvroeg had). Dagvroeg wordt gelijk verdeeld: 60+ telt niet zwaarder en krijgt geen extra dagvroegweken. Een waakruil verandert de dagvroeg niet.'}};
 var DR_GNAAM={LN:'Noord',RA:'Randstad',LZ:'Zuid'};
 function drIso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function drPlus(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
@@ -6387,7 +6387,7 @@ function drMaak(j,modus){
     (res.za||[]).forEach(function(i,k){if(i)(ZA[i]=ZA[i]||[]).push(wdWeekStart(k));});});}
   voeg(r);if(rn)voeg(rn);
   var pool=WD_POOL.slice(),regio={},fac={};
-  pool.forEach(function(m){regio[m.ini]=prep.home[m.ini];fac[m.ini]=m.f<1?0.75:1;}); // voor de dagvroeg telt 60+ zwaarder (ook nu 60+ elke waakronde meedraait)
+  pool.forEach(function(m){regio[m.ini]=prep.home[m.ini];fac[m.ini]=1;}); // dagvroeg wordt gelijk verdeeld: 60+ telt niet zwaarder en krijgt geen extra dagvroeg
   var dvAl={};DR_DVALLEEN.forEach(function(x){var mm=M.filter(function(q){return q.ini===x[0];})[0];if(mm&&!pool.some(function(p){return p.ini===x[0];})){pool.push({ini:x[0],woon:mm.woonNaam,lat:mm.lat,lng:mm.lng,f:1});regio[x[0]]=x[1];fac[x[0]]=1;dvAl[x[0]]=1;}});
   // maandagen van het jaar; een week telt als er minstens één werkdag in het jaar valt
   var MA=[],mIdx={},werk=[];
@@ -6424,16 +6424,7 @@ function drMaak(j,modus){
         if(heeft(i,k)||heeft(i,k-1)||heeft(i,k+1)){var alt=wk.filter(function(q){return !heeft(i,q)&&!heeft(i,q-1)&&!heeft(i,q+1)&&(dv[q][g]||[]).some(function(o){return !dvAl[o];});});if(!alt.length)continue;k=alt[0];}
         var lst=dv[k][g],vi=-1,vm=-1;lst.forEach(function(o,ix){if(!dvAl[o]&&cnt[o]>vm){vm=cnt[o];vi=ix;}});
         if(vi<0)continue;var weg=lst.splice(vi,1)[0];cnt[weg]--;zet(k,i);}});
-    // 60+: evenveel extra dagvroegweken als de rest gemiddeld schaduw heeft
-    var jong=pool.filter(function(m){return fac[m.ini]===1&&WD_GEEN_SCH.indexOf(m.ini)<0&&!dvAl[m.ini];});
-    var gemS=jong.length?jong.reduce(function(s,m){return s+(S[m.ini]||[]).filter(function(f){return f>=start&&f<=eind;}).length;},0)/jong.length:0;
-    st.nX=Math.round(gemS);
-    pool.filter(function(m){return fac[m.ini]<1&&WD_SCH_WEL.indexOf(m.ini)<0;}).forEach(function(m){var i=m.ini; // 60+ die wel schaduw draaien (JOMA02, ASER01) krijgen geen extra dagvroeg
-      for(var x=0;x<st.nX;x++){var best=null,bs=-1e9;
-        for(var k2=0;k2<MA.length;k2++){if(!werk[k2]||blok[i][k2]||heeft(i,k2)||heeft(i,k2-1)||heeft(i,k2+1))continue;
-          var md=99;for(var q2=0;q2<MA.length;q2++){if(blok[i][q2]||heeft(i,q2)){var a=Math.abs(q2-k2);if(a<md)md=a;}}
-          var sc=Math.min(md,10)*2-(dv[k2][regio[i]]||[]).length*3;if(sc>bs){bs=sc;best=k2;}}
-        if(best!==null){zet(best,i);extraN[i]++;extraK[i][best]=1;st.extra++;}}});
+    st.nX=0; // 60+ krijgt geen extra dagvroegweken meer: iedereen gelijk
   }
   // dagrooster per monteur en per dag
   var vaste={};DR_VASTE.forEach(function(v){(vaste[v[0]]=vaste[v[0]]||{})[v[1]]={t:v[2]};});
