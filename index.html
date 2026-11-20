@@ -6270,7 +6270,7 @@ function wdLeaflet(){
     lay[q[0]]=L.polygon(WD_RING[i],{color:k,weight:0.6,fillColor:k,fillOpacity:fo(g)}).bindTooltip('Postcode '+q[0]+'xx · '+wdGNaam(c,g),{sticky:true}).addTo(map);});
   var cen=WD_OPZET[key].centers;
   var pos=wdPinPos(wdAlle());
-  wdAlle().forEach(function(m){
+  (role==='TZ'?[]:wdAlle()).forEach(function(m){ // Teamleider Zara ziet op de kaart alleen de Zara-monteurs
     var g=prep.home[m.ini],mv=!!(WD_OVERRIDE[key]&&WD_OVERRIDE[key][m.ini]),q=pos[m.ini],ds=duty?duty[m.ini]:null,mine=wdIsMine(m.ini),sel=wdKaartIni===m.ini;
     var bg=ds?(ds==='SCH'?'#fff':wdKleur(key,ds)):(duty?'#b9b8b2':wdKleur(key,g));
     var uitTeam=!!(wdTeamF&&wdTeamVan(m.ini)!==wdTeamF);
