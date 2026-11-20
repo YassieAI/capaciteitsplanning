@@ -5253,7 +5253,9 @@ WD_FLEX_VAST.forEach(function(v){if(WD_UIT.indexOf(v.ini)<0&&!WD_POOL.some(funct
 var WD_F75=["MOBE02", "ROKR02", "ROMO01", "ERBR01", "JOMA02", "ASER01", "BOMU01", "EMMU01", "WIES01", "JADR01", "NGHU01"]; // NGHU01: geb. 27-10-1964
 WD_POOL.forEach(function(m){if(WD_F75.indexOf(m.ini)>=0)m.f=0.75;});
 wdFlexVast();
-function wdAlle(){return WD_POOL.concat(WD_FLEX.filter(function(f){return !WD_POOL.some(function(p){return p.ini===f.ini;});}));}
+var WD_ZLOC={ZAM:'Zara Amsterdam',ZRO:'Zara Rotterdam',ZAR:'Zara Arnhem',ZZW:'Zara Zwolle'}; // Zara-locaties (voor nieuwe Zara-monteurs)
+function wdFxZara(f){return !!(f&&WD_ZLOC[f.geb]);}
+function wdAlle(){return WD_POOL.concat(WD_FLEX.filter(function(f){return !wdFxZara(f)&&!WD_POOL.some(function(p){return p.ini===f.ini;});}));}
 /* Nieuwe monteur = flex-monteur met startdatum {j,k}. In zijn startjaar draait hij niet automatisch mee (het rooster blijft staan,
    hij neemt weken over); vanaf het volgende roosterjaar zit hij gewoon in de pool. */
 var WD_VASTDB={}; // vastgezette jaarroosters: {jaar:{id,plan}}
@@ -5263,14 +5265,16 @@ var WD_HELP={}, WD_FLEX_REG={};
 function wdFlexRegels(){
   Object.keys(WD_FLEX_REG).forEach(function(i){delete WD_HOME_VAST[i];delete WD_VLEUGEL_VAST[i];delete WD_HELP[i];delete WD_TRAP_START[i];});WD_FLEX_REG={};
   WD_FLEX.forEach(function(f){var x=false;
-    if(f.geb){WD_HOME_VAST[f.ini]={D:/^RA/.test(f.geb)?'RA':f.geb};if(/^RA/.test(f.geb))WD_VLEUGEL_VAST[f.ini]=f.geb==='RA1'?'noord':'zuid';x=true;}
+    if(f.geb&&!WD_ZLOC[f.geb]){WD_HOME_VAST[f.ini]={D:/^RA/.test(f.geb)?'RA':f.geb};if(/^RA/.test(f.geb))WD_VLEUGEL_VAST[f.ini]=f.geb==='RA1'?'noord':'zuid';x=true;}
     if(f.help&&f.help.length){WD_HELP[f.ini]=f.help.slice();x=true;}
     if(f.mode==='d'&&f.start){WD_TRAP_START[f.ini]={j:f.start.j,k:f.start.k};x=true;}
     if(x)WD_FLEX_REG[f.ini]=1;});}
 function wdPoolSync(j){
   wdFlexRegels();
-  WD_POOL=WD_POOL.filter(function(m){return !m.nieuw;});
-  WD_FLEX.forEach(function(f){if(f.start&&(f.start.j<j||(f.mode==='d'&&f.start.j<=j))&&!WD_POOL.some(function(p){return p.ini===f.ini;}))
+  WD_POOL=WD_POOL.filter(function(m){return !m.nieuw;});WD_ZPOOL=WD_ZPOOL.filter(function(m){return !m.nieuw;});
+  WD_FLEX.forEach(function(f){if(!(f.start&&(f.start.j<j||(f.mode==='d'&&f.start.j<=j))))return;
+    if(wdFxZara(f)){if(!WD_ZPOOL.some(function(p){return p.ini===f.ini;}))WD_ZPOOL.push({ini:f.ini,woon:f.woon,lat:f.lat,lng:f.lng,f:f.f,zara:1,nieuw:1,start:f.start,base:f.geb});return;} // nieuwe Zara-monteur: Zara-waakdienst
+    if(!WD_POOL.some(function(p){return p.ini===f.ini;}))
     WD_POOL.push({ini:f.ini,woon:f.woon,lat:f.lat,lng:f.lng,f:f.f,nieuw:1,start:f.start,direct:f.mode==='d'});});
 }
 function wdStartTxt(f){return wdMetJaar(f.start.j,function(){return 'week '+wdNr(f.start.k)+' ('+wdWeekLabel(f.start.k)+') '+f.start.j;});}
@@ -5285,6 +5289,7 @@ function wdZaMaak(carry){
   for(var k=0;k<N;k++){
     var kn=wdIsKerstNj(k),fs=wdIsFeest(k),best=null,bs=1e9;
     WD_ZPOOL.forEach(function(m){var i=m.ini;
+      if(m.start&&(WD_KJ<m.start.j||(WD_KJ===m.start.j&&k<m.start.k)))return; // nieuwe Zara-monteur: pas vanaf zijn startweek
       var gap=k-last[i];if(gap<WD_ZTUSSEN&&!(gap>=4&&WD_ZPOOL.length<8))return;
       var sc=n[i]/m.f+(dv[i]||0)+rnd()*0.3;
       if(fs)sc+=(fe[i]+(fd[i]||0))*1.5;
@@ -7173,30 +7178,33 @@ function wdFlexVoorHtml(c,f){
 }
 function wdFlexKaart(c,t){
   var mag=wdFlexMag();
-  var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct"><i class="wd-sw" style="background:#c98a16"></i>Nieuwe en flex-monteurs ('+WD_FLEX.length+')</div>';
-  WD_FLEX.forEach(function(f){var x=t[f.ini]||{tot:0},st='';
+  var FL=WD_FLEX.filter(function(f){return role==='TZ'?wdFxZara(f):!wdFxZara(f);}),zt0=wdZaTel(c.za);
+  var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct"><i class="wd-sw" style="background:#c98a16"></i>Nieuwe en flex-monteurs'+(role==='TZ'?' Zara':'')+' ('+FL.length+')</div>';
+  FL.forEach(function(f){var x=wdFxZara(f)?{tot:(zt0[f.ini]||{n:0}).n}:(t[f.ini]||{tot:0}),st='';
     if(f.start){
-      if(f.mode==='d'){var vj=wdVastVoor(WD_JAAR);st=WD_JAAR<f.start.j?'nog niet gestart in '+WD_JAAR:(vj&&WD_JAAR===f.start.j?'rooster '+WD_JAAR+' staat vast: neem weken over':'draait mee in de beurt');}
+      if(f.mode==='d'&&wdFxZara(f)){st=WD_JAAR<f.start.j?'nog niet gestart in '+WD_JAAR:'draait mee in de Zara-waakdienst';}
+      else if(f.mode==='d'){var vj=wdVastVoor(WD_JAAR);st=WD_JAAR<f.start.j?'nog niet gestart in '+WD_JAAR:(vj&&WD_JAAR===f.start.j?'rooster '+WD_JAAR+' staat vast: neem weken over':'draait mee in de beurt');}
       else if(WD_JAAR===f.start.j){var d=wdFlexDoel(c,f);st='neemt weken over, doel ca. '+nl1(d.doel)+' diensten (nu '+x.tot+')';}
       else st=WD_JAAR>f.start.j?'draait mee in de beurt':'nog niet gestart in '+WD_JAAR;}
     h+='<div class="wd-kv"><span><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+f.ini+'|" title="Toon op kaart">'+esc(f.ini)+'</button> · '+esc(f.woon)+(f.geb?' · '+(WD_GEB_NAAM[f.geb]||f.geb):'')+(f.help&&f.help.length?' · helpt in '+f.help.map(function(y){return WD_GEB_NAAM[y]||y;}).join(', '):'')+(f.start?' · vanaf '+wdStartTxt(f):' · flex')+'</span><b>'+x.tot+' '+(x.tot===1?'dienst':'diensten')+(mag?' <button class="linkbtn" data-wdflexdel="'+f.id+'">verwijderen</button>':'')+'</b></div>'+(st?'<div class="wd-uitleg" style="margin:-2px 0 6px">'+st+(f.start&&f.mode!=='d'&&WD_JAAR===f.start.j&&mag?' · <button class="linkbtn" data-wdflexvoor="'+esc(f.ini)+'">Stel weken voor</button>':'')+'</div>':'');
     if(f.start&&f.mode!=='d'&&WD_JAAR===f.start.j&&wdFlexVoor&&wdFlexVoor.ini===f.ini)h+=wdFlexVoorHtml(c,f);
   });
-  if(!WD_FLEX.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen nieuwe of flex-monteurs.</div>';
+  if(!FL.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen nieuwe of flex-monteurs.</div>';
   if(mag){
-    var gebKn=[['','Automatisch']].concat(c.prep.sIds.map(function(x){return [x,wdGNaam(c,x)];}));
+    var zaF=role==='TZ'; // Teamleider Zara: nieuwe monteurs zijn Zara-monteurs
+    var gebKn=zaF?Object.keys(WD_ZLOC).map(function(x){return [x,WD_ZLOC[x]];}):[['','Automatisch']].concat(c.prep.sIds.map(function(x){return [x,wdGNaam(c,x)];}));
     h+='<div class="wd-sub2" style="margin-top:12px">Monteur toevoegen</div>'+
     '<div class="wd-fx"><div class="wd-fxst">1. Wat voor monteur is het?</div><div class="wd-fxsoort">'+
     [['d','&#9654;','Vast meedraaien','Komt vanaf zijn startdatum in de beurt. Collega&rsquo;s schuiven een plek op.'],
-     ['o','&#8644;','Weken overnemen','Rooster blijft staan. Hij neemt losse weken over, volgend jaar draait hij mee.'],
-     ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']].map(function(m,i){
+     ].concat(zaF?[]:[['o','&#8644;','Weken overnemen','Rooster blijft staan. Hij neemt losse weken over, volgend jaar draait hij mee.']]).concat([
+     ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']]).map(function(m,i){
       return '<button type="button" class="wd-fxk'+(i===0?' on':'')+'" data-fx="soort" data-v="'+m[0]+'" onclick="wdFxKies(\'soort\',\''+m[0]+'\')"><span class="wd-fxi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+
     '</div><input type="hidden" id="wdFxMode" value="d">'+
     '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
     '<span id="wdFxStartW"><label class="wd-mut" style="font-size:13px">Startdatum <input type="date" id="wdFxStart" onchange="wdFxUpd()" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label></span></div>'+
-    '<div class="wd-fxst">3. In welk gebied?</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="">'+
-    '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">60+ (geen schaduw)</button></div><input type="hidden" id="wdFxF" value="1">'+
-    '<div class="wd-fxst">5. Mag hij ook helpen in een ander gebied? <span class="wd-mut" style="font-weight:400">(niet verplicht)</span></div><div class="wd-fxrij">'+c.prep.sIds.map(function(x){return '<label class="wd-fxc wd-fxh"><input type="checkbox" class="wdFxHelp" value="'+x+'" onchange="this.parentNode.classList.toggle(\'on\',this.checked);wdFxUpd()">'+wdGNaam(c,x)+'</label>';}).join('')+'</div>'+
+    '<div class="wd-fxst">3. '+(zaF?'Op welke Zara-locatie werkt hij?':'In welk gebied?')+'</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="'+(zaF?'ZAM':'')+'">'+
+    '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">'+(zaF?'60+ (telt voor 0,75)':'60+ (geen schaduw)')+'</button></div><input type="hidden" id="wdFxF" value="1">'+
+    (zaF?'':'<div class="wd-fxst">5. Mag hij ook helpen in een ander gebied? <span class="wd-mut" style="font-weight:400">(niet verplicht)</span></div><div class="wd-fxrij">'+c.prep.sIds.map(function(x){return '<label class="wd-fxc wd-fxh"><input type="checkbox" class="wdFxHelp" value="'+x+'" onchange="this.parentNode.classList.toggle(\'on\',this.checked);wdFxUpd()">'+wdGNaam(c,x)+'</label>';}).join('')+'</div>')+
     '<div id="wdFxToel" class="wd-fxtoel"></div>'+
     '<div style="margin-top:10px"><button class="acc" data-wdflexadd="1">Monteur toevoegen</button></div><div id="wdFxMsg" class="sub" style="margin-top:6px"></div></div>';
   } else h+='<p class="sub" style="margin:0">Toevoegen kan Manager R/D of een teamleider.</p>';
@@ -7213,6 +7221,7 @@ function wdFxUpd(){
   var st=xj?wdMetJaar(xj.j,function(){return 'week '+wdNr(xj.k)+' ('+wdWeekLabel(xj.k)+') '+xj.j;}):null;
   if(md==='f'){t=ini+' komt niet in de beurt. Je kunt hem bij Ruilen of Overnemen kiezen als invaller'+(hp.length?' en hij mag helpen in '+hp.join(', '):'')+'.';}
   else if(!st){t='Kies een startdatum om te zien wat er gebeurt.';}
+  else if(md==='d'&&WD_ZLOC[gb]){t=ini+' ('+gbT+') start in '+st+' en draait vanaf dan mee in de Zara-waakdienst'+(fac?' (60+, telt voor 0,75)':'')+'. De andere Zara-monteurs komen daardoor iets minder vaak aan de beurt.';}
   else if(md==='d'){t=ini+' start in '+st+' en komt achteraan de beurt van '+gbT+(fac?' (60+, geen schaduw)':'')+'. De collega&rsquo;s in dat gebied schuiven een plek op.';
     if(wdVastVoor(xj.j))w='Let op: het rooster van '+xj.j+' staat vast. Dan neemt hij weken over in plaats van meedraaien.';}
   else{t=ini+' start in '+st+'. Het rooster blijft staan. Hij neemt vanaf dan losse weken over in '+gbT+' (met &ldquo;Stel weken voor&rdquo; doet de tool een voorstel). Vanaf het volgende roosterjaar draait hij gewoon mee.';}
@@ -7240,7 +7249,7 @@ function wdZoekPlaats(naam){ // → promise {lat,lng,woon}; elke woonplaats in N
     var m=/POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll);return {lat:+m[2],lng:+m[1],woon:d.woonplaatsnaam||naam};});
 }
 function wdFlexDoelTxt(f){return 'wd:f|'+[f.ini,f.woon,f.lat.toFixed(4),f.lng.toFixed(4),f.f].concat((f.start||f.geb||(f.help&&f.help.length)||f.mode)?[f.start?f.start.j+'-'+f.start.k:'',f.geb||'',(f.help||[]).join('.'),f.mode||'']:[]).join('|');}
-var WD_GEB_NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid'};
+var WD_GEB_NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',ZAM:'Zara Amsterdam',ZRO:'Zara Rotterdam',ZAR:'Zara Arnhem',ZZW:'Zara Zwolle'};
 function wdFlexToevoegen(ini,woonIn,f,startIso,geb,help,mode){
   ini=String(ini||'').trim().toUpperCase();woonIn=String(woonIn||'').trim();
   if(!/^[A-Z0-9]{2,6}$/.test(ini))return Promise.reject(new Error('Code: 2 tot 6 letters of cijfers'));
@@ -7278,6 +7287,7 @@ function wdViewMonteur(){
   var c=wdC(),t=wdTel(c.prep,c.plan),team=wdTeamSet(),D=wdDoelPer(c),DT=wdDeelTel(WD_JAAR);
   var rijen=WD_POOL.slice().filter(function(m){return !team||!wdAlleen||team[m.ini];});
   var h=wdFlexKaart(c,t);
+  if(role==='TZ')return h+wdZaKaart(c); // Teamleider Zara: alleen de Zara-waakdienst, per locatie
   if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen</button></div>';
   // gemiddelden
   function gem(lijst){var n=lijst.length||1,w=0,s=0,tt=0;lijst.forEach(function(m){var x=t[m.ini];w+=x.waak;s+=x.sch;tt+=x.tot;});return {w:w/n,s:s/n,t:tt/n};}
@@ -7302,10 +7312,20 @@ function wdViewMonteur(){
   });
   h+='</tbody></table></div>';
   if(wdMonQ)setTimeout(function(){wdMonFilter(wdMonQ);},0);
-  var zt=wdZaTel(c.za),zdoel=WD_N/WD_ZPOOL.length;
-  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct"><i class="wd-sw" style="background:#8e5bd1"></i>Zara-waakdienst · '+WD_ZPOOL.length+' monteurs</div><p class="wd-uitleg" style="margin:0 0 8px">Eén Zara-monteur per week, woonplaats maakt niet uit. Eerlijk verdeeld over alle Zara-monteurs (doel ca. '+nl1(zdoel)+' per persoon per jaar), minimaal '+WD_ZTUSSEN+' weken tussen twee diensten, feestdagen en kerst eerlijk verdeeld en het saldo loopt door naar het volgende jaar.</p><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Diensten</th><th>Feestdagweken</th><th>Jaar</th></tr></thead><tbody>';
-  WD_ZPOOL.slice().sort(function(a,b){return a.ini<b.ini?-1:1;}).forEach(function(m){var x=zt[m.ini];
-    h+='<tr><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span></td><td>'+m.woon+'</td><td><b>'+x.n+'</b></td><td>'+x.feest+'</td><td style="min-width:200px">'+wdZaStrip(m.ini)+'</td></tr>';});
+  return h+wdZaKaart(c);
+}
+/* Zara-waakdienst per monteur, geordend per Zara-locatie (Amsterdam, Rotterdam, Arnhem, Zwolle) */
+function wdZaLoc(m){var b=m.base||((M.filter(function(x){return x.ini===m.ini;})[0])||{}).base;return WD_ZLOC[b]?b:'ZOV';}
+function wdZaKaart(c){
+  var zt=wdZaTel(c.za),zdoel=WD_N/(WD_ZPOOL.length||1),h='';
+  h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct"><i class="wd-sw" style="background:#8e5bd1"></i>Zara-waakdienst · '+WD_ZPOOL.length+' monteurs</div><p class="wd-uitleg" style="margin:0 0 8px">Geordend per locatie waar de monteur werkt. Eerlijk verdeeld over alle Zara-monteurs (doel ca. '+nl1(zdoel)+' per persoon per jaar), minimaal '+WD_ZTUSSEN+' weken tussen twee diensten, feestdagen en kerst eerlijk verdeeld en het saldo loopt door naar het volgende jaar.</p><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Diensten</th><th>Feestdagweken</th><th>Jaar</th></tr></thead><tbody>';
+  var nm=Object.assign({},WD_ZLOC,{ZOV:'Overig'});
+  Object.keys(nm).forEach(function(l){
+    var gr=WD_ZPOOL.filter(function(m){return wdZaLoc(m)===l;}).sort(function(a,b){return a.ini<b.ini?-1:1;});if(!gr.length)return;
+    var som=0;gr.forEach(function(m){som+=zt[m.ini].n;});
+    h+='<tr class="wd-grp"><td colspan="5" style="background:var(--surface-1);font-weight:600"><i class="wd-sw" style="background:#8e5bd1"></i>'+nm[l]+' · '+gr.length+' monteur'+(gr.length===1?'':'s')+' <span class="wd-mut" style="font-weight:400;margin-left:6px">samen '+som+' diensten</span></td></tr>';
+    gr.forEach(function(m){var x=zt[m.ini];
+      h+='<tr><td><button class="linkbtn" style="padding:0;font-weight:700" data-wdkaart="'+m.ini+'|" title="Toon op kaart">'+m.ini+'</button> <span class="wd-mut">'+wdNaam(m.ini)+'</span>'+(m.nieuw?' <span class="wd-mut">(nieuw)</span>':'')+'</td><td>'+m.woon+'</td><td><b>'+x.n+'</b></td><td>'+x.feest+'</td><td style="min-width:200px">'+wdZaStrip(m.ini)+'</td></tr>';});});
   h+='</tbody></table></div></div>';
   return h;
 }
