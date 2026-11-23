@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261123-beheer2'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261123-beheer3'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -4066,7 +4066,7 @@ function viewWeek(){
   var rijAl=function(m){var n=0;for(var d=weekStart;d<weekStart+7;d++)if(editCells.some(function(c){return c.mid===m.id&&c.day===d;}))n++;return n===7;};
   if(rMode==='maand')return viewRoosterMaand(wcols,alles,monteurs);
   if(rMode==='jaarmaken'){if(role==='RD')return '<h2>Rooster</h2>'+rModeKnoppen()+drView();rMode='week';}
-  if(rMode==='beheer'){if(role==='RD')return '<h2>Rooster</h2>'+rModeKnoppen()+wdBeheerView();rMode='week';}
+  if(rMode==='beheer'){if(wdBeheerMag())return '<h2>Rooster</h2>'+rModeKnoppen()+wdBeheerView();rMode='week';}
   if(rMode==='jaar')rMode='maand';
   if(rMode==='jaar')return viewRoosterJaar(wcols,alles,monteurs);
   if(rMode==='monteur')return viewRoosterMonteur(wcols,alles,monteurs);
@@ -4398,7 +4398,7 @@ function viewRoosterJaar(wcols,alles,monteurs){
   return h+'</tbody></table></div>';
 }
 function rMaandNav(d){rMaandOff=d===0?0:rMaandOff+d;render();}
-function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button>'+'<button class="'+(rMode==='monteur'?'active':'')+'" onclick="rSetMode(\'monteur\')">Per monteur</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button><button class="'+(rMode==='beheer'?'active':'')+'" onclick="rSetMode(\'beheer\')">Monteurs beheren</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
+function rModeKnoppen(){return '<div class="ctrl" style="margin-bottom:10px"><button class="'+(rMode==='week'?'active':'')+'" onclick="rSetMode(\'week\')">Week</button><button class="'+(rMode==='maand'?'active':'')+'" onclick="rSetMode(\'maand\')">Maand</button>'+'<button class="'+(rMode==='monteur'?'active':'')+'" onclick="rSetMode(\'monteur\')">Per monteur</button>'+(role==='RD'?'<button class="'+(rMode==='jaarmaken'?'active':'')+'" onclick="rSetMode(\'jaarmaken\')" style="margin-left:8px">Jaarrooster maken</button>':'')+(wdBeheerMag()?'<button class="'+(rMode==='beheer'?'active':'')+'" onclick="rSetMode(\'beheer\')"'+(role==='RD'?'':' style="margin-left:8px"')+'>Monteurs beheren</button>':'')+'<button class="ghost" style="margin-left:8px" onclick="rVers(this)" title="Haal de nieuwste roosterwijzigingen op">&#8635; Ververs</button></div>';}
 function rVers(b){if(b){b.disabled=true;b.textContent='Bezig…';}RMND={};PNL={};Promise.resolve(sbLoad({})).then(function(){render();sbToast('Rooster ververst');},function(){render();});}
 function rMaandLaad(key,namen,van,tot){
   if(RMND[key])return RMND[key];
@@ -6051,6 +6051,8 @@ function wdUitOverlay(plan,prep){
 }
 /* ---------- Monteurs beheren (Manager R/D): uit dienst per datum ---------- */
 var BH={ini:'',uit:'',mode:'auto',bezig:false};
+function wdBeheerMag(){return role==='RD'||role==='TZ'||role==='TN'||role==='TS';} // Manager R/D en de teamleiders van een team
+function wdBeheerInScope(ini){if(role==='RD')return true;var m=M.filter(function(x){return x.ini===ini;})[0];return !!m&&inScopeId(m.base);}
 (function(){var r0=render;render=function(){var x=r0.apply(this,arguments);try{wdBeheerBind();}catch(e){}return x;};})();
 function wdBeheerTel(ini,uit){ // hoeveel waak- en schaduwweken vallen na de datum?
   var n={w:0,s:0},wk=[];
@@ -6058,7 +6060,7 @@ function wdBeheerTel(ini,uit){ // hoeveel waak- en schaduwweken vallen na de dat
   n.wk=wk;return n;}
 function wdBeheerView(){
   var h='<p class="sub">Monteur uit dienst zetten per datum, of een nieuwe monteur toevoegen. Het rooster en de waakdienst passen zich vanaf die datum zelf aan.</p>';
-  var namen=M.map(function(m){return m.ini;}).sort();
+  var namen=M.filter(function(m){return wdBeheerInScope(m.ini);}).map(function(m){return m.ini;}).sort();
   h+='<div class="card"><div class="ct" style="font-weight:700;margin-bottom:8px">Uit dienst zetten</div><div class="ctrl" style="gap:10px;flex-wrap:wrap;align-items:flex-end">'+
     '<label style="display:block;font-size:12px">Monteur<br><select id="bhIni"><option value="">Kies…</option>'+namen.map(function(i){return '<option value="'+i+'"'+(BH.ini===i?' selected':'')+'>'+i+'</option>';}).join('')+'</select></label>'+
     '<label style="display:block;font-size:12px">Laatste werkdag<br><input type="date" id="bhUit" value="'+BH.uit+'"></label>'+
@@ -6068,12 +6070,12 @@ function wdBeheerView(){
       '<li>'+(t.w+t.s?'<b>'+t.w+' waakweken</b> en <b>'+t.s+' schaduwweken</b> na die datum ('+t.wk.slice(0,12).join(', ')+(t.wk.length>12?', …':'')+') '+(BH.mode==='auto'?'gaan naar collega\'s met de minste diensten, met minimaal '+(WD_REGELS.tussen||5)+' weken rust.':'blijven leeg tot je ze invult via Waakdienst → Ruilen.'):'Geen waak- of schaduwweken na deze datum.')+'</li>'+
       '<li>Zara-waakdienst: pas die zelf aan via Waakdienst (Teamleider Zara), die loopt apart.</li></ul></div>';}
   h+='<div class="ctrl" style="margin-top:12px"><button class="acc" id="bhOk"'+(BH.ini&&BH.uit&&!BH.bezig?'':' disabled')+'>Zet uit dienst</button></div></div>';
-  h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Uit dienst gezet ('+WD_UITD.length+')</div>';
-  if(!WD_UITD.length)h+='<p class="sub" style="margin:0">Nog niemand.</p>';
-  else h+='<table class="wd-tbl"><thead><tr><th>Monteur</th><th>Laatste werkdag</th><th>Waakweken</th><th></th></tr></thead><tbody>'+WD_UITD.map(function(u){return '<tr><td><b>'+u.ini+'</b></td><td>'+u.uit+'</td><td>'+(u.mode==='leeg'?'leeg gelaten':'overgenomen')+'</td><td><button data-bhterug="'+u.id+'">Terugdraaien</button></td></tr>';}).join('')+'</tbody></table><p class="sub" style="margin:8px 0 0">Terugdraaien zet de waakweken terug. Diensten die al uit het rooster zijn gehaald komen terug via Jaarrooster maken → Toepassen.</p>';
+  h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Uit dienst gezet ('+WD_UITD.filter(function(u){return wdBeheerInScope(u.ini);}).length+')</div>';
+  if(!WD_UITD.filter(function(u){return wdBeheerInScope(u.ini);}).length)h+='<p class="sub" style="margin:0">Nog niemand.</p>';
+  else h+='<table class="wd-tbl"><thead><tr><th>Monteur</th><th>Laatste werkdag</th><th>Waakweken</th><th></th></tr></thead><tbody>'+WD_UITD.filter(function(u){return wdBeheerInScope(u.ini);}).map(function(u){return '<tr><td><b>'+u.ini+'</b></td><td>'+u.uit+'</td><td>'+(u.mode==='leeg'?'leeg gelaten':'overgenomen')+'</td><td><button data-bhterug="'+u.id+'">Terugdraaien</button></td></tr>';}).join('')+'</tbody></table><p class="sub" style="margin:8px 0 0">Terugdraaien zet de waakweken terug. Diensten die al uit het rooster zijn gehaald komen terug via Jaarrooster maken → Toepassen.</p>';
   h+='</div>';
   var cc=wdC();
-  h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Monteur toevoegen</div>'+wdFlexForm(cc,true)+'</div>';
+  h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Monteur toevoegen</div>'+wdFlexForm(cc,role==='RD')+'</div>';
   return h;}
 function wdBeheerBind(){
   var a=document.getElementById('bhIni');if(!a)return;
@@ -6084,7 +6086,7 @@ function wdBeheerBind(){
   document.querySelectorAll('[data-wdflexadd]').forEach(function(b){b.onclick=wdFlexAddKlik;});
   document.querySelectorAll('[data-bhterug]').forEach(function(b){b.onclick=function(){wdBeheerTerug(+b.getAttribute('data-bhterug'));};});}
 async function wdBeheerUit(){
-  if(role!=='RD'||!BH.ini||!BH.uit||BH.bezig)return;
+  if(!wdBeheerMag()||!wdBeheerInScope(BH.ini)||!BH.ini||!BH.uit||BH.bezig)return;
   var m=M.filter(function(x){return x.ini===BH.ini;})[0];if(!m)return;
   if(WD_UITD.some(function(u){return u.ini===BH.ini;})){sbToast(BH.ini+' staat al uit dienst. Draai dat eerst terug.');return;}
   if(!window.confirm(BH.ini+' uit dienst zetten per '+BH.uit+'?\n\nAlle diensten na die datum verdwijnen uit het rooster.'))return;
@@ -6098,7 +6100,7 @@ async function wdBeheerUit(){
   }catch(e){sbToast('⚠️ Niet gelukt: '+String((e&&e.message)||e).slice(0,140));}
   BH.bezig=false;render();}
 function wdBeheerTerug(id){
-  var u=WD_UITD.filter(function(x){return x.id===id;})[0];if(!u||role!=='RD')return;
+  var u=WD_UITD.filter(function(x){return x.id===id;})[0];if(!u||!wdBeheerMag()||!wdBeheerInScope(u.ini))return;
   if(!window.confirm(u.ini+' weer in dienst zetten? De waakweken komen terug.'))return;
   WD_UITD=WD_UITD.filter(function(x){return x.id!==id;});wdOpslaan(id,'wd:u|'+u.ini+'|'+u.uit+'|'+u.mode,wdRoleNaam(),'ingetrokken');
   WD_JCACHE={};wdCache={};sbToast(u.ini+' staat weer in dienst.');render();}
