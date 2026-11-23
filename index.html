@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261123-beheer3'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261123-beheer4'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -5891,7 +5891,7 @@ function wdExcelMaak(){
     zr('Tabbladen',{bold:true,size:12,kl:'1F3864'});
     ['Jaarrooster: per week wie de Zara-waakdienst draait, met feestdagen.','Ritme: per monteur, geordend per Zara-locatie, in welke weken hij dienst heeft (Za) en hoeveel diensten in totaal.','Per monteur: alle diensten van één monteur onder elkaar.'].forEach(function(t){zr(t);});ur++;
     zr('Spelregels',{bold:true,size:12,kl:'1F3864'});
-    ['Eerlijk verdeeld over alle Zara-monteurs; minimaal '+WD_ZTUSSEN+' weken tussen twee diensten van dezelfde persoon.','Feestdagen en kerst worden om de beurt verdeeld; het saldo loopt door naar het volgende jaar.','Nieuwe Zara-monteurs draaien mee vanaf hun startweek.'].forEach(function(t){zr(t);});
+    ['Twee poules (Zara Amsterdam en overige locaties) met vaste koppels; elk koppel heeft om de 8 weken dienst. In het begin van 2027 (tot week 36) is de ronde korter, met 5 weken tussen twee diensten. Bij een vervanging door een regio-waakdienst of ruil is het minimaal 4 weken.','Feestdagen en kerst worden om de beurt verdeeld; het saldo loopt door naar het volgende jaar.','Nieuwe Zara-monteurs draaien mee vanaf hun startweek.'].forEach(function(t){zr(t);});
     var zj=wb.addWorksheet('Jaarrooster',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
     var zjc=zj.getCell(1,1);zjc.value='Zara-waakdienst jaarrooster '+jaren.join(' en ');fnt(zjc,{bold:true,size:14,kl:'1F3864'});
     kop(zj,3,['Week','Van (vr)','T/m (do)','Feestdag','Zara','Locatie','Woonplaats'],ZK);[7,13,13,30,22,18,30].forEach(function(w,i){zj.getColumn(i+1).width=w;});
