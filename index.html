@@ -1256,7 +1256,8 @@ var uvView='bord'; // uitvoering: schuifbord / mijn rooster
 var proposals=[]; var propId=1; // zelfsturende voorstellen van teamleiders
 
 function scopeIds(){
-  if(role==='TZ')return ['ZAM','ZRO','ZAR','ZZW','TCU'];
+  if(role==='TZ')return ['ZAM','ZRO','ZAR','ZZW'];
+  if(role==='TT')return ['TCU'];
   if(role==='TN')return ['NO','MI'];
   if(role==='TS')return ['ZO','MI'];
   return LOC.map(function(l){return l.id;});
@@ -1264,9 +1265,9 @@ function scopeIds(){
 function inScopeId(id){return scopeIds().indexOf(id)>=0;}
 function inScope(col){return col.members.every(function(m){return inScopeId(m);});}
 function canDecide(){return role==='RD';}
-function isTL(){return role==='TZ'||role==='TN'||role==='TS'||role==='TB';}
-function isOperational(){return role==='RD'||role==='TZ'||role==='TB';}
-function tlKleur(naam){naam=String(naam||'');if(/zara|techno/i.test(naam))return '#8e5bd1';if(/noord/i.test(naam))return '#1f7fd6';if(/zuid/i.test(naam))return '#e0731f';return '#6b6a63';}
+function isTL(){return role==='TZ'||role==='TT'||role==='TN'||role==='TS'||role==='TB';}
+function isOperational(){return role==='RD'||role==='TZ'||role==='TT'||role==='TB';}
+function tlKleur(naam){naam=String(naam||'');if(/zara/i.test(naam))return '#8e5bd1';if(/techno/i.test(naam))return '#0f9d8a';if(/noord/i.test(naam))return '#1f7fd6';if(/zuid/i.test(naam))return '#e0731f';return '#6b6a63';}
 function tlBadge(naam){var c=tlKleur(naam);return '<span class="badge" style="background:'+c+'1f;color:'+c+';border:1px solid '+c+'66"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+c+';margin-right:5px"></i>'+esc(naam)+'</span>';}
 function isDienstProp(p){return typeof p.tgt==='string'&&p.tgt.indexOf('st:')===0;}
 function propNaam(p){if(isDienstProp(p)){var v=p.tgt.slice(3).split('@')[0],vu=p.tgt.split('@')[1];return 'dienst: '+(vu?vu+' u ':'')+(dienstShow(v,p.day)||(afwSoort(v)?stLabel(v):'vrij'));}return LOCMAP[p.tgt]?LOCMAP[p.tgt].naam:p.tgt;}
@@ -1278,9 +1279,10 @@ function pushProposal(mid,day,tgt){var p={id:propId++,mid:mid,day:day,tgt:tgt,by
 var ROLES=[
  {id:'G', naam:'Manager G', desc:'Totaaloverzicht per regio · alleen-lezen', pin:'1111'},
  {id:'RD',naam:'Manager R / D', desc:'Operationeel sturen · schuifbord + AI', pin:'2222'},
- {id:'TZ',naam:'Teamleider Zara en Technocenter', desc:'Eigen team · bij tekort iemand uit een regio voorstellen', pin:'3333'},
  {id:'TN',naam:'Teamleider Noord', desc:'Noorden en noordelijk Randstad · voorstellen', pin:'4444'},
  {id:'TS',naam:'Teamleider Zuid', desc:'Zuiden en zuidelijk Randstad · voorstellen', pin:'5555'},
+ {id:'TZ',naam:'Teamleider Zara', desc:'Zara-locaties en Zara-waakdienst · bij tekort iemand uit een regio voorstellen', pin:'3333'},
+ {id:'TT',naam:'Teamleider Technocenter', desc:'Technocenter Utrecht · bij tekort iemand uit een regio voorstellen', pin:'9999'},
  {id:'PL',naam:'Planner', desc:'Alleen bekijken · met de nachtklus-pincode ook nachtklussen invullen', pin:'6666', pinNacht:'8888'},
  {id:'UV',naam:'Monteurs', desc:'Eigen rooster bekijken', pin:'7777'}
 ];
@@ -1422,10 +1424,10 @@ function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='log' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && boardView!=='bord' && !(boardView==='balans' && balansPeriode==='week');
-  var tlDayNav = (role==='TZ'||role==='TN'||role==='TS') && tlMode==='dag';
+  var tlDayNav = (role==='TZ'||role==='TT'||role==='TN'||role==='TS') && tlMode==='dag';
   var uvDayNav = false;
   var dnOn=!startOn&&(rdBoardNav || tlDayNav || uvDayNav || (role==='PL'&&plView!=='besch'&&!plNacht));
-  var dnRes=(role==='RD'||role==='TZ'||role==='TN'||role==='TS');   // vaste plek: de rij blijft staan, ook als de dagknoppen niet nodig zijn
+  var dnRes=(role==='RD'||role==='TZ'||role==='TT'||role==='TN'||role==='TS');   // vaste plek: de rij blijft staan, ook als de dagknoppen niet nodig zijn
   show('dayNav', dnOn||dnRes);
   document.getElementById('dayNav').classList.toggle('dn-leeg',!dnOn&&dnRes);
   show('groupToggle', false);   // indeling staat vast op 3 regio's
@@ -1448,12 +1450,12 @@ function setCtrls(){
     '<button data-gv="kwartaal" class="'+(gView==='kwartaal'?'active':'')+'">Kwartaal</button>'+
     '<button data-gv="jaar" class="'+(gView==='jaar'?'active':'')+'">Jaar</button>';
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;gView=b.dataset.gv;setCtrls();render();};});
-  } else if(role==='TZ'||role==='TN'||role==='TS'){vt.classList.remove('hidden');vt.innerHTML=
+  } else if(role==='TZ'||role==='TT'||role==='TN'||role==='TS'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button>'+
     '<button data-tl="dag" class="'+(tlMode==='dag'?'active':'')+'">Dag</button>'+
     '<button data-tl="week" class="'+(tlMode==='week'?'active':'')+'">Rooster</button>'+
     '<button data-tl="schuif" class="'+(tlMode==='schuif'?'active':'')+'">Schuifbord</button>'+
-    '<button data-tl="waak" class="'+(tlMode==='waak'?'active':'')+'">Waakdienst</button>';
+    (role==='TT'?'':'<button data-tl="waak" class="'+(tlMode==='waak'?'active':'')+'">Waakdienst</button>');
     vt.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(b.dataset.start){startOn=true;setCtrls();render();return;}startOn=false;tlMode=b.dataset.tl;if(tlMode==='week'){weekStart=curDay>=7?7:0;rMode='maand';rMaandOff=0;}setCtrls();render();};});
   } else if(role==='UV'){vt.classList.remove('hidden');vt.innerHTML=
     '<button data-start="1">Start</button><button data-uv="rooster">Mijn rooster</button>';
@@ -2255,11 +2257,12 @@ function render(){
     else v.innerHTML=viewBoard();
   }
   else if(role==='TZ') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewTeam()));
+  else if(role==='TT'){if(tlMode==='waak')tlMode='dag';v.innerHTML=(tlMode==='schuif'?viewBoard():(tlMode==='week'?viewWeek():viewTeam()));}
   else if(role==='TN') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewBuitenTeam('Noord')));
   else if(role==='TS') v.innerHTML=(tlMode==='waak'?viewWaak():tlMode==='schuif'?viewBoard():(tlMode==='week'?'':'')+(tlMode==='week'?viewWeek():wdTeamBanner()+viewBuitenTeam('Zuid')));
   else if(role==='PL') v.innerHTML=plView==='taken'?viewIfs():plView==='besch'?viewBeschikbaar():(!plNacht?viewHeatmap('Planner · alleen-lezen'):(plView==='week'?viewWeek():viewManagerG()));
   else if(role==='UV') v.innerHTML=viewUitvoering();
-  if(winShift!==0&&(role==='RD'||role==='TZ'||role==='TN'||role==='TS')){v.insertAdjacentHTML('afterbegin','<div class="ai" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span><span class="dot"></span>Je werkt in <b>week '+isoWeek(dateForIdx(7))+'</b> ('+dLabel(7)+' t/m '+dLabel(13)+'), niet in de huidige week.</span><button class="acc ghost" onclick="shiftWindow(0,realToday())">terug naar vandaag</button></div>');}
+  if(winShift!==0&&(role==='RD'||role==='TZ'||role==='TT'||role==='TN'||role==='TS')){v.insertAdjacentHTML('afterbegin','<div class="ai" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span><span class="dot"></span>Je werkt in <b>week '+isoWeek(dateForIdx(7))+'</b> ('+dLabel(7)+' t/m '+dLabel(13)+'), niet in de huidige week.</span><button class="acc ghost" onclick="shiftWindow(0,realToday())">terug naar vandaag</button></div>');}
   if(role==='RD'&&boardView==='bord') wireBoard();
   if(role==='RD'&&boardView==='week') wireWeek();
   if(role==='RD'&&boardView==='voorstellen') wireVoorstellen();
@@ -2277,7 +2280,7 @@ function render(){
     document.querySelectorAll('[data-uvmd]').forEach(function(b){b.onclick=function(){var d=+b.dataset.uvmd;uvMaandOff=d===0?0:uvMaandOff+d;render();};});
     var z=document.getElementById('uvZoek');if(z){z.oninput=function(){var q=z.value.toLowerCase().trim();document.querySelectorAll('.uv-kies').forEach(function(b){b.style.display=!q||b.dataset.zoek.indexOf(q)>=0?'':'none';});document.querySelectorAll('.uv-grp').forEach(function(g){g.style.display=[].some.call(g.querySelectorAll('.uv-kies'),function(b){return b.style.display!=='none';})?'':'none';});};}
   }
-  if(role==='TZ'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
+  if(role==='TZ'||role==='TT'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
   if(role==='RD'&&boardView==='log') wireLog();
   document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + woonplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';
@@ -4266,7 +4269,7 @@ document.addEventListener('mouseup',function(){if(!mDrag)return;var d=mDrag;mDra
   mDragCellen(d).forEach(function(x){if(!mSel.some(function(c){return c.mid===x.mid&&c.iso===x.iso;}))mSel.push(x);});render();});
 
 function mPaneel(){
-  if(!mSel.length||!(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||plMagNacht()))return '';
+  if(!mSel.length||!(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||role==='TT'||plMagNacht()))return '';
   if(role==='PL')return '<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSelTxt()+'</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='zet'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'zet\',this)" style="border-left:6px solid '+dienstStyle('nacht')[0]+'">Nachtklus</button><button class="acc ghost mpb'+(mPend&&mPend.soort==='nk'&&mPend.arg==='weg'?' pick':'')+'" onclick="mKiesSoort(\'nk\',\'weg\',this)">Nachtklus weghalen</button></div><div class="pendbar"><span id="mPendTxt" style="color:var(--muted)">'+(mPend?'Gekozen: '+mPend.label+' · klik Toepassen':'Kies Nachtklus of Nachtklus weghalen en klik daarna op Toepassen.')+'</span><button class="acc" onclick="mGo()">Toepassen</button></div></div>';
   var st0='height:30px;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 6px;background:var(--surface)';
   var h='<div class="ai" style="margin-top:12px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+mSelTxt()+'</span><button class="linkbtn" onclick="mLeeg()">annuleer</button></div>';
@@ -4419,7 +4422,7 @@ function viewRoosterMaand(wcols,alles,monteurs){
   if(ROOSTER_WAS_L===null)wasLaad();
   var data=rMaandLaad(namen.join(',')+'|'+van,namen,van,tot);
   var wk=['zo','ma','di','wo','do','vr','za'];
-  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||plMagNacht());
+  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||role==='TT'||plMagNacht());
   rMonLijst=monteurs.map(function(m){return m.id;});rMonDagen=[];for(var q=0;q<nT;q++)rMonDagen.push(fmtIsoD(dOp(q)));
   var h='<h2>Rooster</h2>'+rModeKnoppen();
   h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><div class="ctrl"><button onclick="rMaandNav(-1)">‹ maand</button><span class="daylabel" style="min-width:150px;text-transform:capitalize">'+mnL[mo]+' '+j+'</span><button onclick="rMaandNav(1)">maand ›</button>'+(rMaandOff?'<button onclick="rMaandNav(0)">deze maand</button>':'')+'</div>';
@@ -4473,7 +4476,7 @@ function viewRoosterMonteur(wcols,alles,monteurs){
   var nu=new Date(),eerste=new Date(nu.getFullYear(),nu.getMonth()+rMaandOff,1),j=eerste.getFullYear(),mo=eerste.getMonth();
   var mnL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   var mnK=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dnL=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||plMagNacht());
+  var kanEd=(role==='RD'||role==='TN'||role==='TS'||role==='TZ'||role==='TT'||plMagNacht());
   var h='<h2>Rooster</h2>'+rModeKnoppen();
   h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><div class="ctrl" id="wkChips" style="flex-wrap:wrap"><button data-wkc="*" class="'+(alles?'active':'')+'">Alles</button>';
   wcols.forEach(function(c){h+='<button data-wkc="'+c.key+'" class="'+(weekSel.indexOf(c.key)>=0?'active':'')+'">'+c.naam+'</button>';});
@@ -4826,7 +4829,7 @@ function wireHeatmap(){
 /* ---------- Teamleider: eigen team ---------- */
 function viewTeam(){
   var ids=scopeIds();
-  var html='<h2>Mijn team · ZARA</h2><p class="sub">'+dLabel(curDay)+' · inzicht in je eigen datacenters · contracturen. Bij tekort haal je via een voorstel iemand uit een regio erbij.</p>';
+  var html='<h2>Mijn team · '+(role==='TT'?'Technocenter':'ZARA')+'</h2><p class="sub">'+dLabel(curDay)+' · inzicht in je eigen '+(role==='TT'?'locatie':'datacenters')+' · contracturen. Bij tekort haal je via een voorstel iemand uit een regio erbij.</p>';
   html+='<div class="board">';
   ids.forEach(function(id){
     var c={key:id,naam:LOCMAP[id].naam,members:[id],benodigd:LOCMAP[id].benodigd,lat:LOCMAP[id].lat,lng:LOCMAP[id].lng};
@@ -4934,13 +4937,15 @@ function viewBuitenTeam(team){
 
 /* ---------- Teamleider weekweergave (alleen-lezen) ---------- */
 function currentTeamCols(){
-  if(role==='TZ')return ['ZAM','ZRO','ZAR','ZZW','TCU'].map(colFor);
+  if(role==='TZ')return ['ZAM','ZRO','ZAR','ZZW'].map(colFor);
+  if(role==='TT')return ['TCU'].map(colFor);
   if(role==='TN')return teamCols('Noord');
   if(role==='TS')return teamCols('Zuid');
   return [];
 }
 function currentTeamMonteurs(){
-  if(role==='TZ')return M.filter(function(m){return ['ZAM','ZRO','ZAR','ZZW','TCU'].indexOf(m.base)>=0;});
+  if(role==='TZ')return M.filter(function(m){return ['ZAM','ZRO','ZAR','ZZW'].indexOf(m.base)>=0;});
+  if(role==='TT')return M.filter(function(m){return m.base==='TCU';});
   if(role==='TN')return M.filter(function(m){return teamOf(m)==='Noord';});
   if(role==='TS')return M.filter(function(m){return teamOf(m)==='Zuid';});
   return [];
@@ -8305,12 +8310,13 @@ function viewStart(){
   lr.forEach(function(r){var d=new Date(r.t);h+='<div class="wd-kv"><span>'+(isNaN(d)?'':d.getDate()+' '+MN[d.getMonth()]+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2))+' · '+tlBadge(r.door)+' · '+esc(r.waar)+'</span><b style="font-weight:500">'+esc(logWat(r))+'</b></div>';});
   h+=(role==='RD'?'<button class="linkbtn" data-go="rd:log" style="margin-top:6px">Alle wijzigingen ›</button>':'')+'</div>';
   if(role==='UV')h=h.slice(0,hvB);
-  if(role==='TZ'||role==='TN'||role==='TS')h+=gewBlok(rolN);
+  if(role==='TZ'||role==='TT'||role==='TN'||role==='TS')h+=gewBlok(rolN);
   if(role==='PL'){if(LOG_RIJEN===null)logLaad();if(IFS_KLAAR===null)ifsLaad();var nOpen=ifsTaken().filter(function(r){return !IFS_KLAAR[r.id];}).length;h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Taken IFS Workbench</div><div class="wd-kv"><span>Nog aan te passen in IFS</span><b>'+(LOG_RIJEN===null||IFS_KLAAR===null?'…':nOpen)+'</b></div><button class="linkbtn" data-go="pl:taken" style="margin-top:6px">Naar de taken ›</button></div>';}
   // acties per rol
   var acties={RD:[['rd:bord','Schuifbord'],['rd:voorstellen','Te bespreken'],['rd:week','Rooster'],['rd:grafiek','Grafiek'],['rd:waak','Waakdienst'],['rd:log','Wijzigingen']],
     G:[['g:dag','Dashboard'],['g:week','Week'],['g:kwartaal','Kwartaal'],['g:jaar','Jaar']],
     TZ:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
+    TT:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord']],
     TN:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     TS:[['tl:dag','Mijn team vandaag'],['tl:week','Rooster'],['tl:schuif','Schuifbord'],['tl:waak','Waakdienst']],
     PL:(plNacht?[['pl:besch','Beschikbaar'],['pl:grafiek','Grafiek'],['pl:week','Rooster'],['pl:taken','Taken IFS']]:[['pl:besch','Beschikbaar'],['pl:heat','Heatmap'],['pl:taken','Taken IFS']]),UV:[['uv:rooster','Mijn rooster']]}[role]||[];
