@@ -6974,7 +6974,7 @@ function wdMetWie(plan,k,ini){var l=[];Object.keys(plan[k]).forEach(function(sl)
 function wdViewRooster(){
   var c=wdC(),slots=role==='TZ'?[]:c.prep.sIds.concat(['SCH']),team=wdTeamSet(); // Teamleider Zara ziet alleen de Zara-waakdienst
   var h='';
-  if(team)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
+  if(team&&role!=='TZ')h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdalleen="1" class="'+(wdAlleen?'active':'')+'">Mijn team uitlichten</button><button data-wdalleen="0" class="'+(!wdAlleen?'active':'')+'">Iedereen gelijk</button></div>';
   if(wdNuWeek()>=0)h+='<div class="ctrl" style="margin-bottom:10px"><button data-wdnu="1">Naar de huidige week (wk '+wdNr(wdNuWeek())+')</button></div>';
   if(wdSel)h+=wdRuilPaneel();
   else h+='<p class="sub">Kan iemand niet? Klik <b>✎ Wijzigen</b> bij de week. <span style="color:#a0522d;font-weight:600">½</span> = deel overgenomen. Tip: sleep een dienst op een andere om snel te ruilen. <span class="wd-fb">feestdag</span> = week met een feestdag. De gekleurde labels zijn schoolvakanties per regio (Noord, Midden, Zuid).</p>'+(wdVakNote()?'<p class="wd-vknote">'+wdVakNote()+'</p>':'');
