@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261123-trap'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261123-zcodes'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -5300,6 +5300,14 @@ var WD_ZTUSSEN=8; // minimaal aantal weken tussen twee Zara-diensten van dezelfd
 function wdZaTel(za,za2){var t={};WD_ZPOOL.forEach(function(m){t[m.ini]={n:0,feest:0};});[za,za2].forEach(function(L){(L||[]).forEach(function(i,k){if(i&&t[i]&&!(WD_KJ===2027&&k===0)){t[i].n++;if(wdIsFeest(k))t[i].feest++;}});});return t;}
 function wdZaWeek(c,k){return [c.za&&c.za[k],c.za2&&c.za2[k]].filter(Boolean);}
 var WD_ZA_ALIAS={Z01:'JOMA02',Z02:'MAKH02',Z03:'ASER01'}; // zelfde persoon in de regio-waakdienst
+var WD_ZA_REEL={Z01:'John Mak',Z02:'Marouane El khattouti',Z03:'Aslan Ergul'};
+function wdZaCode(t){return String(t).replace(/ZARA Ams (Z0[123])/g,function(m,z){return WD_ZA_REEL[z];}).replace(/\bZ0([123])\b/g,function(m){return WD_ZA_ALIAS[m]||m;});}
+(function(){ // toon overal de echte code (JOMA02, MAKH02, ASER01) in plaats van Z01, Z02, Z03; intern blijft het Z0x
+  function fix(root){if(!root||!root.nodeType)return;var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,L=[];while((n=w.nextNode()))if(/Z0[123]\b/.test(n.nodeValue))L.push(n);L.forEach(function(x){var v=wdZaCode(x.nodeValue);if(v!==x.nodeValue)x.nodeValue=v;});
+    if(root.querySelectorAll)root.querySelectorAll('[title],[aria-label],[placeholder]').forEach(function(e){['title','aria-label','placeholder'].forEach(function(a){var v=e.getAttribute(a);if(v&&/Z0[123]\b/.test(v))e.setAttribute(a,wdZaCode(v));});});}
+  var t=null;function plan(){if(t)return;t=setTimeout(function(){t=null;fix(document.getElementById('view'));},30);}
+  document.addEventListener('DOMContentLoaded',function(){var v=document.getElementById('view');if(v)new MutationObserver(plan).observe(v,{childList:true,subtree:true,characterData:true});fix(v);});
+})();
 function wdZaMaak(carry,rplan){
   var owe=carry&&carry.owe?JSON.parse(JSON.stringify(carry.owe)):{},N=WD_N,rnd=wdRng(4242+WD_KJ),n={},fe={},last={},za=[],za2=[],pin=WD_ZA_PIN[WD_KJ],dv=carry?carry.dev:{},fd=carry?carry.fdev:{};
   WD_ZPOOL.forEach(function(m){n[m.ini]=0;fe[m.ini]=0;last[m.ini]=carry&&carry.last[m.ini]!==undefined?carry.last[m.ini]:-99;});
@@ -5912,6 +5920,7 @@ function wdExcelMaak(){
       (PER[m.ini]||[]).forEach(function(x,k){[k?'':m.ini,k?'':(wdNaam(m.ini)===m.ini?'':wdNaam(m.ini)),k?'':ZNM[l],wl(x),dd(x.van),dd(x.tot),x.feest].forEach(function(val,i){var cc=zp.getCell(pr,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i===0});if(x.feest)vul(cc,'D9D9D9');});pr++;});
       if(PER[m.ini])pr++;});});
   }
+  wb.eachSheet(function(ws){ws.eachRow(function(r){r.eachCell(function(c){if(typeof c.value==='string')c.value=wdZaCode(c.value);});});});
   wb.xlsx.writeBuffer().then(function(buf){
     var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(alleenZa?'Zara_waakdienst_':'Waakdienstrooster_')+jaren.join('-')+'.xlsx';document.body.appendChild(a);a.click();
