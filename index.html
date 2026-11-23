@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261123-q4'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261123-beheer2'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -6057,7 +6057,7 @@ function wdBeheerTel(ini,uit){ // hoeveel waak- en schaduwweken vallen na de dat
   for(var j=WD_BASISJAAR;j<WD_BASISJAAR+WD_JAREN;j++){var r=wdPlanJaar(j);wdMetJaar(j,function(){r.plan.forEach(function(w,k){if(drIso(wdWeekStart(k))<=uit)return;Object.keys(w).forEach(function(sl){if(w[sl]===ini){if(sl==='SCH')n.s++;else n.w++;if(wk.length<40)wk.push(j+' wk '+wdNr(k));}});});});}
   n.wk=wk;return n;}
 function wdBeheerView(){
-  var h='<p class="sub">Monteur uit dienst per datum zetten. Het rooster en de waakdienst passen zich vanaf die datum zelf aan.</p>';
+  var h='<p class="sub">Monteur uit dienst zetten per datum, of een nieuwe monteur toevoegen. Het rooster en de waakdienst passen zich vanaf die datum zelf aan.</p>';
   var namen=M.map(function(m){return m.ini;}).sort();
   h+='<div class="card"><div class="ct" style="font-weight:700;margin-bottom:8px">Uit dienst zetten</div><div class="ctrl" style="gap:10px;flex-wrap:wrap;align-items:flex-end">'+
     '<label style="display:block;font-size:12px">Monteur<br><select id="bhIni"><option value="">Kies…</option>'+namen.map(function(i){return '<option value="'+i+'"'+(BH.ini===i?' selected':'')+'>'+i+'</option>';}).join('')+'</select></label>'+
@@ -6071,13 +6071,17 @@ function wdBeheerView(){
   h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Uit dienst gezet ('+WD_UITD.length+')</div>';
   if(!WD_UITD.length)h+='<p class="sub" style="margin:0">Nog niemand.</p>';
   else h+='<table class="wd-tbl"><thead><tr><th>Monteur</th><th>Laatste werkdag</th><th>Waakweken</th><th></th></tr></thead><tbody>'+WD_UITD.map(function(u){return '<tr><td><b>'+u.ini+'</b></td><td>'+u.uit+'</td><td>'+(u.mode==='leeg'?'leeg gelaten':'overgenomen')+'</td><td><button data-bhterug="'+u.id+'">Terugdraaien</button></td></tr>';}).join('')+'</tbody></table><p class="sub" style="margin:8px 0 0">Terugdraaien zet de waakweken terug. Diensten die al uit het rooster zijn gehaald komen terug via Jaarrooster maken → Toepassen.</p>';
-  return h+'</div>';}
+  h+='</div>';
+  var cc=wdC();
+  h+='<div class="card" style="margin-top:12px"><div class="ct" style="font-weight:700;margin-bottom:8px">Monteur toevoegen</div>'+wdFlexForm(cc,true)+'</div>';
+  return h;}
 function wdBeheerBind(){
   var a=document.getElementById('bhIni');if(!a)return;
   a.onchange=function(){BH.ini=a.value;render();};
   document.getElementById('bhUit').onchange=function(){BH.uit=this.value;render();};
   document.getElementById('bhMode').onchange=function(){BH.mode=this.value;render();};
   var ok=document.getElementById('bhOk');if(ok)ok.onclick=wdBeheerUit;
+  document.querySelectorAll('[data-wdflexadd]').forEach(function(b){b.onclick=wdFlexAddKlik;});
   document.querySelectorAll('[data-bhterug]').forEach(function(b){b.onclick=function(){wdBeheerTerug(+b.getAttribute('data-bhterug'));};});}
 async function wdBeheerUit(){
   if(role!=='RD'||!BH.ini||!BH.uit||BH.bezig)return;
@@ -7370,6 +7374,28 @@ function wdFlexVoorHtml(c,f){
   h+='<div style="display:flex;gap:6px;margin-top:8px"><button class="acc" data-wdflexvoorok="1">'+(role==='RD'?'Zet alle weken in':'Dien alle weken in als voorstel')+'</button><button class="acc ghost" data-wdflexvoorweg="1">Sluiten</button></div></div>';
   return h;
 }
+function wdFlexAddKlik(){var msg=document.getElementById('wdFxMsg');var md0=(document.getElementById('wdFxMode')||{}).value,st0=(document.getElementById('wdFxStart')||{}).value;if(md0!=='f'&&!st0){if(msg)msg.textContent='Kies eerst een startdatum, of kies Flex invaller.';return;}if(md0==='f'){var sx=document.getElementById('wdFxStart');if(sx)sx.value='';}if(msg)msg.textContent='Even zoeken…';
+    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value,(document.getElementById('wdFxGeb')||{}).value,[].map.call(document.querySelectorAll('.wdFxHelp:checked'),function(x){return x.value;}),(document.getElementById('wdFxMode')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});}
+function wdFlexForm(c,alles){
+  var h='';
+    var zaF=role==='TZ'&&!alles; // Teamleider Zara: nieuwe monteurs zijn Zara-monteurs; Manager R/D bij Monteurs beheren: alle gebieden en Zara-locaties
+    var gebKn=alles?[['','Automatisch']].concat(c.prep.sIds.map(function(x){return [x,wdGNaam(c,x)];})).concat(Object.keys(WD_ZLOC).map(function(x){return [x,WD_ZLOC[x]];})):zaF?Object.keys(WD_ZLOC).map(function(x){return [x,WD_ZLOC[x]];}):[['','Automatisch']].concat(c.prep.sIds.map(function(x){return [x,wdGNaam(c,x)];}));
+    h+='<div class="wd-sub2" style="margin-top:12px">Monteur toevoegen</div>'+
+    '<div class="wd-fx"><div class="wd-fxst">1. Wat voor monteur is het?</div><div class="wd-fxsoort">'+
+    [['d','&#9654;','Vast meedraaien','Komt vanaf zijn startdatum in de beurt. Collega&rsquo;s schuiven een plek op.'],
+     ].concat(zaF?[]:[['o','&#8644;','Weken overnemen','Rooster blijft staan. Hij neemt losse weken over, volgend jaar draait hij mee.']]).concat([
+     ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']]).map(function(m,i){
+      return '<button type="button" class="wd-fxk'+(i===0?' on':'')+'" data-fx="soort" data-v="'+m[0]+'" onclick="wdFxKies(\'soort\',\''+m[0]+'\')"><span class="wd-fxi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+
+    '</div><input type="hidden" id="wdFxMode" value="d">'+
+    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
+    '<span id="wdFxStartW"><label class="wd-mut" style="font-size:13px">Startdatum <input type="date" id="wdFxStart" onchange="wdFxUpd()" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label></span></div>'+
+    '<div class="wd-fxst">3. '+(zaF?'Op welke Zara-locatie werkt hij?':'In welk gebied?')+'</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="'+(zaF?'ZAM':'')+'">'+
+    '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">'+(zaF?'60+ (telt voor 0,75)':'60+ (geen schaduw)')+'</button></div><input type="hidden" id="wdFxF" value="1">'+
+    (zaF?'':'<div class="wd-fxst">5. Mag hij ook helpen in een ander gebied? <span class="wd-mut" style="font-weight:400">(niet verplicht)</span></div><div class="wd-fxrij">'+c.prep.sIds.map(function(x){return '<label class="wd-fxc wd-fxh"><input type="checkbox" class="wdFxHelp" value="'+x+'" onchange="this.parentNode.classList.toggle(\'on\',this.checked);wdFxUpd()">'+wdGNaam(c,x)+'</label>';}).join('')+'</div>')+
+    '<div id="wdFxToel" class="wd-fxtoel"></div>'+
+    '<div style="margin-top:10px"><button class="acc" data-wdflexadd="1">Monteur toevoegen</button></div><div id="wdFxMsg" class="sub" style="margin-top:6px"></div></div>';
+  return h;
+}
 function wdFlexKaart(c,t){
   var mag=wdFlexMag();
   var FL=WD_FLEX.filter(function(f){return role==='TZ'?wdFxZara(f):!wdFxZara(f);}),zt0=wdZaTel(c.za,c.za2);
@@ -7385,22 +7411,7 @@ function wdFlexKaart(c,t){
   });
   if(!FL.length)h+='<div class="empty" style="margin-bottom:8px">Nog geen nieuwe of flex-monteurs.</div>';
   if(mag){
-    var zaF=role==='TZ'; // Teamleider Zara: nieuwe monteurs zijn Zara-monteurs
-    var gebKn=zaF?Object.keys(WD_ZLOC).map(function(x){return [x,WD_ZLOC[x]];}):[['','Automatisch']].concat(c.prep.sIds.map(function(x){return [x,wdGNaam(c,x)];}));
-    h+='<div class="wd-sub2" style="margin-top:12px">Monteur toevoegen</div>'+
-    '<div class="wd-fx"><div class="wd-fxst">1. Wat voor monteur is het?</div><div class="wd-fxsoort">'+
-    [['d','&#9654;','Vast meedraaien','Komt vanaf zijn startdatum in de beurt. Collega&rsquo;s schuiven een plek op.'],
-     ].concat(zaF?[]:[['o','&#8644;','Weken overnemen','Rooster blijft staan. Hij neemt losse weken over, volgend jaar draait hij mee.']]).concat([
-     ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']]).map(function(m,i){
-      return '<button type="button" class="wd-fxk'+(i===0?' on':'')+'" data-fx="soort" data-v="'+m[0]+'" onclick="wdFxKies(\'soort\',\''+m[0]+'\')"><span class="wd-fxi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+
-    '</div><input type="hidden" id="wdFxMode" value="d">'+
-    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
-    '<span id="wdFxStartW"><label class="wd-mut" style="font-size:13px">Startdatum <input type="date" id="wdFxStart" onchange="wdFxUpd()" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label></span></div>'+
-    '<div class="wd-fxst">3. '+(zaF?'Op welke Zara-locatie werkt hij?':'In welk gebied?')+'</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="'+(zaF?'ZAM':'')+'">'+
-    '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">'+(zaF?'60+ (telt voor 0,75)':'60+ (geen schaduw)')+'</button></div><input type="hidden" id="wdFxF" value="1">'+
-    (zaF?'':'<div class="wd-fxst">5. Mag hij ook helpen in een ander gebied? <span class="wd-mut" style="font-weight:400">(niet verplicht)</span></div><div class="wd-fxrij">'+c.prep.sIds.map(function(x){return '<label class="wd-fxc wd-fxh"><input type="checkbox" class="wdFxHelp" value="'+x+'" onchange="this.parentNode.classList.toggle(\'on\',this.checked);wdFxUpd()">'+wdGNaam(c,x)+'</label>';}).join('')+'</div>')+
-    '<div id="wdFxToel" class="wd-fxtoel"></div>'+
-    '<div style="margin-top:10px"><button class="acc" data-wdflexadd="1">Monteur toevoegen</button></div><div id="wdFxMsg" class="sub" style="margin-top:6px"></div></div>';
+    h+=wdFlexForm(c,false);
   } else h+='<p class="sub" style="margin:0">Toevoegen kan Manager R/D of een teamleider.</p>';
   return h+'</div>';
 }
@@ -7415,7 +7426,7 @@ function wdFxUpd(){
   var st=xj?wdMetJaar(xj.j,function(){return 'week '+wdNr(xj.k)+' ('+wdWeekLabel(xj.k)+') '+xj.j;}):null;
   if(md==='f'){t=ini+' komt niet in de beurt. Je kunt hem bij Ruilen of Overnemen kiezen als invaller'+(hp.length?' en hij mag helpen in '+hp.join(', '):'')+'.';}
   else if(!st){t='Kies een startdatum om te zien wat er gebeurt.';}
-  else if(md==='d'&&WD_ZLOC[gb]){t=ini+' ('+gbT+') start in '+st+' en draait vanaf dan mee in de Zara-waakdienst'+(fac?' (60+, telt voor 0,75)':'')+'. De andere Zara-monteurs komen daardoor iets minder vaak aan de beurt.';}
+  else if(md==='d'&&WD_ZLOC[gb]){t=ini+' ('+gbT+') start in '+st+' en komt in de Zara-pool'+(fac?' (60+, telt voor 0,75)':'')+'. Let op: de Zara-waakdienst draait op vaste koppels. Hij staat dus niet automatisch in het rooster; plaats hem via Ruilen of laat hem in een koppel opnemen.';}
   else if(md==='d'){t=ini+' start in '+st+' en komt achteraan de beurt van '+gbT+(fac?' (60+, geen schaduw)':'')+'. De collega&rsquo;s in dat gebied schuiven een plek op.';
     if(wdVastVoor(xj.j))w='Let op: het rooster van '+xj.j+' staat vast. Dan neemt hij weken over in plaats van meedraaien.';}
   else{t=ini+' start in '+st+'. Het rooster blijft staan. Hij neemt vanaf dan losse weken over in '+gbT+' (met &ldquo;Stel weken voor&rdquo; doet de tool een voorstel). Vanaf het volgende roosterjaar draait hij gewoon mee.';}
@@ -7698,8 +7709,7 @@ function wireWaak(){
   q('[data-wdg]',function(b){wdKaartG=wdKaartG===b.dataset.wdg?null:b.dataset.wdg;wdKaartIni=null;render();});
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
-  q('[data-wdflexadd]',function(){var msg=document.getElementById('wdFxMsg');var md0=(document.getElementById('wdFxMode')||{}).value,st0=(document.getElementById('wdFxStart')||{}).value;if(md0!=='f'&&!st0){if(msg)msg.textContent='Kies eerst een startdatum, of kies Flex invaller.';return;}if(md0==='f'){var sx=document.getElementById('wdFxStart');if(sx)sx.value='';}if(msg)msg.textContent='Even zoeken…';
-    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value,(document.getElementById('wdFxGeb')||{}).value,[].map.call(document.querySelectorAll('.wdFxHelp:checked'),function(x){return x.value;}),(document.getElementById('wdFxMode')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
+  q('[data-wdflexadd]',wdFlexAddKlik);
   q('[data-wdflexvoor]',function(b){var f=WD_FLEX.filter(function(x){return x.ini===b.dataset.wdflexvoor;})[0];if(!f)return;var r=wdFlexVoorstel(wdC(),f);wdFlexVoor={ini:f.ini,lijst:r.lijst,n:r.n};render();});
   q('[data-wdflexvoorweg]',function(){wdFlexVoor=null;render();});
   q('[data-wdflexvoorok]',function(){var c=wdC(),fv=wdFlexVoor;if(!fv)return;var n=0;
