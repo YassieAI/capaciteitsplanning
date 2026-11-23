@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261123-rust6'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261123-begin1'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -5292,6 +5292,13 @@ function wdNogNiet(ini,k){var f=WD_FLEX.filter(function(x){return x.ini===ini&&x
   return WD_JAAR<f.start.j||(WD_JAAR===f.start.j&&k<f.start.k);}
 function wdNogNietTxt(ini){var f=WD_FLEX.filter(function(x){return x.ini===ini&&x.start;})[0];return 'Nog niet gestart: '+ini+' begint in '+(f?wdStartTxt(f):'een later jaar');}
 var WD_ZA_PINS_POULE={2027:[["KHA02", "ARBR01", "THTE02", "DAPR04", "HEVI01", "KHA02", "ARBR01", "THTE02", "DAPR04", "HEVI01", "KHA02", "ARBR01", "THTE02", "DAPR04", "Z01", "ADKH01", "HEVI01", "KHA02", "THTE02", "DAPR04", "Z01", "ADKH01", "HEVI01", "KHA02", "THTE02", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01"],[null, "RESO02", "JUGR01", "PAVE01", "ROMS", "FRSC02", "RESO02", "JUGR01", "PAVE01", "ROMS", "FRSC02", "RESO02", "JUGR01", "PAVE01", "Z03", "ROMS", "FRSC02", "RESO02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "JUGR01", "PAVE01", "LAHA02", "ARBR01", "Z03", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01"]]};
+var WD_ZA_PINS_EEN={2027:[["KHA02", "RESO02", "HEVI01", "PAVE01", "DAPR04", "ROMS", "THTE02", "FRSC02", "KHA02", "JUGR01", "DAPR04", "RESO02", "THTE02", "ARBR01", "Z01", "ADKH01", "HEVI01", "KHA02", "THTE02", "DAPR04", "Z01", "ADKH01", "HEVI01", "KHA02", "THTE02", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01", "HEVI01", "Z02", "KHA02", "THTE02", "ERMI03", "DAPR04", "Z01", "ADKH01"],[null, null, null, null, null, null, null, null, null, null, null, null, null, null, "Z03", "ROMS", "FRSC02", "RESO02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "JUGR01", "PAVE01", "LAHA02", "ARBR01", "Z03", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01", "Z03", "ARBR01", "FRSC02", "RESO02", "ROMS", "LAHA02", "JUGR01", "PAVE01"]]}; // keuze B: tot en met week 13 één Zara-monteur per week (maar 10 monteurs gestart), vanaf week 14 twee
+WD_ZA_PINS_EEN[2026]=WD_ZA_PINS_POULE[2026];
+var WD_ZA_BEGIN='twee';try{if(localStorage.getItem('za_begin')==='een')WD_ZA_BEGIN='een';}catch(e){}
+function wdZaPinsNu(){return WD_ZA_BEGIN==='een'?WD_ZA_PINS_EEN:WD_ZA_PINS_POULE;}
+function wdZaBeginKnop(){if(WD_JAAR!==2027||(role!=='TZ'&&role!=='RD'))return '';var b=function(v,t){return '<button data-wdzabegin="'+v+'" class="'+(WD_ZA_BEGIN===v?'active':'')+'">'+t+'</button>';};
+  return '<div class="ctrl" style="margin:6px 0 8px;flex-wrap:wrap;align-items:center"><span class="wd-lbl" style="margin-right:4px">Begin 2027 (week 1 t/m 13)</span>'+b('twee','2 monteurs per week')+b('een','1 monteur per week, vanaf week 14 twee')+'</div>';}
+function wdZaBeginZet(v){WD_ZA_BEGIN=v==='een'?'een':'twee';try{localStorage.setItem('za_begin',WD_ZA_BEGIN);}catch(e){}WD_JCACHE={};wdCache={};wdBouw();render();}
 WD_ZA_PINS_POULE[2026]=(function(){var q={39:'ROMS',40:'RESO02',41:'KHA02',42:'KHA02',43:'FRSC02',44:'THTE02',45:'DAPR04',46:'HEVI01',47:'PAVE01',48:'JUGR01',49:'ROMS',50:'FRSC02',51:'GAAL'},a=[],b=[];Object.keys(q).forEach(function(k){a[+k]=q[k];b[+k]=null;});return [a,b];})(); // echte Zara-waakdiensten Q4 2026 (FF Q4 2026): vr 2 okt t/m do 24 dec; GAAL = Gabriël Alladin (niet in de Zara-pool)
 var WD_ZA_KOPPELS=[["Z01", "JUGR01"], ["ADKH01", "PAVE01"], ["HEVI01", "Z03"], ["Z02", "ARBR01"], ["KHA02", "FRSC02"], ["THTE02", "RESO02"], ["ERMI03", "ROMS"], ["DAPR04", "LAHA02"]]; // twee poules: Zara Amsterdam + overige, vaste koppels vanaf week 30
 var WD_ZA_VNAAM={poule:'Twee poules, vaste koppels'};
@@ -5310,7 +5317,7 @@ function wdZaCode(t){return String(t).replace(/ZARA Ams (Z0[123])/g,function(m,z
   document.addEventListener('DOMContentLoaded',function(){var v=document.getElementById('view');if(v)new MutationObserver(plan).observe(v,{childList:true,subtree:true,characterData:true});fix(v);});
 })();
 function wdZaMaak(carry,rplan){
-  var owe=carry&&carry.owe?JSON.parse(JSON.stringify(carry.owe)):{},N=WD_N,rnd=wdRng(4242+WD_KJ),n={},fe={},last={},za=[],za2=[],pin=WD_ZA_PIN[WD_KJ],dv=carry?carry.dev:{},fd=carry?carry.fdev:{};
+  var owe=carry&&carry.owe?JSON.parse(JSON.stringify(carry.owe)):{},N=WD_N,rnd=wdRng(4242+WD_KJ),n={},fe={},last={},za=[],za2=[],pin=wdZaPinsNu()[WD_KJ],dv=carry?carry.dev:{},fd=carry?carry.fdev:{};
   WD_ZPOOL.forEach(function(m){n[m.ini]=0;fe[m.ini]=0;last[m.ini]=carry&&carry.last[m.ini]!==undefined?carry.last[m.ini]:-99;});
   for(var k=0;k<N;k++){
     var kn=wdIsKerstNj(k),fs=wdIsFeest(k),best=null,bs=1e9;
@@ -6553,7 +6560,7 @@ function viewWaak(){
   for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
   var dwk=wdWeergave(WD_JAAR),eind=dwk[dwk.length-1].tot,vj=WD_JAAR>WD_BASISJAAR;
-  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdUitleg()+'<p class="sub">Vr '+wdD(dwk[0].van)+' '+dwk[0].van.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+dwk.length+' weken (wk '+dwk[0].nr+' t/m wk '+dwk[dwk.length-1].nr+')'+(role==='TZ'?' · Zara-waakdienst: elke week '+(WD_JAAR<2027?'één Zara-monteur':'twee Zara-monteurs')+' ·':' · elke week waakdienst per gebied plus één landelijke schaduwdienst ·')+
+  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdUitleg()+wdZaBeginKnop()+'<p class="sub">Vr '+wdD(dwk[0].van)+' '+dwk[0].van.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+dwk.length+' weken (wk '+dwk[0].nr+' t/m wk '+dwk[dwk.length-1].nr+')'+(role==='TZ'?' · Zara-waakdienst: elke week '+(WD_JAAR<2027?'één Zara-monteur':'twee Zara-monteurs')+' ·':' · elke week waakdienst per gebied plus één landelijke schaduwdienst ·')+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' als Excel">&#11015; Excel-export</button></div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
@@ -7712,6 +7719,7 @@ function wireWaak(){
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
   q('[data-wdflexadd]',wdFlexAddKlik);
+  q('[data-wdzabegin]',function(b){wdZaBeginZet(b.dataset.wdzabegin);});
   q('[data-wdflexvoor]',function(b){var f=WD_FLEX.filter(function(x){return x.ini===b.dataset.wdflexvoor;})[0];if(!f)return;var r=wdFlexVoorstel(wdC(),f);wdFlexVoor={ini:f.ini,lijst:r.lijst,n:r.n};render();});
   q('[data-wdflexvoorweg]',function(){wdFlexVoor=null;render();});
   q('[data-wdflexvoorok]',function(){var c=wdC(),fv=wdFlexVoor;if(!fv)return;var n=0;
