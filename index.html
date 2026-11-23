@@ -5294,7 +5294,7 @@ var WD_ZA_VNAAM={team:'Op team, dan woongebied',gebied:'Op woongebied'};
 var WD_ZA_V=(function(){try{var v=localStorage.getItem('wdZaVersie');return WD_ZA_PINS[v]?v:'team';}catch(e){return 'team';}})();
 var WD_ZA_PIN=WD_ZA_PINS[WD_ZA_V]; // Zara: 2 monteurs per week, ritme loopt door. Twee versies om te laten zien (knop bij Waakdienst). 2027 loopt van vr 25 dec 2026 (k=0, echte dienst) t/m do 23 dec 2027; week 52 (24 dec 2027) is k=0 van 2028.
 function wdZaZet(v){if(!WD_ZA_PINS[v]||v===WD_ZA_V)return;WD_ZA_V=v;WD_ZA_PIN=WD_ZA_PINS[v];try{localStorage.setItem('wdZaVersie',v);}catch(e){}WD_JCACHE={};wdCache={};if(typeof RMND!=='undefined')RMND={};wdSel=null;sbToast('Zara-waakdienst: '+WD_ZA_VNAAM[v]);render();}
-function wdZaKnop(){if(role!=='RD'&&role!=='TZ')return '';return '<div class="ctrl" style="margin:0 0 8px;flex-wrap:wrap;align-items:center"><span class="wd-lbl" style="margin-right:4px">Zara-versie</span>'+['team','gebied'].map(function(v){return '<button data-wdzav="'+v+'" class="'+(v===WD_ZA_V?'active':'')+'" title="'+(v==='team'?'Tweede monteur uit een ander team; lukt dat niet, dan een ander woongebied':'Tweede monteur uit een ander woongebied')+'">'+WD_ZA_VNAAM[v]+'</button>';}).join('')+'<span class="sub" style="margin-left:8px">Proefversie: kies om te vergelijken, nog niet definitief</span></div>';}
+function wdZaKnop(){if((role!=='RD'&&role!=='TZ')||WD_JAAR<2027)return '';return '<div class="ctrl" style="margin:0 0 8px;flex-wrap:wrap;align-items:center"><span class="wd-lbl" style="margin-right:4px">Zara-versie</span>'+['team','gebied'].map(function(v){return '<button data-wdzav="'+v+'" class="'+(v===WD_ZA_V?'active':'')+'" title="'+(v==='team'?'Tweede monteur uit een ander team; lukt dat niet, dan een ander woongebied':'Tweede monteur uit een ander woongebied')+'">'+WD_ZA_VNAAM[v]+'</button>';}).join('')+'<span class="sub" style="margin-left:8px">Proefversie: kies om te vergelijken, nog niet definitief</span></div>';}
 var WD_ZTUSSEN=8; // minimaal aantal weken tussen twee Zara-diensten van dezelfde persoon
 function wdZaTel(za,za2){var t={};WD_ZPOOL.forEach(function(m){t[m.ini]={n:0,feest:0};});[za,za2].forEach(function(L){(L||[]).forEach(function(i,k){if(i&&t[i]&&!(WD_KJ===2027&&k===0)){t[i].n++;if(wdIsFeest(k))t[i].feest++;}});});return t;}
 function wdZaWeek(c,k){return [c.za&&c.za[k],c.za2&&c.za2[k]].filter(Boolean);}
@@ -6192,6 +6192,7 @@ function wdLaadEcht(j,naam){
 }
 /* korte uitleg voor iedereen bovenaan de waakdienst */
 function wdUitleg(){
+  if(role==='TZ')return wdZaUitleg();
   return '<details class="wd-det" style="margin:0 0 10px;padding:8px 12px;border:0.5px solid var(--border-strong);border-radius:10px;background:var(--surface)"><summary style="cursor:pointer;font-weight:700">Zo werkt de waakdienst (kort) · en zo verschuif je een dienst</summary>'+
   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px;font-size:13px;line-height:1.5">'+
   '<div><b>Hoe het rooster werkt</b><ul style="margin:4px 0 0 18px;padding:0">'+
@@ -6209,6 +6210,26 @@ function wdUitleg(){
    '<li>Dezelfde drie lijsten zie je op de <b>Kaart</b>: klik op een speld van een monteur die die week dienst heeft.</li>'+
    '<li>Klik op <b>Ruilen</b> of <b>Overnemen</b>: het gaat <b>direct door</b>, niet meer langs Manager R/D. Breekt het een regel (lijst 2), dan krijg je eerst een melding.</li>'+
    '<li>Daarna loopt het ritme er netjes omheen. In het tabje Ruilen zie je wat er veranderd is en door wie.</li></ol></div>'+
+  '</div></details>';
+}
+function wdZaUitleg(){
+  return '<details class="wd-det" style="margin:0 0 10px;padding:8px 12px;border:0.5px solid var(--border-strong);border-radius:10px;background:var(--surface)"><summary style="cursor:pointer;font-weight:700">Zo werkt de Zara-waakdienst (kort) · en zo ruil je een dienst</summary>'+
+  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px;font-size:13px;line-height:1.5">'+
+  '<div><b>Hoe het rooster werkt</b><ul style="margin:4px 0 0 18px;padding:0">'+
+   '<li>Zara heeft een <b>eigen waakdienst</b>, alleen voor de Zara-locaties (Amsterdam, Rotterdam, Arnhem en Zwolle). Woonplaats maakt voor het gebied niet uit.</li>'+
+   '<li>Een waakweek loopt van <b>vrijdagavond 19:00 tot vrijdagochtend 07:00</b>. Week 1 van 2027 is vr 1 jan t/m do 7 jan.</li>'+
+   '<li>In 2026 draaide er <b>één</b> Zara-monteur per week, vanaf 2027 zijn het er <b>twee</b>.</li>'+
+   '<li>Het gaat <b>om de beurt in een vaste volgorde</b>: wie dienst had gaat achteraan. Nieuwe collega\'s komen vooraan zodra ze beginnen.</li>'+
+   '<li>De tweede monteur kiezen we zo, afhankelijk van de versie: <b>Op team, dan woongebied</b>: uit een ander Zara-team, en lukt dat niet uit een ander woongebied. <b>Op woongebied</b>: uit een ander woongebied.</li>'+
+   '<li>Tussen twee diensten van dezelfde monteur zitten <b>minimaal 5 weken</b>.</li>'+
+   '<li>Wie vorig jaar een <b>feestdag</b> draaide, krijgt er dit jaar zo min mogelijk.</li>'+
+   '<li>Niet in de Zara-waakdienst: '+WD_ZUIT.join(', ')+'.</li></ul></div>'+
+  '<div><b>Een dienst ruilen</b><ol style="margin:4px 0 0 18px;padding:0">'+
+   '<li>Ga naar <b>Jaarrooster</b> en klik op de naam van de Zara-monteur bij de week die weg moet.</li>'+
+   '<li>Je ziet wie kan ruilen of overnemen, binnen de regels (5 weken rust).</li>'+
+   '<li>Klik op <b>Ruilen</b> of <b>Overnemen</b>: het gaat direct door.</li>'+
+   '<li>Op de <b>Kaart</b> blader je per week: de twee Zara-monteurs van die week zijn paars uitgelicht.</li>'+
+   '<li>Met <b>Excel-export</b> download je het Zara-rooster per locatie.</li></ol></div>'+
   '</div></details>';
 }
 function wdDirect(){return role==='RD'||isTL();} // waakdienst-ruilen en -overnames gaan direct door (niet meer langs Manager R/D)
@@ -6420,9 +6441,9 @@ function wdLeaflet(){
   // Zara-monteurs: eigen waakdienst, paars, niet versleepbaar (gebied doet er niet toe)
   var zpos=wdPinPos(WD_ZPOOL,0.007,0.011),zd=(wdKaartWk!=null&&c.za)?wdZaWeek(c,wdKaartWk):[];
   WD_ZPOOL.forEach(function(m){
-    var q=zpos[m.ini],ds=zd===m.ini,sel=wdKaartIni===m.ini,mine=wdIsMine(m.ini),uitTeam=!!(wdTeamF&&wdTeamF!=='Zara');
-    var bg=ds?'#8e5bd1':(zd!=null?'#d9cdee':'#8e5bd1');
-    var cls='wd-lpin'+(zd!=null&&!ds?' off':'')+(ds?' on':'')+(sel?' sel':'')+(!mine?' other':'')+(uitTeam?' uit':'');
+    var q=zpos[m.ini],ds=zd.indexOf(m.ini)>=0,sel=wdKaartIni===m.ini,mine=wdIsMine(m.ini),uitTeam=!!(wdTeamF&&wdTeamF!=='Zara');
+    var bg=ds?'#8e5bd1':(zd.length?'#d9cdee':'#8e5bd1');
+    var cls='wd-lpin'+(zd.length&&!ds?' off':'')+(ds?' on':'')+(sel?' sel':'')+(!mine?' other':'')+(uitTeam?' uit':'');
     var ic=L.divIcon({className:'',html:'<div class="'+cls+'" style="background:'+bg+';border-style:dashed">'+m.ini+'</div>'+(sel?'<div class="wd-slab">'+m.ini+' · '+esc(m.woon)+' · Zara</div>':'')+(ds&&!uitTeam?'<div class="wd-plab" style="border-color:#8e5bd1">Zara</div>':''),iconSize:[24,24],iconAnchor:[12,12]});
     var mk=L.marker([q.lat,q.lng],{icon:ic,title:m.ini+' · '+m.woon+' · Zara-monteur',keyboard:false,zIndexOffset:sel?3000:(ds&&!uitTeam?1000:0)}).addTo(map);
     mk.on('click',function(){wdKaartIni=wdKaartIni===m.ini?null:m.ini;wdKaartG=null;render();});
@@ -6477,7 +6498,7 @@ function viewWaak(){
   for(var jj=WD_EERSTE;jj<WD_BASISJAAR+WD_JAREN;jj++)jk+='<button data-wdjaar="'+jj+'" class="'+(jj===WD_JAAR?'active':'')+'">'+jj+'</button>';
   jk+='</div>';
   var dwk=wdWeergave(WD_JAAR),eind=dwk[dwk.length-1].tot,vj=WD_JAAR>WD_BASISJAAR;
-  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdZaKnop()+wdUitleg()+'<p class="sub">Vr '+wdD(dwk[0].van)+' '+dwk[0].van.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+dwk.length+' weken (wk '+dwk[0].nr+' t/m wk '+dwk[dwk.length-1].nr+') · elke week waakdienst per gebied plus één landelijke schaduwdienst ·'+
+  var h='<h2>Waakdienst '+WD_JAAR+'</h2>'+jk+wdZaKnop()+wdUitleg()+'<p class="sub">Vr '+wdD(dwk[0].van)+' '+dwk[0].van.getFullYear()+' t/m do '+wdD(eind)+' '+eind.getFullYear()+' · '+dwk.length+' weken (wk '+dwk[0].nr+' t/m wk '+dwk[dwk.length-1].nr+')'+(role==='TZ'?' · Zara-waakdienst: elke week '+(WD_JAAR<2027?'één Zara-monteur':'twee Zara-monteurs')+' ·':' · elke week waakdienst per gebied plus één landelijke schaduwdienst ·')+
     (vj?' Bouwt voort op '+(WD_JAAR-1)+': de laatste diensten tellen mee voor de tussentijd in januari, wie kerst of oud &amp; nieuw had krijgt die nu niet, en wie de vorige jaren meer of minder draaide krijgt er nu iets minder of meer.':'')+'</p>'+wdDatabron()+wdVastBalk();
   h+='<div class="ctrl wd-subs">'+subs.map(function(s){return '<button data-wds="'+s[0]+'" class="'+(wdSub===s[0]?'active':'')+'">'+s[1]+'</button>';}).join('')+'<button data-wdxls="1" style="margin-left:auto" title="Download het waakdienstrooster van '+WD_JAAR+' als Excel">&#11015; Excel-export</button></div>';
   var WD_TOELICHTING={q4:'De echte waakdiensten van oktober t/m december 2026 uit het rooster (type laat/waak), inclusief de weekenden.',vergelijk:'Vier manieren om Nederland in waakdienstgebieden te verdelen, naast elkaar. Kies bovenin welke opzet je verder wilt bekijken.',kaart:'Waar de monteurs wonen en welk gebied elke waakdienst dekt. Blader per week om te zien wie dienst heeft.',voorspel:'Hoeveel storingen je in 2027 per week verwacht, welke weken het drukst zijn en welke indeling daar het beste bij past. Vereist het instroomrapport.',rooster:'Het jaarrooster: wie in welke week waakdienst draait.',monteur:'Het overzicht per monteur: hoeveel en welke diensten die persoon draait.',ruil:'Ruilverzoeken tussen monteurs.',regels:'De spelregels waar het rooster aan moet voldoen.'};
