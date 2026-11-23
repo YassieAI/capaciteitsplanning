@@ -1145,7 +1145,7 @@ var CONTRACT_NAAM={regio:'Field Force',zara:'Zara',techno:'Techno'};
 function weekUren(l){return Math.round(l.benodigd*40);}
 function uTxt(b,n){return Math.round(b*8)+' / '+Math.round(n*8)+' u';}
 
-/* monteurs: fictieve code/naam + basislocatie + fictieve stamplaats. Echte stamplaatsen van de waakdienstpool
+/* monteurs: fictieve code/naam + basislocatie + fictieve woonplaats. Echte woonplaatsen van de waakdienstpool
    staan NIET in deze code: die laad je lokaal in via Waakdienst > Echte gegevens inladen (waakdienst-echt.json). */
 var RAW=[
  ['MOBE02','Amsterdam-west','MI','MOBE02'],
@@ -1371,7 +1371,7 @@ function colMonteurs(col,day){var out=[];M.forEach(function(m){if(col.members.in
 /* primaire doellocatie binnen een kolom = de member met laagste dekking */
 function primaryTarget(col,day){var best=col.members[0],bd=999;col.members.forEach(function(id){var d=dekkingLoc(id,day);if(d<bd){bd=d;best=id;}});return best;}
 
-/* AI: suggesties voor een kolom onder norm. rangschik op reisafstand stamplaats->doel, donor moet minstens op de norm (100%) blijven. */
+/* AI: suggesties voor een kolom onder norm. rangschik op reisafstand woonplaats->doel, donor moet minstens op de norm (100%) blijven. */
 function suggestions(col,day,regioOnly,minDonor){
   minDonor=minDonor||NORM;
   var cols=columns();
@@ -2243,7 +2243,7 @@ function render(){
   if(!role)return;
   setCtrls();
   var v=document.getElementById('view');
-  if(startOn){v.innerHTML=viewStart();wireStart();document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + stamplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';return;}
+  if(startOn){v.innerHTML=viewStart();wireStart();document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + woonplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';return;}
   if(role==='G') v.innerHTML=(gView==='prognose'?pgView_():gView==='jaar'?viewJaar():gView==='kwartaal'?viewKwartaal():gView==='week'?viewWeekG():viewManagerG());
   else if(role==='RD'){
     if(boardView==='prognose') v.innerHTML=pgView_();
@@ -2283,7 +2283,7 @@ function render(){
   if(role==='TZ'||role==='TT'||role==='TN'||role==='TS'){if(tlMode==='waak'){wireWaak();}else if(tlMode==='schuif'){wireBoard();}else if(tlMode==='week'){wireWeek();}else{wireTeam();wireWdBanner();}}
   if(role==='RD'&&boardView==='waak') wireWaak();
   if(role==='RD'&&boardView==='log') wireLog();
-  document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + stamplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';
+  document.getElementById('foot').innerHTML='Regio-monteurs: IFS-code + woonplaats · Zara/Techno nog demo-codes · pincodes zijn demo.';
 }
 
 /* ---------- Manager G weekdashboard (alleen-lezen, echte data, bladerbaar) ---------- */
@@ -3222,7 +3222,7 @@ function viewBoard(){
   html+='</div>';
   var under=cols.filter(function(c){return colDekking(c,curDay)<NORM && (decide||inScope(c));});
   if(under.length){
-    html+='<h2>AI-schuifadvies</h2><p class="sub">o.b.v. stamplaats monteur + dekking · donor blijft altijd op of boven de contracturen'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
+    html+='<h2>AI-schuifadvies</h2><p class="sub">o.b.v. woonplaats monteur + dekking · donor blijft altijd op of boven de contracturen'+(decide?'':' · accepteren stuurt een voorstel naar R/D')+'</p>';
     under.forEach(function(c){
       var sug=suggestions(c,curDay).slice(0,3);
       html+='<div class="ai"><div class="hd"><span class="dot"></span>'+c.naam+' · '+colDekking(c,curDay)+'%</div>';
@@ -3659,10 +3659,10 @@ function viewBalansActies(){
     var donorVoor=bereikTxt(a.items.map(function(it){return it.donorNow;}));
     var donorNa=bereikTxt(a.items.map(function(it){return it.donorAfter;}));
     // in gewone taal: waarom juist deze monteur, en wat het aan beide kanten doet
-    var waarom='<strong>Waarom '+a.m.ini+'?</strong> Stamplaats '+a.m.woonNaam+' ('+a.dist+' km van '+a.col.naam+
+    var waarom='<strong>Waarom '+a.m.ini+'?</strong> Woont in '+a.m.woonNaam+' ('+a.dist+' km van '+a.col.naam+
       ') en is daarmee de dichtstbijzijnde die gemist kan worden. '+a.donor.naam+' zakt van '+donorVoor+' naar '+donorNa+
       ' en blijft daarmee op of boven de norm.'+
-      (a.buiten?' <span style="color:var(--warn)">Let op: meer dan 45 km van de stamplaats — dat valt buiten het eigen gebied.</span>':'');
+      (a.buiten?' <span style="color:var(--warn)">Let op: meer dan 45 km van de woonplaats — dat valt buiten het eigen gebied.</span>':'');
     var nHaalt=a.items.filter(function(it){return it.haalt;}).length;
     var nOnder=a.items.length-nHaalt;
     var winst = nOnder===0 ? '<span style="color:var(--ok)">lost '+nHaalt+' dag'+(nHaalt===1?'':'en')+' op</span>'
@@ -3705,7 +3705,7 @@ function viewBalansActies(){
           '<span class="bl-tekst"><strong>'+o.m.ini+' → '+o.sh.naam+'</strong>'+
             '<span class="bl-dagen">'+dagTxt2+'</span>'+
             '<span class="bl-effect">'+x.col.naam+' heeft ruimte op '+x.dagen.length+' dag'+(x.dagen.length===1?'':'en')+' · '+o.sh.naam+' gaat naar '+bereikTxt(o.items.map(function(it){return it.shAfter;}))+'</span>'+
-            '<span class="bl-meta"><strong>Vanuit de overkant:</strong> '+x.col.naam+' zit op '+bereikTxt(x.dagen.map(function(d2){return d2.dek;}))+' en houdt na deze verplaatsing nog '+bereikTxt(o.items.map(function(it){return it.overAfter;}))+' over. Stamplaats '+o.m.woonNaam+' ('+o.dist+' km).'+
+            '<span class="bl-meta"><strong>Vanuit de overkant:</strong> '+x.col.naam+' zit op '+bereikTxt(x.dagen.map(function(d2){return d2.dek;}))+' en houdt na deze verplaatsing nog '+bereikTxt(o.items.map(function(it){return it.overAfter;}))+' over. Woont in '+o.m.woonNaam+' ('+o.dist+' km).'+
               (o.buiten?' <span style="color:var(--warn)">Let op: meer dan 45 km — buiten het eigen gebied.</span>':'')+'</span></span>'+
           '<span class="bl-winst"><span style="color:var(--accent)">benut ruimte</span></span>'+
           '<button class="acc" data-balw="'+o.m.id+'|'+o.sh.key+'|'+dagen2.join(',')+'">Doen</button>'+
@@ -3740,7 +3740,7 @@ function viewBalansActies(){
           '<span class="bl-dagen">'+x.dagen.length+' dag'+(x.dagen.length===1?'':'en')+' op '+bereikTxt(x.dagen.map(function(d2){return d2.dek;}))+' · kan tot '+x.maxMist+' monteur'+(x.maxMist===1?'':'s')+' ('+(x.maxMist*8)+' u) missen zonder zelf onder norm te zakken</span>'+
           (dagen2.length
             ? '<span class="bl-effect">'+beste.m.ini+' kan naar '+beste.sh.naam+' op '+dagen2.map(dChip).join(' · ')+' — die gaat daarmee naar '+bereikTxt(beste.items.map(function(it){return it.shAfter;}))+'</span>'+
-              '<span class="bl-meta">'+x.col.naam+' houdt dan nog '+bereikTxt(beste.items.map(function(it){return it.overAfter;}))+' over en blijft ruim op norm. Stamplaats '+beste.m.woonNaam+' ('+beste.dist+' km).'+
+              '<span class="bl-meta">'+x.col.naam+' houdt dan nog '+bereikTxt(beste.items.map(function(it){return it.overAfter;}))+' over en blijft ruim op norm. Woont in '+beste.m.woonNaam+' ('+beste.dist+' km).'+
               (beste.buiten?' <span style="color:var(--warn)">Let op: meer dan 45 km — buiten het eigen gebied.</span>':'')+'</span>'
             : '<span class="bl-meta">Geen tekort om naartoe te verplaatsen deze week — deze ruimte blijft ongebruikt.</span>')+
         '</span>'+
@@ -3765,7 +3765,7 @@ function viewBalansDag(){
   var cols=columns();
   var over=cols.filter(function(c){return colDekking(c,curDay)>=100;});
   var tekort=cols.filter(function(c){return colDekking(c,curDay)<NORM;});
-  var html='<h2>Balans · dag</h2><p class="sub">'+dLabel(curDay)+' · waar zit te veel, waar tekort, en hoe verschuif je zonder in elkaars gebied te komen. De AI kiest de dichtstbijzijnde monteur; ligt de bestemming ver van zijn stamplaats, dan verschijnt "buiten eigen gebied".</p>';
+  var html='<h2>Balans · dag</h2><p class="sub">'+dLabel(curDay)+' · waar zit te veel, waar tekort, en hoe verschuif je zonder in elkaars gebied te komen. De AI kiest de dichtstbijzijnde monteur; ligt de bestemming ver van zijn woonplaats, dan verschijnt "buiten eigen gebied".</p>';
   html+='<h2 style="font-size:16px">Overbezetting</h2>';
   if(!over.length)html+='<div class="empty">Geen locatie boven de benodigde bezetting vandaag.</div>';
   over.forEach(function(c){
@@ -4236,7 +4236,7 @@ function rZoekSet(v){
 }
 /* zoekveld in het Rooster houdt cursor, ook als het scherm om een andere reden opnieuw wordt opgebouwd */
 (function(){var r0=render;render=function(){var a=document.activeElement,keep=a&&a.id==='rZoek'?[a.selectionStart,a.selectionEnd]:null;var res=r0.apply(this,arguments);if(keep){var e=document.getElementById('rZoek');if(e&&document.activeElement!==e){e.focus({preventScroll:true});try{e.setSelectionRange(keep[0],keep[1]);}catch(x){}}}return res;};})();
-function rZoekHtml(){return '<input id="rZoek" type="text" autocomplete="off" placeholder="Zoek monteur (code of stamplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;width:260px;flex:none;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
+function rZoekHtml(){return '<input id="rZoek" type="text" autocomplete="off" placeholder="Zoek monteur (code of woonplaats)…" value="'+rZoek.replace(/"/g,'&quot;')+'" oninput="rZoekSet(this.value)" style="height:32px;width:260px;flex:none;border:0.5px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px">';}
 /* teamleiders zien in het Rooster alleen hun eigen Randstad-monteurs (indeling op team, niet de hele Randstad) */
 function rTeamFilter(lijst){if(role!=='TN'&&role!=='TS'||rAlleRegios())return lijst;var t=role==='TN'?'Noord':'Zuid';return lijst.filter(function(m){return m.base!=='MI'||teamOf(m)===t;});}
 function rZoekLijst(monteurs,wcols){
@@ -4867,9 +4867,9 @@ function wireTeam(){
   document.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){removeProposal(+b.dataset.del);render();};});
 }
 
-/* ---------- Teamleider Noord/Zuid: eigen team met Midden op stamplaats ---------- */
+/* ---------- Teamleider Noord/Zuid: eigen team met Midden op woonplaats ---------- */
 function colFor(id){var l=LOCMAP[id];return {key:id,naam:l.naam,type:l.type,members:[id],benodigd:l.benodigd,lat:l.lat,lng:l.lng};}
-/* vaste indeling: deze monteurs horen bij teamleider Zuid, ongeacht stamplaats */
+/* vaste indeling: deze monteurs horen bij teamleider Zuid, ongeacht woonplaats */
 var TEAM_VAST={ASER01:'Zuid',ARZW02:'Zuid',JOMA02:'Zuid',MUGO07:'Zuid'};
 function teamOf(m){
   if(TEAM_VAST[m.ini])return TEAM_VAST[m.ini];
@@ -4907,7 +4907,7 @@ function tlBoard(cols){var html='';
   return html;}
 function viewBuitenTeam(team){
   var cols=teamCols(team);
-  var html='<h2>Mijn team · Regio '+team+'</h2><p class="sub">'+dLabel(curDay)+' · '+(team==='Noord'?'Noorden en het noordelijke deel van Randstad':'Zuiden en het zuidelijke deel van Randstad')+'. Midden is verdeeld op stamplaats. Bij tekort haal je iemand uit een andere regio en stel je dat voor aan R/D.</p>';
+  var html='<h2>Mijn team · Regio '+team+'</h2><p class="sub">'+dLabel(curDay)+' · '+(team==='Noord'?'Noorden en het noordelijke deel van Randstad':'Zuiden en het zuidelijke deel van Randstad')+'. Midden is verdeeld op woonplaats. Bij tekort haal je iemand uit een andere regio en stel je dat voor aan R/D.</p>';
   html+=tlBoard(cols);
   var ander=team==='Noord'?'Zuid':'Noord';
   html+='<details class="tl-ander" style="margin:10px 0"'+(tlAnderOpen?' open':'')+' ontoggle="tlAnderOpen=this.open"><summary style="cursor:pointer;font-weight:500">Regio '+ander+' bekijken (alleen kijken)</summary><p class="sub" style="margin:6px 0">Zo staat het team van Regio '+ander+' er vandaag voor. Wijzigen of voorstellen doet de teamleider van die regio.</p>'+tlBoard(teamCols(ander))+'</details>';
@@ -5235,22 +5235,22 @@ var GEO={"paths":{"GR":"M418.5,133.6L412.6,127.3L409.9,127.3L413.3,119.5L410.0,1
 var WD_COLLEGA={plan:null,home:null,wing:{noord:[],zuid:[]},centers:[{g:'RA',stad:'Alphen a/d Rijn',lat:52.129,lng:4.657,km:70},{g:'LN',stad:'Hoogeveen',lat:52.722,lng:6.476,km:130},{g:'LZ',stad:'Eindhoven',lat:51.441,lng:5.478,km:130}]};
 /* ================================================================
    WAAKDIENST 2027 — rooster-engine
-   Pool: de regio-monteurs met IFS-code + stamplaats (in de code, op verzoek van de gebruiker).
+   Pool: de regio-monteurs met IFS-code + woonplaats (in de code, op verzoek van de gebruiker).
    De 60+-indicatie is nog niet bekend (factor 1) en kan lokaal binnenkomen via wdLaadEcht().
    ================================================================ */
-/* Pool = de regio-monteurs (IFS-code + stamplaats); 60+-factor 1 tot die bekend is */
+/* Pool = de regio-monteurs (IFS-code + woonplaats); 60+-factor 1 tot die bekend is */
 var WD_POOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='regio';}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1};});
 /* Zara heeft een eigen waakdienst, alleen voor de Zara-locaties, en het Technocenter heeft geen waakdienst.
    Monteurs van Zara en Technocenter draaien daarom niet mee in deze waakdienst (2× Randstad, Noord, Zuid + schaduw). */
 function wdIsZara(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&(LOCMAP[m.base].type==='zara'||LOCMAP[m.base].type==='techno'));}
 var WD_UIT=['ERMI01','HEMO01','MUUN','JOHA','ROMA']; // doen (tijdelijk) niet mee in de waakdienst
 WD_POOL=WD_POOL.filter(function(m){return !wdIsZara(m.ini)&&WD_UIT.indexOf(m.ini)<0;});
-/* Zara-waakdienst: elke week 1 Zara-monteur, stamplaats maakt niet uit, eerlijk verdeeld over alle Zara-monteurs */
+/* Zara-waakdienst: elke week 1 Zara-monteur, woonplaats maakt niet uit, eerlijk verdeeld over alle Zara-monteurs */
 function wdIsZaraEcht(ini){var m=M.filter(function(x){return x.ini===ini;})[0];return !!(m&&LOCMAP[m.base]&&LOCMAP[m.base].type==='zara');}
 var WD_ZUIT=['STAR01','REGR01','MESE','PAVO02','Z04']; // uit dienst in 2027 of niet in de Zara-waakdienst (Zara Waakdienst 2027.xlsx)
 var WD_ZPOOL=M.filter(function(m){return LOCMAP[m.base]&&LOCMAP[m.base].type==='zara';}).filter(function(m){return WD_ZUIT.indexOf(m.ini)<0;}).map(function(m){return {ini:m.ini,woon:m.woonNaam,lat:m.lat,lng:m.lng,f:1,zara:1};});
 var WD_UITD=[]; // monteurs uit dienst per datum: {id,ini,uit:'YYYY-MM-DD',mode:'auto'|'leeg'}
-var WD_FLEX=[]; // flex-monteurs: alleen stamplaats, draaien niet automatisch mee maar kunnen een week overnemen
+var WD_FLEX=[]; // flex-monteurs: alleen woonplaats, draaien niet automatisch mee maar kunnen een week overnemen
 /* vaste flex-monteurs (code = 2 letters voornaam + 2 letters achternaam; allemaal onder 60 = factor 1) */
 var WD_FLEX_VAST=[{ini:'NABE',woon:'Den Haag',lat:52.0705,lng:4.3007},{ini:'SEBU',woon:'Haarlem',lat:52.3874,lng:4.6462},{ini:'MUUN',woon:'Rotterdam',lat:51.9244,lng:4.4777},{ini:'ROMA',woon:'Rotterdam',lat:51.9244,lng:4.4777}];
 function wdFlexVast(){WD_FLEX_VAST.forEach(function(v,i){if(WD_UIT.indexOf(v.ini)<0&&!WD_FLEX.some(function(x){return x.ini===v.ini;})&&!WD_POOL.some(function(x){return x.ini===v.ini;}))WD_FLEX.push({id:9000001+i,ini:v.ini,woon:v.woon,lat:v.lat,lng:v.lng,f:1,flex:1});});}
@@ -5345,7 +5345,7 @@ var WD_OPZET={
       if(p==='GR'||p==='FR'||p==='DR'||p==='OV')return 'NO';
       if(p==='GE')return lat>=52.1?'NO':'ZU';
       return 'ZU';}},
- C:{kort:'Voorstel',naam:'Voorstel · 4 stamgebieden',
+ C:{kort:'Voorstel',naam:'Voorstel · 4 woongebieden',
     uitleg:'Gebieden getekend rond de vier plekken waar de monteurs echt wonen: de noordvleugel en de zuidvleugel van de Randstad, het noordoosten en het zuiden. Zo draait bijna iedereen in het gebied waar hij woont. Midden verdwijnt: Utrecht-west hoort bij West, de rest van Utrecht en Gelderland boven de rivieren bij Oost.',
     gebieden:[{id:'WE',naam:'West'},{id:'ZW',naam:'Zuidwest'},{id:'OO',naam:'Oost'},{id:'ZU',naam:'Zuid'}],
     assign:function(p,lng,lat){
@@ -5422,7 +5422,7 @@ function wdMin(km){return 8+km*1.25/85*60;}
 var WD_OVERRIDE={A:{},B:{},C:{},D:{}}; // gesleepte monteurs: opzet → {code: gebied}
 var WD_INSTROOM_W=null;                  // {pc2: verwacht aantal storingen} — uit het instroomrapport
 function wdPc2Gebied(key){var o=WD_OPZET[key],r={};(typeof PC2!=='undefined'?PC2:[]).forEach(function(p){r[p[0]]=o.assign(p[3],p[1],p[2]);});return r;}
-/* vast thuisgebied, los van de stamplaats: JOHA heeft Almere als stamplaats maar draait mee met regio Noord (niet Randstad) */
+/* vast thuisgebied, los van de woonplaats: JOHA woont in Almere maar draait mee met regio Noord (niet Randstad) */
 var WD_HOME_VAST={JOHA:{B:'NO',D:'LN'}};
 function wdPrep(key,cells){
   var o=WD_OPZET[key];
@@ -5865,7 +5865,7 @@ function wdExcelMaak(){
     ['Eerlijk verdeeld over alle Zara-monteurs; minimaal '+WD_ZTUSSEN+' weken tussen twee diensten van dezelfde persoon.','Feestdagen en kerst worden om de beurt verdeeld; het saldo loopt door naar het volgende jaar.','Nieuwe Zara-monteurs draaien mee vanaf hun startweek.'].forEach(function(t){zr(t);});
     var zj=wb.addWorksheet('Jaarrooster',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
     var zjc=zj.getCell(1,1);zjc.value='Zara-waakdienst jaarrooster '+jaren.join(' en ');fnt(zjc,{bold:true,size:14,kl:'1F3864'});
-    kop(zj,3,['Week','Van (vr)','T/m (do)','Feestdag','Zara','Locatie','Stamplaats'],ZK);[7,13,13,30,22,18,30].forEach(function(w,i){zj.getColumn(i+1).width=w;});
+    kop(zj,3,['Week','Van (vr)','T/m (do)','Feestdag','Zara','Locatie','Woonplaats'],ZK);[7,13,13,30,22,18,30].forEach(function(w,i){zj.getColumn(i+1).width=w;});
     W.forEach(function(x,n){var l=zaL(x),ms=l.map(function(i){return WD_ZPOOL.filter(function(m){return m.ini===i;})[0]||{ini:i};});
       var v=[wl(x),dd(x.van),dd(x.tot),x.feest,l.join(' + ')||'OPEN',ms.map(function(m){return ZNM[wdZaLoc(m)]||'';}).join(' + '),ms.map(function(m){return m.woon||'';}).join(' + ')];
       v.forEach(function(val,i){var cc=zj.getCell(4+n,i+1);cc.value=val;cc.border=rand;fnt(cc,{bold:i===4,kl:i===4?(val==='OPEN'?'C00000':'5B3A8C'):'000000'});if(x.feest)vul(cc,'D9D9D9');if(val==='OPEN')vul(cc,'F8CBAD');cc.alignment={horizontal:i>=3?'left':'center'};});});
@@ -6165,7 +6165,7 @@ function wdWeekPas(r){if(!wdJaarOk(r)){wdCache={};return;}var c=wdCache[r.key];i
 function wdVerpPas(r){WD_OVERRIDE[r.key]=WD_OVERRIDE[r.key]||{};if(wdBase().home[r.ini]===r.naar)delete WD_OVERRIDE[r.key][r.ini];else WD_OVERRIDE[r.key][r.ini]=r.naar;wdBouw();}
 function wdC(){if(!wdCache[wdKey])wdBouw();return wdCache[wdKey];}
 /* ---------- echte gegevens: alleen lokaal, alleen in het geheugen ----------
-   Het bestand waakdienst-echt.json bevat echte stamplaatsen, de 60+-indicatie en het rooster van de
+   Het bestand waakdienst-echt.json bevat echte woonplaatsen, de 60+-indicatie en het rooster van de
    collega. Het wordt nergens opgeslagen (geen localStorage, geen Supabase): herladen = weer demo. */
 var WD_ECHT=null; // bestandsnaam zodra echte gegevens zijn ingeladen
 function wdLaadEcht(j,naam){
@@ -6184,7 +6184,7 @@ function wdLaadEcht(j,naam){
   var D=WD_OPZET.D;
   D.home=WD_COLLEGA.home;D.vast=WD_COLLEGA.plan;D.centers=WD_COLLEGA.centers;
   D.slots.forEach(function(s){if(s.id==='RA1')s.wing=WD_COLLEGA.wing.noord;if(s.id==='RA2')s.wing=WD_COLLEGA.wing.zuid;});
-  // dezelfde stamplaats ook in de rest van de tool (schuifadvies rekent met afstand)
+  // dezelfde woonplaats ook in de rest van de tool (schuifadvies rekent met afstand)
   WD_POOL.forEach(function(p){M.forEach(function(m){if(m.ini===p.ini){m.woonNaam=p.woon;m.lat=p.lat;m.lng=p.lng;}});});
   wdPoolSync(WD_JAAR);wdCache={};WD_BASE={};WD_OVERRIDE={};wdRuilen=[];wdDEigen=false;wdKaartIni=null;wdKaartG=null;wdKaartWk=null;
   WD_ECHT=naam||'eigen bestand';
@@ -6219,12 +6219,12 @@ function wdZaWaarom(c,k,zl){
   var h='<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:#8e5bd10f;font-size:12.5px;line-height:1.55"><b>Waarom deze '+(zl.length>1?'twee':'monteur')+'?</b>';
   zl.forEach(function(ini){var vk=null;for(var i=k-1;i>=0;i--){if(c.za&&c.za[i]===ini||c.za2&&c.za2[i]===ini){vk=i;break;}}
     var zm=WD_ZPOOL.filter(function(x){return x.ini===ini;})[0]||{};
-    h+='<div><b>'+ini+'</b> · '+esc(wdZaTeam(ini))+' · stamplaats '+esc(zm.woon||'?')+' ('+wdZaGeb(ini)+')'+(WD_JAAR<2027?'':' · '+(vk==null?'eerste Zara-dienst dit roosterjaar':'vorige dienst wk '+wdNr(vk)+', '+(k-vk)+' weken geleden'))+'</div>';});
+    h+='<div><b>'+ini+'</b> · stamplaats '+esc(wdZaTeam(ini))+' · woont in '+esc(zm.woon||'?')+' ('+wdZaGeb(ini)+')'+(WD_JAAR<2027?'':' · '+(vk==null?'eerste Zara-dienst dit roosterjaar':'vorige dienst wk '+wdNr(vk)+', '+(k-vk)+' weken geleden'))+'</div>';});
   if(zl.length>1){var a=zl[0],b=zl[1],tz=wdZaTeam(a)===wdZaTeam(b),gz=wdZaGeb(a)===wdZaGeb(b),ok='<span style="color:#1a7f4b;font-weight:600">',nok='<span style="color:#b45309;font-weight:600">';
     var pl=function(x){return /amsterdam/i.test(wdZaTeam(x))?'Zara Amsterdam':'overige';};if(WD_ZA_V==='poule'&&WD_JAAR===2027)h+='<div style="margin-top:4px">Poule: '+pl(a)+' + '+pl(b)+(pl(a)===pl(b)?' '+nok+'(zelfde poule)</span>':'')+'</div>';
-    h+='<div style="margin-top:2px">Team: '+(tz?nok+'zelfde team</span>':ok+'ander team</span>')+' · Stamgebied: '+(gz?nok+'zelfde stamgebied</span>':ok+'ander stamgebied</span>')+'</div>';
+    h+='<div style="margin-top:2px">Stamplaats: '+(tz?nok+'zelfde Zara-locatie</span>':ok+'andere Zara-locatie</span>')+' · Woongebied: '+(gz?nok+'zelfde woongebied</span>':ok+'ander woongebied</span>')+'</div>';
     var kp=WD_ZA_KOPPELS.filter(function(q){return (q[0]===a&&q[1]===b)||(q[0]===b&&q[1]===a);})[0];
-    var reg=WD_ZA_V==='poule'?(kp?'Vast koppel (Zara Amsterdam + overige): dit koppel draait elke 8 weken samen.':'Nog geen vast koppel: tot week 28 zijn nog niet alle monteurs gestart, dus valt wie het langst geen dienst had in.'+(pl(a)===pl(b)?' In week 1 t/m 13 zijn er maar 4 monteurs in de poule Zara Amsterdam, daarom soms twee uit de poule overige.':'')):WD_ZA_V==='team'?(tz?'Er was geen monteur uit een ander team aan de beurt, dus is gekozen voor een ander stamgebied.':(gz?'De tweede komt uit een ander team; een ander stamgebied was deze week niet mogelijk binnen het ritme.':'De tweede komt uit een ander team én een ander stamgebied.')):(gz?'Er was geen monteur uit een ander stamgebied aan de beurt.':'De tweede komt uit een ander stamgebied'+(tz?'; het team is wel hetzelfde.':' en ook uit een ander team.'));
+    var reg=WD_ZA_V==='poule'?(kp?'Vast koppel (Zara Amsterdam + overige): dit koppel draait elke 8 weken samen.':'Nog geen vast koppel: tot week 28 zijn nog niet alle monteurs gestart, dus valt wie het langst geen dienst had in.'+(pl(a)===pl(b)?' In week 1 t/m 13 zijn er maar 4 monteurs in de poule Zara Amsterdam, daarom soms twee uit de poule overige.':'')):WD_ZA_V==='team'?(tz?'Er was geen monteur uit een ander team aan de beurt, dus is gekozen voor een ander woongebied.':(gz?'De tweede komt uit een ander team; een ander woongebied was deze week niet mogelijk binnen het ritme.':'De tweede komt uit een ander team én een ander woongebied.')):(gz?'Er was geen monteur uit een ander woongebied aan de beurt.':'De tweede komt uit een ander woongebied'+(tz?'; het team is wel hetzelfde.':' en ook uit een ander team.'));
     var vast=WD_JAAR===2027&&k<=1,pv=WD_JAAR===2027;
     h+='<div class="wd-mut" style="margin-top:2px">'+(vast?'Deze week staat al vast in het gedeelde rooster.':(pv&&WD_ZA_V==='poule'?'':'Beiden zijn aan de beurt in de vaste volgorde (wie het langst geen dienst had). ')+(pv?reg:''))+'</div>';}
   return h+'</div>';
@@ -6233,7 +6233,7 @@ function wdZaUitleg(){
   return '<details class="wd-det" style="margin:0 0 10px;padding:8px 12px;border:0.5px solid var(--border-strong);border-radius:10px;background:var(--surface)"><summary style="cursor:pointer;font-weight:700">Zo werkt de Zara-waakdienst (kort) · en zo ruil je een dienst</summary>'+
   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px;font-size:13px;line-height:1.5">'+
   '<div><b>Hoe het rooster werkt</b><ul style="margin:4px 0 0 18px;padding:0">'+
-   '<li>Zara heeft een <b>eigen waakdienst</b>, alleen voor de Zara-locaties (Amsterdam, Rotterdam, Arnhem en Zwolle). Stamplaats maakt voor het gebied niet uit.</li>'+
+   '<li>Zara heeft een <b>eigen waakdienst</b>, alleen voor de Zara-locaties (Amsterdam, Rotterdam, Arnhem en Zwolle). Woonplaats maakt voor het gebied niet uit.</li>'+
    '<li>Een waakweek loopt van <b>vrijdagavond 19:00 tot vrijdagochtend 07:00</b>. Week 1 van 2027 is vr 1 jan t/m do 7 jan.</li>'+
    '<li>In 2026 draaide er <b>één</b> Zara-monteur per week, vanaf 2027 zijn het er <b>twee</b>.</li>'+
    '<li>Het gaat <b>om de beurt in een vaste volgorde</b>: wie dienst had gaat achteraan. Nieuwe collega\'s komen vooraan zodra ze beginnen.</li>'+
@@ -6263,8 +6263,8 @@ function wdVastBalk(){
 }
 function wdDatabron(){
   return ''; // echte gegevens staan in de tool; het demoblok is niet meer nodig
-  if(WD_ECHT)return '<div class="wd-bron echt"><span><b>Echte gegevens</b> uit '+WD_ECHT+' · alleen in deze browser, verdwijnt bij herladen. Deel geen screenshots met stamplaatsen.</span></div>';
-  return '<div class="wd-bron"><span><b>Demogegevens</b> · fictieve stamplaatsen en 60+-verdeling, zelfde aantallen per gebied als echt.</span>'+
+  if(WD_ECHT)return '<div class="wd-bron echt"><span><b>Echte gegevens</b> uit '+WD_ECHT+' · alleen in deze browser, verdwijnt bij herladen. Deel geen screenshots met woonplaatsen.</span></div>';
+  return '<div class="wd-bron"><span><b>Demogegevens</b> · fictieve woonplaatsen en 60+-verdeling, zelfde aantallen per gebied als echt.</span>'+
     '<label class="linkbtn wd-laad">Echte gegevens inladen<input type="file" id="wdEchtFile" accept=".json,application/json" hidden></label></div>';
 }
 function wdTeamSet(){
@@ -6751,7 +6751,7 @@ function wdViewVergelijk(){
   h+='<div class="ai" style="margin-top:14px"><div class="hd"><span class="dot"></span>Wat valt op</div><ul class="wd-ul">'+
     '<li><b>Huidig (5 regio\'s)</b> vraagt de meeste diensten: '+K.A.perWeek+' per week, '+nl1(K.A.f1avg)+' per monteur per jaar. In Midden wonen maar '+wdWonen('A','MI')+' monteurs, dus '+K.A.buitenPct+'% van de waakdiensten draait iemand uit een ander gebied.</li>'+
     '<li><b>3 regio\'s</b> vraagt het minst ('+K.B.tot+' diensten), maar verdeelt scheef: Noord heeft maar '+K.B.krap.n+' monteurs voor 53 waakweken. Zij draaien tot '+K.B.f1max+'×, de Randstad '+K.B.f1min+'×.</li>'+
-    '<li><b>Voorstel (4 stamgebieden)</b> verdeelt eerlijk ('+K.C.f1min+(K.C.f1max!==K.C.f1min?'–'+K.C.f1max:'')+'× per monteur, '+K.C.buitenPct+'% buiten eigen gebied) met '+K.C.perWeek+' diensten per week.</li>'+
+    '<li><b>Voorstel (4 woongebieden)</b> verdeelt eerlijk ('+K.C.f1min+(K.C.f1max!==K.C.f1min?'–'+K.C.f1max:'')+'× per monteur, '+K.C.buitenPct+'% buiten eigen gebied) met '+K.C.perWeek+' diensten per week.</li>'+
     '<li><b>Opzet collega</b> lost het scheve van 3 regio\'s op door de Randstad ('+wdWonen('D','RA')+' monteurs) twee diensten per week te geven, één per vleugel. Daardoor komt iedereen op '+D.f1min+(D.f1max!==D.f1min?'–'+D.f1max:'')+'× (factor 1) en is er dubbele dekking in het drukke westen. Landelijk Noord en Zuid zijn wel groot (bereik ca. 130 km): aanrijtijd gem. '+D.aanrij+' min.'+(D.vast.length?' Met de huidige spelregels geeft zijn rooster '+D.vast.length+' meldingen, omdat hij de schaduwdienst niet meetelt voor de 3 weken ertussen. Zet die regel uit bij Spelregels, dan klopt zijn rooster op alle vaste regels.':'')+'</li>'+
     '<li>Aanrijtijden zijn geschat met storingen gelijk verdeeld over het gebied. Met het instroomrapport (postcode-2, 2025–2026) reken ik ze opnieuw door.</li></ul></div>';
   return h;
@@ -6885,16 +6885,16 @@ function wdViewKaart(){
     '<div class="wd-legend" style="margin-top:8px">'+c.prep.gIds.map(function(g){return '<button class="wd-lg'+(wdKaartG===g?' on':'')+'" data-wdg="'+g+'"><i style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</button>';}).join('')+
     '<div class="ctrl" style="flex-wrap:wrap;margin-right:8px"><span class="wd-lbl" style="margin-right:4px">Team</span>'+[null,'Noord','Zuid','Zara'].map(function(t){return '<button data-wdteam="'+(t||'')+'" class="'+(wdTeamF===t?'active':'')+'">'+(t||'Alle')+'</button>';}).join('')+'</div>'+
     '<span class="wd-pinlg"><i class="d1"></i>'+(wdTeamSet()?'mijn team':'monteur')+'</span>'+(wdVerpl.some(function(x){return x.status==='open';})?'<span class="wd-pinlg" title="Gekleurde rand = voorstel van een teamleider"><i style="background:#8e5bd1"></i>Zara/Techno <i style="background:#1f7fd6;margin-left:6px"></i>Noord <i style="background:#e0731f;margin-left:6px"></i>Zuid (voorstel)</span>':'')+(wdTeamSet()?'<span class="wd-pinlg"><i class="d2"></i>ander team</span>':'')+'</div>'+
-    '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de stamplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+(role==='TZ'?'':wdVerschoven());
+    '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+(role==='TZ'?'':wdVerschoven());
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+wdNr(wdKaartWk)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
       (role==='TZ'?[]:c.prep.sIds.concat(['SCH'])).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+wdDeelVan(WD_JAAR,wdKaartWk,sl).map(function(x){return '<div class="wd-deeltag" style="margin:-2px 0 6px 18px;font-size:12px">½ '+x.ini+' neemt over: '+wdDeelTxt(x)+'</div>';}).join('')+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
       (function(){var zl=wdZaWeek(c,wdKaartWk);return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zl.length?zl.map(function(zi){var zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0]||{};return '<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+(zm.woon||'');}).join('<br>'):'leeg')+'</b></div>'+wdZaWaarom(c,wdKaartWk,zl);})()+'</div>';}
   if(wdKaartIni&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za,c.za2)[zm.ini],zo=0;
-    h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Stamplaats '+zm.woon+' · Zara-waakdienst, stamplaats maakt niet uit</div>'+
+    h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+zm.woon+' · Zara-waakdienst, woonplaats maakt niet uit</div>'+
       '<div class="wd-kv"><span>Zara-diensten '+WD_JAAR+'</span><b>'+zt.n+' (doel ca. '+nl1((c.za2&&c.za2.some(Boolean)?2:1)*WD_N/WD_ZPOOL.length)+')</b></div>'+wdZaStrip(zm.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';
   } else if(wdKaartIni){var m=wdAlle().filter(function(x){return x.ini===wdKaartIni;})[0],x=t[m.ini];
-    h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Stamplaats '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
+    h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
       h+='<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</span><b>'+c.prep.tijd[m.ini][g]+' min · '+(thuis?'<span class="badge b-ok">thuis</span>':ok?'<span class="badge b-ruim">mag</span>':'<span class="badge b-risk">te ver</span>')+'</b></div>';});
     if(wdKaartWk!=null)h+=wdVoorstelPaneel(c,wdKaartWk,m.ini);
@@ -6904,7 +6904,7 @@ function wdViewKaart(){
   c.prep.gIds.forEach(function(g){var woont=WD_POOL.filter(function(m){return c.prep.home[m.ini]===g;}).length;var inz=WD_POOL.filter(function(m){return wdMagG(c.prep,m.ini,g);}).length;var ns=wdNSlots(c.prep,g);
     var tr=0,n=0;c.plan.forEach(function(wk){c.prep.sIds.forEach(function(sl){if(wdG(c.prep,sl)===g&&wk[sl]){tr+=c.prep.tijd[wk[sl]][g];n++;}});});
     h+='<tr><td><i class="wd-sw" style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+(ns>1?' <small class="wd-mut">×'+ns+'</small>':'')+'</td><td>'+woont+'</td><td>'+inz+'</td><td>'+nl1(WD_N*ns/inz)+'</td><td>'+Math.round(tr/Math.max(1,n))+' min</td></tr>';});
-  h+='</tbody></table><p class="wd-uitleg">Inzetbaar = heeft zijn stamplaats in het gebied of zit gemiddeld binnen '+WD_REGELS.grens+' min van een storing daar'+(wdKey==='D'?' (Randstad: alleen de eigen vleugel per dienst)':'')+'. Aanrijtijd is een schatting (hemelsbreed × 1,25, 85 km/u).</p></div>';
+  h+='</tbody></table><p class="wd-uitleg">Inzetbaar = woont in het gebied of zit gemiddeld binnen '+WD_REGELS.grens+' min van een storing daar'+(wdKey==='D'?' (Randstad: alleen de eigen vleugel per dienst)':'')+'. Aanrijtijd is een schatting (hemelsbreed × 1,25, 85 km/u).</p></div>';
   h+='<div class="wd-card" style="margin-top:12px"><div class="wd-ct">Over deze opzet</div><p class="wd-uitleg" style="margin:0">'+WD_OPZET[wdKey].uitleg+'</p></div></div></div>';
   return h;
 }
@@ -7288,7 +7288,7 @@ function wdViewRuil(){
   return h;
 }
 
-/* ---------- flex-monteurs: alleen een code en een stamplaats ---------- */
+/* ---------- flex-monteurs: alleen een code en een woonplaats ---------- */
 function wdFlexMag(){return role==='RD'||role==='TZ'||role==='TN'||role==='TS';}
 var wdFlexVoor=null; // {ini,lijst,n}: voorgestelde weken voor een nieuwe monteur
 /* doel naar rato: eerlijk deel van alle diensten in zijn regio, naar het deel van het jaar dat hij meedraait */
@@ -7364,7 +7364,7 @@ function wdFlexKaart(c,t){
      ['f','&#9889;','Flex invaller','Zit niet in de beurt. Alleen voor losse weken als iemand uitvalt.']]).map(function(m,i){
       return '<button type="button" class="wd-fxk'+(i===0?' on':'')+'" data-fx="soort" data-v="'+m[0]+'" onclick="wdFxKies(\'soort\',\''+m[0]+'\')"><span class="wd-fxi">'+m[1]+'</span><b>'+m[2]+'</b><small>'+m[3]+'</small></button>';}).join('')+
     '</div><input type="hidden" id="wdFxMode" value="d">'+
-    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Stamplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
+    '<div class="wd-fxst">2. Wie is het?</div><div class="ctrl" style="flex-wrap:wrap;gap:6px;align-items:center"><input id="wdFxIni" placeholder="Code (bv. F01)" maxlength="6" style="width:110px" oninput="wdFxUpd()"><input id="wdFxWoon" list="wdFxLijst" placeholder="Woonplaats (typ om te zoeken)" autocomplete="off" style="width:240px" oninput="wdFxZoek(this.value)"><datalist id="wdFxLijst"></datalist>'+
     '<span id="wdFxStartW"><label class="wd-mut" style="font-size:13px">Startdatum <input type="date" id="wdFxStart" onchange="wdFxUpd()" min="'+WD_BASISJAAR+'-01-01" max="'+(WD_BASISJAAR+WD_JAREN-1)+'-12-31"></label></span></div>'+
     '<div class="wd-fxst">3. '+(zaF?'Op welke Zara-locatie werkt hij?':'In welk gebied?')+'</div><div class="wd-fxrij">'+gebKn.map(function(g,i){return '<button type="button" class="wd-fxc'+(i===0?' on':'')+'" data-fx="geb" data-v="'+g[0]+'" onclick="wdFxKies(\'geb\',\''+g[0]+'\')">'+g[1]+'</button>';}).join('')+'</div><input type="hidden" id="wdFxGeb" value="'+(zaF?'ZAM':'')+'">'+
     '<div class="wd-fxst">4. Hoeveel draait hij mee?</div><div class="wd-fxrij"><button type="button" class="wd-fxc on" data-fx="f" data-v="1" onclick="wdFxKies(\'f\',\'1\')">Volledig</button><button type="button" class="wd-fxc" data-fx="f" data-v="0.75" onclick="wdFxKies(\'f\',\'0.75\')">'+(zaF?'60+ (telt voor 0,75)':'60+ (geen schaduw)')+'</button></div><input type="hidden" id="wdFxF" value="1">'+
@@ -7374,7 +7374,7 @@ function wdFlexKaart(c,t){
   } else h+='<p class="sub" style="margin:0">Toevoegen kan Manager R/D of een teamleider.</p>';
   return h+'</div>';
 }
-var WD_FX_GEBN={'':'het gebied dat bij zijn stamplaats past'};
+var WD_FX_GEBN={'':'het gebied dat bij zijn woonplaats past'};
 function wdFxUpd(){
   var el=document.getElementById('wdFxToel');if(!el)return;
   var md=document.getElementById('wdFxMode').value,ini=(document.getElementById('wdFxIni').value||'').trim().toUpperCase()||'De monteur',
@@ -7396,14 +7396,14 @@ function wdFxKies(w,v){
   document.querySelectorAll('[data-fx="'+w+'"]').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});
   if(w==='soort'){var sw=document.getElementById('wdFxStartW');sw.style.display=v==='f'?'none':'';if(v==='f')document.getElementById('wdFxStart').value='';}
   wdFxUpd();}
-/* stamplaats zoeken in alle stamplaatsen van Nederland (PDOK Locatieserver), terwijl je typt */
+/* woonplaats zoeken in alle woonplaatsen van Nederland (PDOK Locatieserver), terwijl je typt */
 var WD_FX_SUG={},wdFxT=null,PDOK_LS='https://api.pdok.nl/bzk/locatieserver/search/v3_1/';
 function wdFxZoek(q){clearTimeout(wdFxT);q=String(q||'').trim();if(q.length<2||WD_FX_SUG[q])return;
   wdFxT=setTimeout(function(){fetch(PDOK_LS+'suggest?fq=type:woonplaats&rows=10&q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){
     var dl=document.getElementById('wdFxLijst');if(!dl)return;var docs=(j&&j.response&&j.response.docs)||[];
     dl.innerHTML=docs.map(function(d){var n=d.weergavenaam;WD_FX_SUG[n]=d.id;return '<option value="'+esc(n)+'">';}).join('');}).catch(function(){});},200);}
 function wdPdokPunt(d,naam){var m=/POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll||'');if(!m)throw new Error('niet gevonden');return {lat:+m[2],lng:+m[1],woon:d.woonplaatsnaam||naam};}
-function wdZoekPlaats(naam){ // → promise {lat,lng,woon}; elke stamplaats in Nederland
+function wdZoekPlaats(naam){ // → promise {lat,lng,woon}; elke woonplaats in Nederland
   naam=String(naam||'').trim();
   if(WD_FX_SUG[naam])return fetch(PDOK_LS+'lookup?id='+encodeURIComponent(WD_FX_SUG[naam])).then(function(r){return r.json();}).then(function(j){var d=j&&j.response&&j.response.docs&&j.response.docs[0];if(!d)throw new Error('niet gevonden');return wdPdokPunt(d,naam);});
   var k=naam.indexOf(',')<0&&Object.keys(WOON).filter(function(w){return w.toLowerCase()===naam.toLowerCase().replace(/\s+/g,'');})[0];
@@ -7417,7 +7417,7 @@ var WD_GEB_NAAM={RA1:'Randstad noord',RA2:'Randstad zuid',LN:'Noord',LZ:'Zuid',Z
 function wdFlexToevoegen(ini,woonIn,f,startIso,geb,help,mode){
   ini=String(ini||'').trim().toUpperCase();woonIn=String(woonIn||'').trim();
   if(!/^[A-Z0-9]{2,6}$/.test(ini))return Promise.reject(new Error('Code: 2 tot 6 letters of cijfers'));
-  if(!woonIn)return Promise.reject(new Error('Vul een stamplaats in'));
+  if(!woonIn)return Promise.reject(new Error('Vul een woonplaats in'));
   if(wdAlle().some(function(x){return x.ini===ini;})||M.some(function(x){return x.ini===ini;}))return Promise.reject(new Error('Code '+ini+' bestaat al'));
   var start=null;
   if(startIso){var d=new Date(startIso+'T12:00:00'),xj=isNaN(d)?null:wdJaarVan(d);
@@ -7457,7 +7457,7 @@ function wdViewMonteur(){
   function gem(lijst){var n=lijst.length||1,w=0,s=0,tt=0;lijst.forEach(function(m){var x=t[m.ini];w+=x.waak;s+=x.sch;tt+=x.tot;});return {w:w/n,s:s/n,t:tt/n};}
   var ga=gem(rijen);
   h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:10px"><div class="metric"><div class="l">Gem. waakdiensten</div><div class="v">'+nl1(ga.w)+'</div></div><div class="metric"><div class="l">Gem. schaduwdiensten</div><div class="v">'+nl1(ga.s)+'</div></div><div class="metric"><div class="l">Gem. totaal per monteur</div><div class="v">'+nl1(ga.t)+'</div></div><div class="metric"><div class="l">Monteurs</div><div class="v">'+rijen.length+'</div></div></div>';
-  h+='<div class="ctrl" style="margin-bottom:8px"><input id="wdMonZoek" placeholder="Zoek monteur, code of stamplaats" value="'+esc(wdMonQ)+'" oninput="wdMonFilter(this.value)" style="min-width:260px"></div>';
+  h+='<div class="ctrl" style="margin-bottom:8px"><input id="wdMonZoek" placeholder="Zoek monteur, code of woonplaats" value="'+esc(wdMonQ)+'" oninput="wdMonFilter(this.value)" style="min-width:260px"></div>';
   h+='<p class="sub"><b>Klik op een monteur of op een gekleurd weekblokje</b> om op de kaart te zien waar en met wie die dienst (waak of schaduw) is. <b>Doel</b> = eerlijk deel van alle diensten (waak + schaduw) die de eigen regio draait, naar inzetbaarheidsfactor (60+ telt voor 0,75). Wie geen schaduw draait, draait daardoor wat meer waakdiensten. Rood = 2 of meer ernaast. </p><div class="wd-scroll wd-vast"><table class="wd-tbl" id="wdMonTbl"><thead><tr><th>Monteur</th><th>Woont</th><th>Thuisgebied</th><th>Factor</th><th>Waak</th><th>Schaduw</th><th>Totaal</th><th title="Eerlijk deel binnen de eigen regio + schaduw">Doel</th><th>Feestd.</th>'+(c.prep.carry?'<th title="Diensten meer (+) of minder (−) dan gemiddeld in de vorige jaren, naar factor">Saldo t/m '+c.prep.carry.jaar+'</th>':'')+'<th style="min-width:220px">'+WD_JAAR+' ('+WD_N+' weken)</th></tr></thead><tbody>';
   var ncol=10+(c.prep.carry?1:0);
   c.prep.gIds.forEach(function(g){
@@ -7511,7 +7511,7 @@ function wdViewRegels(){
     '<li>Een waakweek loopt van vrijdagavond 19:00 tot vrijdagochtend 07:00; doordeweeks 19:00–07:00, weekend 07:00–07:00 (in Zuid zaterdag en zondag 07:00–23:00).</li>'+
     '<li>Een dienst is één week, vrijdag t/m donderdag. Elk roosterjaar start op de eerste vrijdag van januari en loopt tot de eerste vrijdag van het jaar erna (52 of 53 weken). '+WD_JAAR+': vr '+wdD(WD_START)+' t/m do '+wdD(wdWeekEnd(WD_N-1))+' '+wdWeekEnd(WD_N-1).getFullYear()+'.</li>'+
     '<li>Leeftijd telt op 1 januari van het roosterjaar. 60+ draait sinds het rooster 2027 (16-11) elke ronde mee in de waakdienst, maar doet geen schaduw (JOMA02 en ASER01 wel, vanaf week 27 van 2027).</li>'+
-    '<li>Nieuwe monteur: vul bij Per monteur een code, stamplaats en startdatum in. Het rooster blijft staan; hij neemt vanaf zijn startweek weken over (doel naar rato van de rest van het jaar) en draait vanaf het volgende roosterjaar gewoon mee.</li>'+
+    '<li>Nieuwe monteur: vul bij Per monteur een code, woonplaats en startdatum in. Het rooster blijft staan; hij neemt vanaf zijn startweek weken over (doel naar rato van de rest van het jaar) en draait vanaf het volgende roosterjaar gewoon mee.</li>'+
     '<li>Tussen twee waakdiensten van dezelfde persoon minimaal '+WD_REGELS.tussen+' weken.</li>'+
     '<li>Vast ritme: per groep een vaste volgorde; elke week is de volgende aan de beurt en na de laatste begint de eerste weer. Het ritme loopt door over de jaarwisseling.</li>'+
     '<li>2027 is het aangeleverde rooster van de teamleiders (16-11). Vanaf 2028 loopt per gebied dezelfde volgorde door als in de laatste ronde van 2027.</li>'+
@@ -7659,7 +7659,7 @@ function wireWaak(){
   q('[data-wdalleen]',function(b){wdAlleen=b.dataset.wdalleen==='1';render();});
   document.querySelectorAll('[data-wdcell]').forEach(wdSleepChip);
   q('[data-wdflexadd]',function(){var msg=document.getElementById('wdFxMsg');var md0=(document.getElementById('wdFxMode')||{}).value,st0=(document.getElementById('wdFxStart')||{}).value;if(md0!=='f'&&!st0){if(msg)msg.textContent='Kies eerst een startdatum, of kies Flex invaller.';return;}if(md0==='f'){var sx=document.getElementById('wdFxStart');if(sx)sx.value='';}if(msg)msg.textContent='Even zoeken…';
-    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value,(document.getElementById('wdFxGeb')||{}).value,[].map.call(document.querySelectorAll('.wdFxHelp:checked'),function(x){return x.value;}),(document.getElementById('wdFxMode')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Stamplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
+    wdFlexToevoegen(document.getElementById('wdFxIni').value,document.getElementById('wdFxWoon').value,document.getElementById('wdFxF').value,(document.getElementById('wdFxStart')||{}).value,(document.getElementById('wdFxGeb')||{}).value,[].map.call(document.querySelectorAll('.wdFxHelp:checked'),function(x){return x.value;}),(document.getElementById('wdFxMode')||{}).value).then(function(fl){sbToast('Flex-monteur '+fl.ini+' ('+fl.woon+') toegevoegd.');render();}).catch(function(e){var m2=document.getElementById('wdFxMsg');if(m2)m2.textContent=(e&&e.message==='niet gevonden'?'Woonplaats niet gevonden':(e&&e.message)||'Toevoegen mislukt')+'.';});});
   q('[data-wdflexvoor]',function(b){var f=WD_FLEX.filter(function(x){return x.ini===b.dataset.wdflexvoor;})[0];if(!f)return;var r=wdFlexVoorstel(wdC(),f);wdFlexVoor={ini:f.ini,lijst:r.lijst,n:r.n};render();});
   q('[data-wdflexvoorweg]',function(){wdFlexVoor=null;render();});
   q('[data-wdflexvoorok]',function(){var c=wdC(),fv=wdFlexVoor;if(!fv)return;var n=0;
