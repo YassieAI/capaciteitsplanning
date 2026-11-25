@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-zakaart'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-zaopzet'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -7593,7 +7593,7 @@ function wdViewRegels(){
     '<li>60+ en '+WD_GEEN_SCH.join(', ')+' draaien geen schaduwdienst. Een schaduwweek valt nooit in of direct naast een eigen waakweek, en tussen twee schaduwweken van dezelfde persoon zitten minstens '+WD_REGELS.schTussen+' weken.</li>'+
     '<li>Drie vaste combinaties nooit in dezelfde week (waak of schaduw): '+WD_VERBODEN.map(function(v){return v[0]+' & '+v[1];}).join(', ')+'.</li>'+
     '<li>Per week één waakdienst per gebied en één landelijke schaduwdienst.</li>'+
-    '<li>Zara heeft daarnaast elke week een eigen waakdienst met één Zara-monteur, ongeacht waar die woont. Technocenter heeft geen waakdienst.</li></ol></div>'+
+    '<li>Zara heeft daarnaast elke week een eigen waakdienst (vanaf 2027 met twee Zara-monteurs), ongeacht waar die woont. Technocenter heeft geen waakdienst.</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Roosterregels <span class="badge b-warn">voorstel · samen bepalen</span></div><ol class="wd-ol">'+
     '<li>Telt de schaduwdienst mee voor de '+WD_REGELS.tussen+' weken ertussen? <span class="ctrl wd-inl"><button data-wdsch="1"'+dis+' class="'+(R.schTelt?'active':'')+'">Ja</button><button data-wdsch="0"'+dis+' class="'+(!R.schTelt?'active':'')+'">Nee</button></span><br><small class="wd-mut">Nee = schaduw alleen niet in of direct naast je eigen waakweek.</small></li>'+
     '<li>Draait 60+ schaduwdienst? <span class="ctrl wd-inl"><button data-wd60="0"'+dis+' class="'+(!R.geenSch60?'active':'')+'">Ja, naar factor</button><button data-wd60="1"'+dis+' class="'+(R.geenSch60?'active':'')+'">Nee, vrijgesteld</button></span></li>'+
@@ -7602,6 +7602,13 @@ function wdViewRegels(){
     '<li>Kerst, oud & nieuw en nieuwjaar: maximaal één per persoon per rooster, en wie ze vorig jaar had krijgt ze dit jaar niet. Vanaf '+(WD_BASISJAAR+1)+' rekent de tool dat zelf door. Het saldo over de jaren heen telt mee: wie meer draaide dan gemiddeld, krijgt het volgende jaar iets minder.</li>'+
     '<li>Schaduwdienst telt mee voor het totaal aantal diensten per jaar.</li>'+
     '<li>Randstad: twee diensten per week, één uit elke vleugel (opzet collega). De Randstad heeft twee eigen diensten: Randstad noord (Amsterdam/Utrecht) en Randstad zuid (Den Haag/Rotterdam). JOMA02 en JEJO05 draaien mee in Randstad zuid.</li></ol></div>'+
+    '<div class="wd-card"><div class="wd-ct"><i class="wd-sw" style="background:#8e5bd1"></i>Zara-waakdienst <span class="badge b-ruim">eigen opzet</span></div><ol class="wd-ol">'+
+    '<li>Zara heeft elke week een <b>eigen waakdienst</b>, los van de regio\'s en ongeacht waar de monteur woont. Vanaf 2027 draaien er <b>twee Zara-monteurs per week</b> (in 2026 één).</li>'+
+    '<li>De monteurs zitten in twee poules: <b>poule Amsterdam</b> en <b>poule overige locaties</b>. Elke week komt er één monteur uit elke poule, zodat de locaties verdeeld blijven.</li>'+
+    '<li>Vanaf <b>week 29 van 2027</b> draaien vaste <b>koppels</b> samen, in een vaste ronde van 8 weken. Voor die tijd is het rooster handmatig opgebouwd.</li>'+
+    '<li>Tussen twee Zara-diensten van dezelfde monteur zitten minimaal <b>5 volle weken rust</b>. In Q1 2027 zijn er maar 4 weken mogelijk door de beperkte bezetting.</li>'+
+    '<li>In 2027 mogen de nieuwe monteurs (ERMI03, ADKH01, MAKH02, ARBR01 en LAHA02) <b>niet samen</b> in één week. Vanaf 2028 mag dat wel.</li>'+
+    '<li>Ruilen kan door Teamleider Zara op de kaart of in het jaarrooster, met dezelfde regels als hierboven. Kerst en jaarwisseling tellen één keer per persoon.</li></ol></div>'+
     '<div class="wd-card"><div class="wd-ct">Ruilen: wat mag <span class="badge b-warn">voorstel</span></div><ol class="wd-ol">'+
     '<li>Ruilen gaat één-op-één: jij neemt zijn week, hij neemt de jouwe. Een dienst weggeven zonder terugdienst kan niet.</li>'+
     '<li>Je ruilt alleen met iemand die het gebied ook mag draaien (eigen gebied of binnen de reistijdgrens).</li>'+
