@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-nieuw2027'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-zakaart'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -6155,7 +6155,7 @@ function wdSigStr(){return WD_UITD.map(function(u){return u.ini+u.uit+u.mode;}).
 /* wat stond er eerst? (goedgekeurd weekvoorstel of ruil) */
 function wdWasBij(k,sl){var r=null;
   wdVerpl.forEach(function(v){if(v.t==='w'&&v.key===wdKey&&v.status==='goed'&&wdJaarOk(v)&&v.k===k&&v.slot===sl)r={was:v.oud||'leeg',door:v.door,hoe:'overgenomen'};});
-  wdRuilen.forEach(function(x){if(x.key!==wdKey||x.status!=='goed'||!wdJaarOk(x)||x.s1==='ZA')return;
+  wdRuilen.forEach(function(x){if(x.key!==wdKey||x.status!=='goed'||!wdJaarOk(x)||wdZaIsSl(x.s1))return;
     if(x.k1===k&&x.s1===sl)r={was:x.a,door:x.door,hoe:'geruild'};if(x.k2===k&&x.s2===sl)r={was:x.b,door:x.door,hoe:'geruild'};});
   return r;}
 function wdWasHtml(k,sl){if(!lfWaak(k,sl))return '';return ' <span style="color:'+LOG_FOCUS.kleur+';font-weight:600">· '+(LOG_VOOR?'voor de wijziging':'na de wijziging')+'</span>';}
@@ -6500,7 +6500,7 @@ function wdLeaflet(){
   });
   // Zara-monteurs: eigen waakdienst, paars, niet versleepbaar (gebied doet er niet toe)
   var zpos=wdPinPos(WD_ZPOOL,0.007,0.011),zd=(wdKaartWk!=null&&c.za)?wdZaWeek(c,wdKaartWk):[];
-  WD_ZPOOL.forEach(function(m){
+  (role==='TZ'?WD_ZPOOL:[]).forEach(function(m){
     var q=zpos[m.ini],ds=zd.indexOf(m.ini)>=0,sel=wdKaartIni===m.ini,mine=wdIsMine(m.ini),uitTeam=!!(wdTeamF&&wdTeamF!=='Zara');
     var bg=ds?'#8e5bd1':(zd.length?'#d9cdee':'#8e5bd1');
     var cls='wd-lpin'+(zd.length&&!ds?' off':'')+(ds?' on':'')+(sel?' sel':'')+(!mine?' other':'')+(uitTeam?' uit':'');
@@ -6924,16 +6924,17 @@ function wdViewKaart(){
     return '<div class="wd-wknav"><span class="wd-lbl">Week op de kaart</span>'+(k==null?'<button data-wdwk="0" aria-label="vorige week">\u2039</button>':bt(pv,'\u2039','vorige week'))+'<span class="wd-wklab">'+lab+'</span>'+(k==null?'<button data-wdwk="0" aria-label="volgende week">\u203a</button>':bt(nx,'\u203a','volgende week'))+(wdNuWeek()>=0&&wdKaartWk!==wdNuWeek()?'<button data-wdwk="'+wdNuWeek()+'">naar nu</button>':'')+(wdKaartWk!=null?'<button data-wdwk="-1">wis</button>':'')+'</div>';})()+(wdKaartWk!=null?wdVakKaart(wdKaartWk):'');
   var h='<div class="wd-layout"><div class="wd-card wd-mapcard">'+wkNav+'<div class="wd-lwrap"><div id="wdLmap" class="wd-lmap" role="application" aria-label="Kaart van Nederland met waakdienstgebieden"></div></div>'+
     '<div class="wd-legend" style="margin-top:8px">'+c.prep.gIds.map(function(g){return '<button class="wd-lg'+(wdKaartG===g?' on':'')+'" data-wdg="'+g+'"><i style="background:'+wdKleur(wdKey,g)+'"></i>'+wdGNaam(c,g)+'</button>';}).join('')+
-    '<div class="ctrl" style="flex-wrap:wrap;margin-right:8px"><span class="wd-lbl" style="margin-right:4px">Team</span>'+[null,'Noord','Zuid','Zara'].map(function(t){return '<button data-wdteam="'+(t||'')+'" class="'+(wdTeamF===t?'active':'')+'">'+(t||'Alle')+'</button>';}).join('')+'</div>'+
+    '<div class="ctrl" style="flex-wrap:wrap;margin-right:8px"><span class="wd-lbl" style="margin-right:4px">Team</span>'+(role==='TZ'?[null,'Noord','Zuid','Zara']:[null,'Noord','Zuid']).map(function(t){return '<button data-wdteam="'+(t||'')+'" class="'+(wdTeamF===t?'active':'')+'">'+(t||'Alle')+'</button>';}).join('')+'</div>'+
     '<span class="wd-pinlg"><i class="d1"></i>'+(wdTeamSet()?'mijn team':'monteur')+'</span>'+(wdVerpl.some(function(x){return x.status==='open';})?'<span class="wd-pinlg" title="Gekleurde rand = voorstel van een teamleider"><i style="background:#8e5bd1"></i>Zara/Techno <i style="background:#1f7fd6;margin-left:6px"></i>Noord <i style="background:#e0731f;margin-left:6px"></i>Zuid (voorstel)</span>':'')+(wdTeamSet()?'<span class="wd-pinlg"><i class="d2"></i>ander team</span>':'')+'</div>'+
-    '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. <b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara). Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+(role==='TZ'?'':wdVerschoven());
+    '<p class="sub" style="margin:6px 0 0">Zoom en schuif zoals in een kaartenapp. De grote spelden met een label hebben die week waakdienst; grijze spelden niet. '+(role==='TZ'?'<b>Paarse spelden met stippelrand zijn Zara-monteurs</b>: Zara heeft elke week een eigen waakdienst en de woonplaats maakt daarbij niet uit. Kies een week en klik op een Zara-monteur om te <b>ruilen</b>. Met <b>Team</b> zie je alleen de monteurs van één team (Noord, Zuid of Zara).':'Met <b>Team</b> zie je alleen de monteurs van één team (Noord of Zuid).')+' Klik een speld voor waar die monteur mag draaien, of <b>sleep een speld naar een ander gebied</b>. Achtergrond: © OpenStreetMap, © CARTO.</p></div><div>'+(role==='TZ'?'':wdVerschoven());
   if(wdKaartWk!=null){var wk=c.plan[wdKaartWk];
     h+='<div class="wd-card" style="margin-bottom:12px;border:2px solid var(--text)"><div class="wd-ct">Waakdienst week '+wdNr(wdKaartWk)+' · '+wdWeekLabel(wdKaartWk)+(WD_FEEST[wdKaartWk]?' <span class="wd-fb">'+WD_FEEST[wdKaartWk].join(', ')+'</span>':'')+'</div>'+
       (role==='TZ'?[]:c.prep.sIds.concat(['SCH'])).map(function(sl){var i=wk[sl],m=wdAlle().filter(function(x){return x.ini===i;})[0];return '<div class="wd-kv"><span><i class="wd-sw" style="background:'+wdKleur(wdKey,sl)+'"></i>'+wdGNaam(c,sl)+'</span><b>'+(i&&!m?'<span class="wd-bad">'+i+' (niet in pool)</span>':i?'<button class="linkbtn" data-wdpin="'+i+'" style="font-weight:700;padding:0">'+i+'</button>'+wdTeamTag(i)+' · '+m.woon+(sl!=='SCH'?' · '+c.prep.tijd[i][wdG(c.prep,sl)]+' min':''):'leeg')+(i?wdWasHtml(wdKaartWk,sl):'')+'</b></div>'+wdDeelVan(WD_JAAR,wdKaartWk,sl).map(function(x){return '<div class="wd-deeltag" style="margin:-2px 0 6px 18px;font-size:12px">½ '+x.ini+' neemt over: '+wdDeelTxt(x)+'</div>';}).join('')+(i?'':wdAdviesHtml(c,wdKaartWk,sl));}).join('')+
-      (function(){var zl=wdZaWeek(c,wdKaartWk);return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zl.length?zl.map(function(zi){var zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0]||{};return '<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+(zm.woon||'');}).join('<br>'):'leeg')+'</b></div>'+wdZaWaarom(c,wdKaartWk,zl);})()+'</div>';}
-  if(wdKaartIni&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za,c.za2)[zm.ini],zo=0;
+      (role!=='TZ'?'':function(){var zl=wdZaWeek(c,wdKaartWk);return '<div class="wd-kv"><span><i class="wd-sw" style="background:#8e5bd1"></i>Zara (eigen waakdienst)</span><b>'+(zl.length?zl.map(function(zi){var zm=WD_ZPOOL.filter(function(x){return x.ini===zi;})[0]||{};return '<button class="linkbtn" data-wdpin="'+zi+'" style="font-weight:700;padding:0">'+zi+'</button>'+wdTeamTag(zi)+' · '+(zm.woon||'')+(wdIsMine(zi)?' <button class="acc ghost" style="padding:2px 8px;font-size:12px" data-wdzi="'+zi+'" data-wdza="'+wdKaartWk+'|'+(c.za[wdKaartWk]===zi?'ZA':'ZB')+'">Ruilen</button>':'');}).join('<br>'):'leeg')+'</b></div>'+wdZaWaarom(c,wdKaartWk,zl);}())+'</div>';}
+  if(wdKaartIni&&role==='TZ'&&WD_ZPOOL.some(function(z){return z.ini===wdKaartIni;})){var zm=WD_ZPOOL.filter(function(z){return z.ini===wdKaartIni;})[0],zt=wdZaTel(c.za,c.za2)[zm.ini],zo=0;
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+zm.ini+' · '+wdNaam(zm.ini)+wdTeamTag(zm.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+zm.woon+' · Zara-waakdienst, woonplaats maakt niet uit</div>'+
       '<div class="wd-kv"><span>Zara-diensten '+WD_JAAR+'</span><b>'+zt.n+' (doel ca. '+nl1((c.za2&&c.za2.some(Boolean)?2:1)*WD_N/WD_ZPOOL.length)+')</b></div>'+wdZaStrip(zm.ini)+'<button class="linkbtn" data-wdpin="">Sluiten</button></div>';
+    if(wdKaartWk!=null&&wdZaWeek(c,wdKaartWk).indexOf(zm.ini)>=0&&(wdIsMine(zm.ini)||role==='RD')){var bw=wdSel;wdSel={k:wdKaartWk,s:(c.za[wdKaartWk]===zm.ini?'ZA':'ZB')};try{h+=wdZaPaneel();}finally{wdSel=bw;}}
   } else if(wdKaartIni){var m=wdAlle().filter(function(x){return x.ini===wdKaartIni;})[0],x=t[m.ini];
     h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">'+m.ini+' · '+wdNaam(m.ini)+'</div><div class="sub" style="margin:0 0 6px">Woont in '+m.woon+' · thuisgebied '+wdGNaam(c,c.prep.home[m.ini])+' · factor '+String(wdFactor(m)).replace('.',',')+'</div>';
     c.prep.gIds.forEach(function(g){var ok=wdMagG(c.prep,m.ini,g),thuis=c.prep.home[m.ini]===g;
@@ -7028,7 +7029,7 @@ function wdViewRooster(){
     slots.forEach(function(s){var i=wk[s];
       var cls='wd-chip'+(team&&wdAlleen&&i&&team[i]?' mine':'')+(team&&wdAlleen&&i&&!team[i]?' dim':'')+(own&&wdSel&&wdSel.k===k&&wdSel.s===s?' sel':'');
       h+='<td>'+(i?(own?'<button class="'+cls+'" data-wdcell="'+k+'|'+s+'"'+(lfWaak(k,s)?' style="'+lfStijl()+'"':'')+'>'+i+'</button>'+(lfWaak(k,s)?'<small style="display:block;font-size:10px;color:'+LOG_FOCUS.kleur+';font-weight:600">'+(LOG_VOOR?'voor':'na')+'</small>':''):'<span class="'+cls+'" style="cursor:default" title="Vaste dienst uit het rooster van '+cc.jr+' (staat daar, niet te ruilen)">'+i+'</span>'):'<span class="wd-bad">leeg</span>')+wdDeelVan(cc.jr,k,s).map(function(x){return '<span class="wd-deeltag" title="Deel overgenomen, telt naar rato">½ '+x.ini+': '+wdDeelTxt(x)+'</span>';}).join('')+'</td>';});
-    var zi=cc.za&&cc.za[k],zi2=cc.za2&&cc.za2[k];h+='<td>'+(zi?(own?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZA'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'" title="Zara-waakdienst · klik om te ruilen">'+zi+'</button>':'<span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi+'</span>'):'<span class="wd-bad">leeg</span>')+(zi2?' <span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi2+'</span>':'')+'</td>';
+    var zi=cc.za&&cc.za[k],zi2=cc.za2&&cc.za2[k];h+='<td>'+(zi?(own?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZA'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'|ZA" title="Zara-waakdienst · klik om te ruilen">'+zi+'</button>':'<span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi+'</span>'):'<span class="wd-bad">leeg</span>')+(zi2?' '+(own?'<button class="wd-chip'+(wdSel&&wdSel.k===k&&wdSel.s==='ZB'?' sel':'')+'" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114" data-wdza="'+k+'|ZB" title="Zara-waakdienst · klik om te ruilen">'+zi2+'</button>':'<span class="wd-chip" style="border-color:#8e5bd1;color:#6b3fb0;background:#8e5bd114;cursor:default">'+zi2+'</span>'):'')+'</td>';
     h+='</tr>';return h;}
   /* per kalenderjaar: wk 53 van 2026 (25–31 dec) staat onderaan 2026, niet bovenaan 2027 */
   wdWeergave(WD_JAAR).forEach(function(d){
@@ -7118,23 +7119,32 @@ function wdExcel(){
 }
 /* ---------- ruilen ---------- */
 function wdDeadlineOk(k){var d=wdWeekStart(k);var nu=new Date();nu.setHours(0,0,0,0);return (d-nu)/864e5>=7;}
-function wdZaRuilCheck(c,k1,k2){
-  var za=c.za,A=za[k1],B=za[k2],r=[];
+function wdZaArr(c,sl){return sl==='ZB'?c.za2:c.za;}
+function wdZaIsSl(sl){return sl==='ZA'||sl==='ZB';}
+function wdZaMin(k1,k2){return (WD_JAAR===2027&&Math.max(k1,k2)<14)?5:6;} // 5 volle weken rust = 6 tussen starts (Q1 2027: 5)
+function wdZaRuilCheck(c,k1,s1,k2,s2){
+  var a1=wdZaArr(c,s1),a2=wdZaArr(c,s2),A=a1&&a1[k1],B=a2&&a2[k2],r=[];
   if(!A||!B||A===B)return ['zelfde persoon'];
+  if(k1===k2)return ['zelfde week'];
   if(wdIsFeest(k1)!==wdIsFeest(k2))r.push('feestdagweek alleen ruilen tegen een feestdagweek');
   if(!wdDeadlineOk(k1)||!wdDeadlineOk(k2))r.push('minder dan 7 dagen voor de start');
-  function dicht(i,k,negeer){for(var w=0;w<za.length;w++){if(w===negeer||w===k)continue;if(za[w]===i&&Math.abs(w-k)<WD_ZTUSSEN)return true;}return false;}
-  if(dicht(A,k2,k1))r.push(A+' heeft dan minder dan '+WD_ZTUSSEN+' weken tussen twee Zara-diensten');
-  if(dicht(B,k1,k2))r.push(B+' heeft dan minder dan '+WD_ZTUSSEN+' weken tussen twee Zara-diensten');
-  if(wdZaNieuw(A,WD_JAAR)&&wdZaNieuw(c.za2&&c.za2[k2],WD_JAAR))r.push(A+' en '+c.za2[k2]+' zijn allebei nieuw in de waakdienst en mogen niet samen');
-  if(wdZaNieuw(B,WD_JAAR)&&wdZaNieuw(c.za2&&c.za2[k1],WD_JAAR))r.push(B+' en '+c.za2[k1]+' zijn allebei nieuw in de waakdienst en mogen niet samen');
-  function kerst(i,k,negeer){if(!wdIsKerstNj(k))return false;return za.some(function(x,w){return w!==negeer&&w!==k&&x===i&&wdIsKerstNj(w);});}
+  var o1=wdZaArr(c,s1==='ZA'?'ZB':'ZA'),o2=wdZaArr(c,s2==='ZA'?'ZB':'ZA'); // andere monteur in dezelfde week
+  var P1=o1&&o1[k1],P2=o2&&o2[k2];
+  if(P2===A)r.push(A+' draait die week al mee');
+  if(P1===B)r.push(B+' draait die week al mee');
+  function diensten(i){var w=[];[c.za,c.za2].forEach(function(L){(L||[]).forEach(function(x,k){if(x===i)w.push(k);});});return w;}
+  function dicht(i,nieuwK,oudK){return diensten(i).some(function(w){return w!==oudK&&Math.abs(w-nieuwK)<wdZaMin(w,nieuwK);});}
+  if(dicht(A,k2,k1))r.push(A+' heeft dan minder dan 5 volle weken rust tussen twee Zara-diensten');
+  if(dicht(B,k1,k2))r.push(B+' heeft dan minder dan 5 volle weken rust tussen twee Zara-diensten');
+  if(wdZaNieuw(A,WD_JAAR)&&wdZaNieuw(P2,WD_JAAR))r.push(A+' en '+P2+' zijn allebei nieuw in de waakdienst en mogen niet samen');
+  if(wdZaNieuw(B,WD_JAAR)&&wdZaNieuw(P1,WD_JAAR))r.push(B+' en '+P1+' zijn allebei nieuw in de waakdienst en mogen niet samen');
+  function kerst(i,k,oudK){if(!wdIsKerstNj(k))return false;return diensten(i).some(function(w){return w!==oudK&&w!==k&&wdIsKerstNj(w);});}
   if(kerst(A,k2,k1))r.push(A+' krijgt dan twee kerst/jaarwisselingsweken');
   if(kerst(B,k1,k2))r.push(B+' krijgt dan twee kerst/jaarwisselingsweken');
   return r;
 }
 function wdRuilCheck(c,k1,s1,k2,s2,voorCache){
-  if(s1==='ZA'&&s2==='ZA')return wdZaRuilCheck(c,k1,k2);
+  if(wdZaIsSl(s1)&&wdZaIsSl(s2))return wdZaRuilCheck(c,k1,s1,k2,s2);
   var plan=c.plan,A=plan[k1][s1],B=plan[k2][s2],r=[];
   if(!A||!B||A===B)return ['zelfde persoon'];
   if(wdIsFeest(k1)!==wdIsFeest(k2))r.push('feestdagweek alleen ruilen tegen een feestdagweek');
@@ -7147,15 +7157,15 @@ function wdRuilCheck(c,k1,s1,k2,s2,voorCache){
   return r;
 }
 function wdZaPaneel(){
-  var c=wdC(),k=wdSel.k,A=c.za[k];
+  var c=wdC(),k=wdSel.k,sl=wdSel.s,A=wdZaArr(c,sl)[k];
   var h='<div class="ai wd-ruil"><div class="r1" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="hd"><span class="dot" style="background:#8e5bd1"></span>Week '+wdNr(k)+' · '+wdWeekLabel(k)+' · Zara-waakdienst: '+A+wdNm(A)+'</div><span style="display:flex;gap:6px"><button class="acc ghost" data-wdkaart="'+A+'|'+k+'">Toon op kaart</button><button class="acc ghost" data-wdclose="1">Sluiten</button></span></div>';
   if(!(wdIsMine(A)||role==='RD')){return h+'<div class="empty" style="margin-top:10px">'+A+' zit niet in jouw team. Een ruil voorstellen kan de teamleider van Zara of Manager R/D.</div></div>';}
   var goed=[],fout=[];
-  c.za.forEach(function(B,k2){if(k2===k||!B||B===A)return;var r=wdZaRuilCheck(c,k,k2);(r.length?fout:goed).push({k:k2,B:B,r:r,d:Math.abs(k2-k)});});
+  ['ZA','ZB'].forEach(function(s2){(wdZaArr(c,s2)||[]).forEach(function(B,k2){if(k2===k||!B||B===A)return;var r=wdZaRuilCheck(c,k,sl,k2,s2);(r.length?fout:goed).push({k:k2,s:s2,B:B,r:r,d:Math.abs(k2-k)});});});
   goed.sort(function(a,b){return a.d-b.d;});fout.sort(function(a,b){return a.d-b.d;});
   h+='<div class="wd-sub2">Mag ruilen met ('+goed.length+')</div>';
   if(!goed.length)h+='<div class="empty">Geen ruil mogelijk binnen de spelregels.</div>';
-  goed.slice(0,8).forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc" data-wdruil="'+k+'|ZA|'+g.k+'|ZA">Ruil voorstellen</button></div><div class="meta"><span>'+A+' neemt week '+wdNr(g.k)+' ('+wdWeekLabel(g.k)+')</span><span>'+g.B+' neemt week '+wdNr(k)+'</span></div></div>';});
+  goed.slice(0,8).forEach(function(g){h+='<div class="sugg"><div class="r1"><span class="nm">'+g.B+wdNm(g.B)+'</span><button class="acc" data-wdruil="'+k+'|'+sl+'|'+g.k+'|'+g.s+'">Ruil voorstellen</button></div><div class="meta"><span>'+A+' neemt week '+wdNr(g.k)+' ('+wdWeekLabel(g.k)+')</span><span>'+g.B+' neemt week '+wdNr(k)+'</span></div></div>';});
   if(goed.length>8)h+='<p class="sub" style="margin-top:6px">+ '+(goed.length-8)+' verdere mogelijkheden verder in het jaar.</p>';
   h+='<details class="wd-det"><summary>Waarom niet met de anderen? (dichtstbijzijnde weken)</summary>';
   fout.slice(0,8).forEach(function(f){h+='<div class="wd-nee"><b>'+f.B+'</b> wk '+wdNr(f.k)+' — '+f.r[0]+(f.r.length>1?' (+'+(f.r.length-1)+')':'')+'</div>';});
@@ -7214,7 +7224,7 @@ function wdVNHtml(titel,rows,tots,bad,knop){
   h+=bad&&bad.length?'<div class="wd-vn-st bad">⚠ Let op: '+bad.map(esc).join(' · ')+'</div>':'<div class="wd-vn-st ok">✔ Past binnen de regels</div>';
   return h+'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+knop+'<button class="acc ghost" data-wdkeus="">Terug</button></div></div>';}
 function wdRuilPaneel(){
-  if(wdSel.s==='ZA')return wdZaPaneel();
+  if(wdZaIsSl(wdSel.s))return wdZaPaneel();
   var c=wdC(),k=wdSel.k,s=wdSel.s,dec=wdDirect();
   var kop='<div class="r1" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="hd"><span class="dot"></span>Week '+wdNr(k)+' · '+wdWeekLabel(k)+(s?' · '+wdGNaam(c,s)+': '+c.plan[k][s]+wdNm(c.plan[k][s]):'')+'</div><span style="display:flex;gap:6px">'+(s?'<button class="acc ghost" data-wdkaart="'+c.plan[k][s]+'|'+k+'">Toon op kaart</button>':'')+'<button class="acc ghost" data-wdclose="1">Sluiten</button></span></div>';
   if(!s){ // knop Wijzigen bij een week: eerst kiezen welke dienst
@@ -7289,7 +7299,7 @@ function wdRuilPaneel(){
   h+='</div>';
   return h;
 }
-function wdDoeRuil(c,r){if(r.s1==='ZA'){var za=c.za,x=za[r.k1];za[r.k1]=za[r.k2];za[r.k2]=x;wdLaterWeg(r.jaar||WD_BASISJAAR);return;}var a=c.plan[r.k1][r.s1],b=c.plan[r.k2][r.s2];c.plan[r.k1][r.s1]=b;c.plan[r.k2][r.s2]=a;wdLaterWeg(r.jaar||WD_BASISJAAR);}
+function wdDoeRuil(c,r){if(wdZaIsSl(r.s1)){var z1=wdZaArr(c,r.s1),z2=wdZaArr(c,r.s2),x=z1[r.k1];z1[r.k1]=z2[r.k2];z2[r.k2]=x;wdLaterWeg(r.jaar||WD_BASISJAAR);return;}var a=c.plan[r.k1][r.s1],b=c.plan[r.k2][r.s2];c.plan[r.k1][r.s1]=b;c.plan[r.k2][r.s2]=a;wdLaterWeg(r.jaar||WD_BASISJAAR);}
 var wdRuilMon='';
 function wdNm(i){var n=wdNaam(i);return n&&n!==i?' · '+esc(n):'';}
 function wdRuilKies(c){
@@ -7632,7 +7642,7 @@ function wdTeamBanner(){
 
 /* ---------- ruil vastleggen + slepen in het jaarrooster ---------- */
 function wdMaakRuil(k1,s1,k2,s2){var c=wdC();
-  var r={id:wdRuilId++,key:wdKey,jaar:WD_JAAR,k1:k1,s1:s1,k2:k2,s2:s2,a:s1==='ZA'?c.za[k1]:c.plan[k1][s1],b:s2==='ZA'?c.za[k2]:c.plan[k2][s2],door:ROLES.filter(function(x){return x.id===role;})[0].naam,status:'open'};
+  var r={id:wdRuilId++,key:wdKey,jaar:WD_JAAR,k1:k1,s1:s1,k2:k2,s2:s2,a:wdZaIsSl(s1)?wdZaArr(c,s1)[k1]:c.plan[k1][s1],b:wdZaIsSl(s2)?wdZaArr(c,s2)[k2]:c.plan[k2][s2],door:ROLES.filter(function(x){return x.id===role;})[0].naam,status:'open'};
   var dec=wdDirect();r.id=propId++;if(dec)r.status='goed';wdRuilen.push(r);wdOpslaan(r.id,'wd:r|'+[wdJk(),r.k1,r.s1,r.k2,r.s2,r.a,r.b].join('|'),r.door,dec?'doorgevoerd':'open');
   if(dec){wdDoeRuil(c,r);sbToast('Ruil doorgevoerd: '+r.a+' ⇄ '+r.b+'.');}else sbToast('Ruil '+r.a+' ⇄ '+r.b+' staat bij Te bespreken.');
   wdSel=null;wdSub=wdSub==='kaart'?'kaart':'ruil';render();}
@@ -7733,7 +7743,7 @@ function wireWaak(){
     if(!window.confirm('Rooster '+WD_JAAR+' vrijgeven?\n\nHet rooster wordt dan weer automatisch berekend en kan verschuiven.'))return;
     var sl=wdC().prep.sIds.concat(['SCH']);wdOpslaan(db.id,wdVastTxt(WD_JAAR,db.plan,sl),wdRoleNaam(),'ingetrokken');delete WD_VASTDB[WD_JAAR];wdBouw();sbToast('Rooster '+WD_JAAR+' is vrijgegeven.');render();});
   q('[data-wdflexdel]',function(b){var f=WD_FLEX.filter(function(x){return x.id===+b.dataset.wdflexdel;})[0];if(!f)return;if(window.confirm('Flex-monteur '+f.ini+' verwijderen? Weken die hij had overgenomen worden weer leeg.')){wdFlexWeg(f.id);render();}});
-  q('[data-wdza]',function(b){wdOpenPaneel(+b.dataset.wdza,'ZA');});
+  q('[data-wdza]',function(b){var p=b.dataset.wdza.split('|');if(b.dataset.wdzi){wdKaartIni=b.dataset.wdzi;wdKaartWk=+p[0];wdKaartG=null;wdSel=null;render();var el=document.querySelector('.wd-ruil');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});return;}wdOpenPaneel(+p[0],p[1]||'ZA');});
   q('[data-wdclose]',function(){wdSel=null;render();});
   q('[data-wdmodus]',function(b){wdModus=b.dataset.wdmodus;wdKeus=null;render();});
   q('[data-wdkeus]',function(b){wdKeus=b.dataset.wdkeus||null;if(!wdKeus&&wdModus==='deel')wdDeelF.x='';render();var el=document.querySelector('.wd-vn');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});});
@@ -8333,7 +8343,7 @@ function lfVoorstel(kind,id){
   } else if(kind==='r'){var r=wdRuilen.filter(function(x){return x.id===id;})[0];if(!r)return;var jr=r.jaar||WD_BASISJAAR;
     f={voorstel:true,kind:kind,id:id,r:{door:r.door},type:'Waakdienst',nav:'waak',jaar:jr,wk:r.k1,wdSub:'rooster',kleur:tlKleur(r.door),terug:'voorstellen',
        cells:[{k:r.k1,slot:r.s1},{k:r.k2,slot:r.s2}],wasT:r.a+' (wk '+wdNr(r.k1)+') · '+r.b+' (wk '+wdNr(r.k2)+')',nuT:r.b+' (wk '+wdNr(r.k1)+') · '+r.a+' (wk '+wdNr(r.k2)+')'};
-    f.apply=function(){var c=wdC();if(!c||r.s1==='ZA')return null;var a=c.plan[r.k1][r.s1],b=c.plan[r.k2][r.s2];c.plan[r.k1][r.s1]=b;c.plan[r.k2][r.s2]=a;return function(){c.plan[r.k1][r.s1]=a;c.plan[r.k2][r.s2]=b;};};
+    f.apply=function(){var c=wdC();if(!c||wdZaIsSl(r.s1))return null;var a=c.plan[r.k1][r.s1],b=c.plan[r.k2][r.s2];c.plan[r.k1][r.s1]=b;c.plan[r.k2][r.s2]=a;return function(){c.plan[r.k1][r.s1]=a;c.plan[r.k2][r.s2]=b;};};
   } else if(kind==='v'){var v=wdVerpl.filter(function(x){return x.id===id;})[0];if(!v)return;var jv=v.jaar||WD_BASISJAAR;
     f={voorstel:true,kind:kind,id:id,r:{door:v.door},type:'Waakdienst',nav:'waak',jaar:jv,ini:v.ini,kleur:tlKleur(v.door),terug:'voorstellen'};
     if(v.t==='w'){f.wk=v.k;f.wdSub='rooster';f.cells=[{k:v.k,slot:v.slot}];f.wasT=v.oud||'leeg';f.nuT=v.ini;f.apply=function(){var c=wdC();if(!c||!c.plan[v.k])return null;var cur=c.plan[v.k][v.slot];c.plan[v.k][v.slot]=v.ini;return function(){c.plan[v.k][v.slot]=cur;};};}
