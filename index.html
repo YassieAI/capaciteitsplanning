@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-hbalk'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-geenteam'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -2791,7 +2791,7 @@ function viewManagerG(){
   /* Eén duidelijke indeling: weeknummers → totale capaciteit → lijst per regio/locatie → klik = monteurs */
   var regs=columns().filter(function(c){return c.type==='cluster';});
   LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});
-  return weekStrip()+teamCapWeek()+maandStrip()+totaalCapBlokMaand();
+  return maandStrip()+totaalCapBlokMaand();
 }
 var grafiekDicht={};
 function lijstToggle(k){grafiekDicht[k]=!grafiekDicht[k];render();}
