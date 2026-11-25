@@ -4001,44 +4001,49 @@ function totaalCapBlokMaand(){
   var nodigM={};types.forEach(function(g){nodigM[g]=Math.round(CONTRACT_UREN[g]*wdM/5);});
   var toon=(totSel==='regio'||totSel==='zara'||totSel==='techno')?[totSel]:types;
   var maxV=0;toon.forEach(function(g){if(CONTRACT_UREN[g]*1.3>maxV)maxV=CONTRACT_UREN[g]*1.3;});per.forEach(function(r){toon.forEach(function(g){if(r[g]>maxV)maxV=r[g];});});
-  var H=190,tot=[],chart='',dl='';
+  var rijen='';
   weeks.forEach(function(wk,i){
     var r=per[i],t=0,nd=0;toon.forEach(function(g){t+=r[g];nd+=CONTRACT_UREN[g];});t=Math.round(t);
-    var staven=toon.map(function(g){var hh=r[g]/maxV*H,p=Math.round(r[g]/CONTRACT_UREN[g]*100),tn=tone(p),ly=CONTRACT_UREN[g]/maxV*H,sel=(totSel===g&&totDag===i);
-      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;height:'+H+'px">'+
-        '<span style="position:relative;z-index:2;background:var(--surface,#fff);border-radius:4px;padding:0 3px;margin-bottom:2px;box-shadow:0 0 0 1px var(--border,#ddd);font-size:11px;font-weight:700;line-height:15px;color:'+tn.tx+';white-space:nowrap">'+(laden?'':Math.round(r[g]))+'</span>'+
-        '<div onclick="totKlik(\''+g+'\','+i+')" title="'+CONTRACT_NAAM[g]+' week '+isoWeek(wk)+': '+Math.round(r[g])+' u beschikbaar van '+CONTRACT_UREN[g]+' u nodig ('+p+'%) · klik voor de verdeling met monteurs" style="width:100%;max-width:'+(toon.length===1?'56':'26')+'px;height:'+Math.max(r[g]>0?2:0,hh).toFixed(1)+'px;background:'+GROEP_KLEUR[g]+';border-radius:3px 3px 0 0;cursor:pointer;'+(sel?'outline:2px solid var(--text);outline-offset:-2px;':'')+'"></div>'+
-        '<div title="nodig '+CONTRACT_NAAM[g]+': '+CONTRACT_UREN[g]+' u per week" style="position:absolute;left:8%;right:8%;bottom:'+ly.toFixed(1)+'px;border-top:2px dashed var(--text);pointer-events:none;z-index:1"></div></div>';}).join('');
     var dek=nd?Math.round(t/nd*100):null;
-    tot.push('<div style="flex:1;text-align:center;font-size:12px;font-weight:700;color:'+(dek===null?'var(--muted)':tone(dek).tx)+'">'+(laden?'…':t+' u')+'</div>');
-    chart+='<div style="flex:1;display:flex;gap:3px;justify-content:center;padding:0 4px">'+staven+'</div>';
-    dl+='<div style="flex:1;text-align:center;font-size:11px;color:var(--muted)"><b style="color:var(--text)">wk '+isoWeek(wk)+'</b></div>';
+    var balken=toon.map(function(g){var p=Math.round(r[g]/CONTRACT_UREN[g]*100),tn=tone(p),sel=(totSel===g&&totDag===i),sc=maxV;
+      return '<div onclick="totKlik(\''+g+'\','+i+')" title="'+CONTRACT_NAAM[g]+' week '+isoWeek(wk)+': '+Math.round(r[g])+' u beschikbaar van '+CONTRACT_UREN[g]+' u nodig ('+p+'%) · klik voor de verdeling met monteurs" style="display:flex;align-items:center;gap:8px;margin:3px 0;cursor:pointer">'+
+        '<div style="position:relative;flex:1;height:'+(toon.length===1?'22':'15')+'px;background:var(--surface-1);border-radius:4px;'+(sel?'box-shadow:0 0 0 2px var(--text);':'')+'"><div style="height:100%;width:'+(laden?0:Math.min(100,r[g]/sc*100)).toFixed(1)+'%;background:'+GROEP_KLEUR[g]+';border-radius:4px"></div>'+
+        '<div title="nodig '+CONTRACT_NAAM[g]+': '+CONTRACT_UREN[g]+' u per week" style="position:absolute;top:-2px;bottom:-2px;left:'+Math.min(100,CONTRACT_UREN[g]/sc*100).toFixed(1)+'%;border-left:2px dashed var(--text);pointer-events:none"></div></div>'+
+        '<span style="width:'+(toon.length===1?'120':'70')+'px;font-size:12px;font-weight:700;color:'+tn.tx+';text-align:right;white-space:nowrap">'+(laden?'…':Math.round(r[g])+' u'+(toon.length===1?' · '+p+'%':''))+'</span></div>';}).join('');
+    rijen+='<div style="display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border)"><div style="font-size:12px"><b>wk '+isoWeek(wk)+'</b><div style="color:var(--muted);font-size:11px">'+(laden?'…':t+' u')+'</div></div><div>'+balken+'</div></div>';
   });
   var totM=Math.round(mTot.regio+mTot.zara+mTot.techno),nodigTot=nodigM.regio+nodigM.zara+nodigM.techno;
-  /* horizontale balk: beschikbare uren (gekleurd) tegen nodig (streepje) */
-  function hBalk(naam,kleur,u,con,klik,open,groot){
-    var p=con?Math.round(u/con*100):0,t=tone(p),sc=Math.max(u,con*1.15,1);
-    return '<div '+(klik?'onclick="'+klik+'" ':'')+'style="display:grid;grid-template-columns:'+(groot?'190px':'170px')+' 1fr 150px;gap:12px;align-items:center;padding:'+(groot?'12px':'8px')+' 12px;margin:'+(groot?'10px 0 4px':'4px 0')+';border:1px solid var(--border,#ddd);border-radius:10px;background:var(--surface-1);'+(klik?'cursor:pointer;':'')+'">'+
-      '<b style="font-size:'+(groot?'14':'13')+'px">'+(klik?(open?'&#9662; ':'&#9656; '):'')+(kleur?'<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+kleur+';margin-right:6px"></span>':'')+naam+'</b>'+
-      '<div style="position:relative;height:'+(groot?'22':'16')+'px;background:var(--surface,#fff);border-radius:5px;box-shadow:inset 0 0 0 1px var(--border,#ddd)"><div style="height:100%;width:'+(laden?0:Math.min(100,u/sc*100)).toFixed(1)+'%;background:'+t.bar+';border-radius:5px"></div><div title="nodig: '+Math.round(con)+' u" style="position:absolute;top:-3px;bottom:-3px;left:'+Math.min(100,con/sc*100).toFixed(1)+'%;border-left:2px dashed var(--text)"></div></div>'+
-      '<span style="font-size:12px;text-align:right;font-weight:700;color:'+t.tx+'">'+(laden?'laden…':Math.round(u)+' / '+Math.round(con)+' u · '+p+'%')+'</span></div>';}
-  var dagenM=[];for(var q=new Date(m0);q<=mEnd;q=new Date(q.getFullYear(),q.getMonth(),q.getDate()+1))dagenM.push(new Date(q));
-  var dagenLM=dagenM.map(function(x){return {iso:fmtIsoD(x),label:WD[x.getDay()]+' '+x.getDate()};});
-  function colsVan(g){var c=[];if(g==='regio')columns().filter(function(x){return x.type==='cluster';}).forEach(function(x){c.push(x);});else LOC.filter(function(l){return l.type===g;}).forEach(function(l){c.push(colFor(l.id));});return c;}
-  var h='<h2 style="margin-top:6px">Totale capaciteit · '+MND_K[m0.getMonth()]+' '+m0.getFullYear()+'</h2><p class="sub">beschikbare uren van alle monteurs tegen de benodigde uren (streepje), '+wdM+' werkdagen · klik op Field Force of Zara voor de verdeling per regio of locatie, en daarna op een regel voor de monteurs</p>';
-  h+=hBalk('Totaal',null,totM,nodigTot,null,false,true);
-  [['regio','Field Force'],['zara','Zara'],['techno','Technocenter']].forEach(function(gg){
-    var g=gg[0],open=(totSel===g);
-    h+=hBalk(gg[1],GROEP_KLEUR[g],mTot[g],nodigM[g],'totSetSel(\''+g+'\')',open,true);
-    if(open){h+='<div style="margin:0 0 12px 18px">'+colsVan(g).map(function(c){
-      var u=0;c.members.forEach(function(id){dagenM.forEach(function(x){u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)]||0)*8;});});
-      var con=c.benodigd*8*wdM,o2=!!capOpen[c.key];
-      return hBalk(c.naam,null,u,con,'capToggle(\''+c.key+'\')',o2,false)+(o2?monteurPaneel(c,dagenLM):'');}).join('')+'</div>';}
-  });
-  return h;
+  var tegel=function(k,naam,kleur,val,con,klik){var p=con?Math.round(val/con*100):0;
+    return '<div class="metric'+(klik?' metric-click':'')+(klik&&totSel===k?' metric-sel':'')+'"'+(klik?' onclick="totSetSel(\''+k+'\')"':'')+'><div class="l">'+(kleur?'<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+kleur+';vertical-align:-1px"></span> ':'')+naam+(klik?' <span class="kpi-arrow">'+(totSel===k?'&#9662;':'&#9656;')+' '+(k==='tot'?'alles':'per '+(k==='regio'?'regio':'locatie'))+'</span>':'')+'</div>'+
+      '<div class="v" style="font-size:19px;color:'+tone(p).tx+'">'+(laden?'…':Math.round(val)+' u')+' <span style="font-size:12px;font-weight:500;color:var(--muted)">beschikbaar</span></div><div style="font-size:12px;color:var(--muted)">van <b style="color:var(--text)">'+con+' u</b> nodig in '+MND_K[m0.getMonth()]+' ('+wdM+' werkdagen)</div></div>';};
+  var tegels='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">'+tegel('tot','Totaal Field Force + Zara + Techno','',totM,nodigTot,true)+
+    tegel('regio','Field Force',GROEP_KLEUR.regio,mTot.regio,nodigM.regio,true)+tegel('zara','Zara',GROEP_KLEUR.zara,mTot.zara,nodigM.zara,true)+tegel('techno','Techno',GROEP_KLEUR.techno,mTot.techno,nodigM.techno,true)+'</div>';
+  var detail='';
+  if(totSel==='regio'||totSel==='zara'||totSel==='techno'||totSel==='tot'){
+    var cols=[];
+    (totSel==='tot'?['regio','zara','techno']:[totSel]).forEach(function(g){
+      if(g==='regio')columns().filter(function(c){return c.type==='cluster';}).forEach(function(c){cols.push(c);});
+      else LOC.filter(function(l){return l.type===g;}).forEach(function(l){cols.push(colFor(l.id));});});
+    var heleMaand=(totDag===null),sel=[];
+    if(heleMaand){for(var q=new Date(m0);q<=mEnd;q=new Date(q.getFullYear(),q.getMonth(),q.getDate()+1))sel.push(q);}else sel=dagenVan(weeks[totDag]);
+    var wdSel=sel.filter(werk).length;
+    var dagenL=sel.map(function(x){return {iso:fmtIsoD(x),label:WD[x.getDay()]+' '+x.getDate()};});
+    var titel=heleMaand?MND_K[m0.getMonth()]+' '+m0.getFullYear():'week '+isoWeek(weeks[totDag]);
+    detail='<div class="ai" style="margin:0 0 14px"><div class="hd" style="justify-content:space-between"><span><span class="dot"></span>'+(totSel==='tot'?'Alles: Field Force, Zara en Techno':totSel==='regio'?'Field Force per regio':totSel==='zara'?'Zara per locatie':'Techno')+' · '+titel+'</span><button class="linkbtn" onclick="totSetSel(null)">sluiten &#10006;</button></div>'+
+      (heleMaand?'<p class="sub" style="margin:4px 0 0">Klik op een staaf van een week om de monteurs per dag te zien.</p>':'')+
+      cols.map(function(c){
+        var u=0;c.members.forEach(function(id){sel.forEach(function(x){u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)]||0)*8;});});
+        var con=c.benodigd*8*wdSel,p=con?Math.round(u/con*100):null,t=p===null?null:tone(p),open=!heleMaand&&!grafiekDicht[c.key];
+        return '<div '+(heleMaand?'':'onclick="lijstToggle(\''+c.key+'\')" ')+'style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin:10px 0 4px;border:1px solid var(--border,#ddd);border-radius:10px;'+(heleMaand?'':'cursor:pointer;')+'background:var(--surface-1);font-weight:700">'+
+          '<span>'+(heleMaand?'':(open?'&#9662; ':'&#9656; '))+c.naam+'</span><span style="color:'+(t?t.tx:'var(--muted)')+'">'+(laden?'laden…':Math.round(u)+' / '+Math.round(con)+' u'+(p===null?'':' · '+p+'%'))+'</span></div>'+(open?monteurPaneel(c,dagenL):'');
+      }).join('')+'</div>';
+  }
+  return '<h2 style="margin-top:6px">Totale capaciteit · '+MND_K[m0.getMonth()]+' '+m0.getFullYear()+'</h2><p class="sub">per week de beschikbare uren van alle monteurs per categorie, tegen de benodigde uren per week (streepje) · klik op Totaal, Field Force, Zara of Techno (tegel of staaf) voor de verdeling per regio met monteurs</p>'+
+    tegels+
+    '<div style="margin-top:6px">'+rijen+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 14px;font-size:12px;color:var(--muted)">'+(toon.length===1?'<span><b style="color:var(--text)">Alleen '+CONTRACT_NAAM[toon[0]]+'</b> · <button class="linkbtn" onclick="totSetSel(null)">toon alles</button></span>':'')+toon.map(function(t){return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+GROEP_KLEUR[t]+';vertical-align:-1px"></span> '+CONTRACT_NAAM[t]+' (nodig '+CONTRACT_UREN[t]+' u per week)</span>';}).join('')+'<span><span style="display:inline-block;width:16px;height:0;border-top:2px dashed var(--text);vertical-align:3px"></span> benodigde uren per week</span></div>'+
+    detail;
 }
-var capOpen={};
-function capToggle(k){capOpen[k]=!capOpen[k];render();}
 /* ---------- weekrooster (Manager R/D): diensten schuiven ---------- */
 function dienstStyle(st){
   if(st&&st.indexOf('comp:')===0)return ['#e1f5ee','#0f6e56'];
