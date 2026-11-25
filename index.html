@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-kleur'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-xlchart'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -2791,7 +2791,7 @@ function viewManagerG(){
   /* Eén duidelijke indeling: weeknummers → totale capaciteit → lijst per regio/locatie → klik = monteurs */
   var regs=columns().filter(function(c){return c.type==='cluster';});
   LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});
-  return maandStrip()+totaalCapBlokMaand();
+  return capChartsHtml()+maandStrip()+totaalCapBlokMaand();
 }
 var grafiekDicht={};
 function lijstToggle(k){grafiekDicht[k]=!grafiekDicht[k];render();}
@@ -3907,6 +3907,35 @@ function teamCapHtml(agg,dagen,laden){
 function teamCapWeek(){var mon=mondayOf(new Date());mon.setDate(mon.getDate()+wgOff*7);var end=new Date(mon);end.setDate(mon.getDate()+6);
   var agg=ensureRange('gweek_'+fmtIsoD(mon),fmtIsoD(mon),fmtIsoD(end)),laden=!agg||!agg.loaded,dagen=[];for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);dagen.push(d);}
   return '<h2>Capaciteit per team · week '+isoWeek(mon)+'</h2>'+teamCapHtml(agg,dagen,laden);}
+/* gestapelde weekgrafieken zoals in Excel: per week een kolom, gevuld met de regio's/locaties, groene lijn = benodigd */
+var capOff=0;
+function capNav(d){var y=window.scrollY;capOff+=d;render();window.scrollTo(0,y);}
+function capChartsHtml(){
+  var N=17,mon0=mondayOf(new Date());mon0.setDate(mon0.getDate()+(capOff-12)*7);
+  var weeks=[];for(var i=0;i<N;i++){var w=new Date(mon0);w.setDate(mon0.getDate()+i*7);weeks.push(w);}
+  var last=new Date(weeks[N-1]);last.setDate(last.getDate()+6);
+  var agg=ensureRange('gchart_'+fmtIsoD(weeks[0]),fmtIsoD(weeks[0]),fmtIsoD(last)),laden=!agg||!agg.loaded;
+  var pal=['#1f5f8b','#e87722','#226b22','#3ba0dc','#9b2d9b'];
+  function loc(id,w){var u=0;for(var d=0;d<7;d++){var x=new Date(w);x.setDate(w.getDate()+d);u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)]||0)*8;}return u;}
+  function chart(titel,g,ids){
+    var nodig=CONTRACT_UREN[g],data=weeks.map(function(w){return ids.map(function(id){return loc(id,w);});});
+    var mx=nodig*1.15;data.forEach(function(r){var t=0;r.forEach(function(v){t+=v;});if(t>mx)mx=t;});
+    var stap=mx>1200?200:100,top=Math.ceil(mx/stap)*stap,W=1000,H=300,L=44,R=10,T=14,B=28,pw=W-L-R,ph=H-T-B,bw=pw/N;
+    function y(v){return T+ph-v/top*ph;}
+    var svg='<svg viewBox="0 0 '+W+' '+(H+34)+'" style="width:100%;height:auto;display:block" role="img" aria-label="'+titel+'">';
+    for(var v=0;v<=top;v+=stap)svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--border,#ddd)" stroke-width="1"/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="11" fill="var(--muted,#888)">'+v+'</text>';
+    weeks.forEach(function(w,i){var x0=L+i*bw+bw*.25,cw=bw*.5,acc=0,tot=0;
+      data[i].forEach(function(u,j){if(u<=0)return;var y1=y(acc+u),y0=y(acc);svg+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+cw+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+pal[j%pal.length]+'"><title>'+LOCMAP[ids[j]].naam+' · wk '+isoWeek(w)+': '+Math.round(u)+' u</title></rect>';acc+=u;});
+      tot=acc;if(tot>0)svg+='<text x="'+(x0+cw/2)+'" y="'+(y(tot)-4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text,#222)">'+Math.round(tot)+'</text>';
+      svg+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-T+6)+'" text-anchor="middle" font-size="11" fill="var(--muted,#888)">'+isoWeek(w)+'</text>';});
+    svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodig)+'" y2="'+y(nodig)+'" stroke="#4ea72e" stroke-width="3"/>';
+    var lx=L+40,ly=H+22;ids.forEach(function(id,j){svg+='<rect x="'+lx+'" y="'+(ly-9)+'" width="30" height="10" fill="'+pal[j%pal.length]+'"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Totaal '+LOCMAP[id].naam+'</text>';lx+=36+8*(LOCMAP[id].naam.length+7)+14;});
+    svg+='<line x1="'+lx+'" x2="'+(lx+30)+'" y1="'+(ly-4)+'" y2="'+(ly-4)+'" stroke="#4ea72e" stroke-width="3"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Benodigd ('+nodig+' u)</text></svg>';
+    return '<div class="ai" style="margin:0 0 14px"><div class="hd"><span class="dot"></span>'+titel+(laden?' · laden…':'')+'</div>'+svg+'</div>';}
+  var nav='<div class="ctrl" style="margin:0 0 12px;flex-wrap:wrap;gap:6px;align-items:center"><button onclick="capNav(-4)">‹ 4 weken</button><span style="font-size:13px">week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</span><button onclick="capNav(4)">4 weken ›</button>'+(capOff!==0?'<button class="linkbtn" onclick="capNav(-capOff)">terug naar nu</button>':'')+'</div>';
+  return '<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De groene lijn is het benodigde aantal uren per week.</p>'+nav+
+    chart('Capaciteit FF Regio','regio',['MI','NO','ZO'])+chart('Capaciteit Zara locatie','zara',['ZAM','ZRO','ZAR','ZZW'])+chart('Capaciteit Technocenter','techno',['TCU']);
+}
 var totSel=null,totDag=null;   // totDag: null = hele week, anders index 0-6 van de dag
 function totSetSel(k){totSel=(k===null||(totSel===k&&totDag===null))?null:k;totDag=null;render();}
 function totKlik(k,i){if(totSel===k&&totDag===i){totSel=null;totDag=null;}else{totSel=k;totDag=i;}render();}
