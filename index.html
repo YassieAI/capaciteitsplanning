@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-capwk'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-kleur'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -4011,14 +4011,14 @@ function totaalCapBlokMaand(){
   var dagenLM=dagenM.map(function(x){return {iso:fmtIsoD(x),label:WD[x.getDay()]+' '+x.getDate()};});
   function colsVan(g){var c=[];if(g==='regio')columns().filter(function(x){return x.type==='cluster';}).forEach(function(x){c.push(x);});else LOC.filter(function(l){return l.type===g;}).forEach(function(l){c.push(colFor(l.id));});return c;}
   function colU(c){var u=0;c.members.forEach(function(id){dagenM.forEach(function(x){u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)]||0)*8;});});return u;}
-  var tinten=[1,.72,.52,.38,.28,.2];
+  var kleuren=['#2f6fd0','#e8892b','#2e9e6b','#8e5bd1','#d6457f','#1aa0a8'];
   /* een balk per categorie, gevuld met de regio's/locaties; streepje = nodig */
   function catBalk(g,naam){
     var cols=colsVan(g),tot=mTot2[g],con=nodigS[g],p=con?Math.round(tot/con*100):0,t=tone(p),sc=Math.max(tot,con*1.15,1);
     var segs=cols.map(function(c,i){var u=colU(c),w=laden?0:u/sc*100;
-      return '<div onclick="capToggle(\''+c.key+'\')" title="'+c.naam+': '+Math.round(u)+' u · klik voor de monteurs" style="width:'+w.toFixed(2)+'%;height:100%;background:'+GROEP_KLEUR[g]+';opacity:'+tinten[i%tinten.length]+';cursor:pointer;box-shadow:inset -1px 0 0 var(--surface,#fff);'+(capOpen[c.key]?'outline:2px solid var(--text);outline-offset:-2px;':'')+'"></div>';}).join('');
+      return '<div onclick="capToggle(\''+c.key+'\')" title="'+c.naam+': '+Math.round(u)+' u · klik voor de monteurs" style="width:'+w.toFixed(2)+'%;height:100%;background:'+kleuren[i%kleuren.length]+';cursor:pointer;box-shadow:inset -1px 0 0 var(--surface,#fff);'+(capOpen[c.key]?'outline:2px solid var(--text);outline-offset:-2px;':'')+'"></div>';}).join('');
     var leg=cols.map(function(c,i){var u=colU(c),cn=c.benodigd*8*wdS,pp=cn?Math.round(u/cn*100):0;
-      return '<button onclick="capToggle(\''+c.key+'\')" class="linkbtn" style="display:inline-flex;align-items:center;gap:6px;margin:4px 14px 0 0;font-size:12px;'+(capOpen[c.key]?'font-weight:700;':'')+'"><span style="width:11px;height:11px;border-radius:2px;background:'+GROEP_KLEUR[g]+';opacity:'+tinten[i%tinten.length]+'"></span>'+c.naam+' · '+(laden?'…':Math.round(u)+' / '+Math.round(cn)+' u · '+pp+'%')+'</button>';}).join('');
+      return '<button onclick="capToggle(\''+c.key+'\')" class="linkbtn" style="display:inline-flex;align-items:center;gap:6px;margin:4px 14px 0 0;font-size:12px;'+(capOpen[c.key]?'font-weight:700;':'')+'"><span style="width:11px;height:11px;border-radius:2px;background:'+kleuren[i%kleuren.length]+'"></span>'+c.naam+' · '+(laden?'…':Math.round(u)+' / '+Math.round(cn)+' u · '+pp+'%')+'</button>';}).join('');
     var open=cols.filter(function(c){return capOpen[c.key];}).map(function(c){return '<div style="margin:8px 0 0"><div style="text-align:right"><button class="linkbtn" onclick="capToggle(\''+c.key+'\')">&#8592; terug · sluiten &#10006;</button></div>'+monteurPaneel(c,dagenLM)+'</div>';}).join('');
     return '<div class="ai" style="margin:0 0 14px"><div class="hd" style="justify-content:space-between"><span><span class="dot" style="background:'+GROEP_KLEUR[g]+'"></span>'+naam+'</span><span style="font-weight:700;color:'+t.tx+'">'+(laden?'laden…':Math.round(tot)+' / '+Math.round(con)+' u · '+p+'%')+'</span></div>'+
       '<div style="position:relative;display:flex;height:34px;margin:10px 0 4px;background:var(--surface-1);border-radius:6px;overflow:visible"><div style="display:flex;width:100%;height:100%;border-radius:6px;overflow:hidden">'+segs+'</div><div title="nodig: '+Math.round(con)+' u" style="position:absolute;top:-4px;bottom:-4px;left:'+Math.min(100,con/sc*100).toFixed(1)+'%;border-left:2px dashed var(--text);pointer-events:none"></div></div>'+
