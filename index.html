@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-hoofd'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-zaq3'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -5394,7 +5394,7 @@ function wdStartTxt(f){return wdMetJaar(f.start.j,function(){return 'week '+wdNr
 function wdNogNiet(ini,k){var f=WD_FLEX.filter(function(x){return x.ini===ini&&x.start;})[0];if(!f)return false;
   return WD_JAAR<f.start.j||(WD_JAAR===f.start.j&&k<f.start.k);}
 function wdNogNietTxt(ini){var f=WD_FLEX.filter(function(x){return x.ini===ini&&x.start;})[0];return 'Nog niet gestart: '+ini+' begint in '+(f?wdStartTxt(f):'een later jaar');}
-var WD_ZA_PINS_POULE={2027:[["KHA02", "RESO02", "THTE02", "DAPR04", "HEVI01", "KHA02", "FRSC02", "THTE02", "DAPR04", "HEVI01", "KHA02", "FRSC02", "THTE02", "DAPR04", "Z01", "HEVI01", "ADKH01", "KHA02", "THTE02", "DAPR04", "Z01", "HEVI01", "ADKH01", "KHA02", "THTE02", "DAPR04", "Z01", "Z02", "HEVI01", "ADKH01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02", "HEVI01", "ADKH01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02", "HEVI01", "ADKH01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02"],[null, null, "ARBR01", "JUGR01", "PAVE01", "ROMS", "RESO02", "ARBR01", "JUGR01", "PAVE01", "ROMS", "RESO02", "ARBR01", "JUGR01", "Z03", "PAVE01", "ROMS", "RESO02", "ARBR01", "JUGR01", "Z03", "PAVE01", "FRSC02", "ROMS", "ARBR01", "RESO02", "JUGR01", "Z03", "LAHA02", "ROMS", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01", "Z03", "ROMS", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01", "Z03", "ROMS", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01"]]}; // week 1 (1-7 jan): alleen RESO02, vanaf week 2 twee monteurs (feedback Teamleider Zara 25-11-2026)
+var WD_ZA_PINS_POULE={2027:[["KHA02", "RESO02", "THTE02", "DAPR04", "HEVI01", "KHA02", "FRSC02", "THTE02", "DAPR04", "HEVI01", "KHA02", "FRSC02", "THTE02", "DAPR04", "HEVI01", "KHA02", "ADKH01", "THTE02", "DAPR04", "HEVI01", "KHA02", "ROMS", "ADKH01", "JUGR01", "HEVI01", "KHA02", "Z01", "Z02", "LAHA02", "HEVI01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02", "HEVI01", "ADKH01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02", "HEVI01", "ADKH01", "ERMI03", "KHA02", "THTE02", "DAPR04", "Z01", "Z02"],[null, null, "ARBR01", "JUGR01", "PAVE01", "ROMS", "RESO02", "ARBR01", "JUGR01", "PAVE01", "ROMS", "RESO02", "ARBR01", "JUGR01", "PAVE01", "ROMS", "RESO02", "FRSC02", "JUGR01", "PAVE01", "ARBR01", "RESO02", "THTE02", "FRSC02", "DAPR04", "PAVE01", "ARBR01", "Z03", "JUGR01", "ADKH01", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01", "Z03", "ROMS", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01", "Z03", "ROMS", "PAVE01", "FRSC02", "ARBR01", "RESO02", "LAHA02", "JUGR01"]]}; // week 1 (1-7 jan): alleen RESO02, vanaf week 2 twee monteurs (feedback Teamleider Zara 25-11-2026)
 var WD_ZA_NIEUW=['ERMI03','ADKH01','Z02','ARBR01','LAHA02']; // nieuw in de waakdienst: nooit twee van hen samen in één week (Teamleider Zara)
 function wdZaNieuw(x,j){return (j||WD_KJ)===2027&&WD_ZA_NIEUW.indexOf(x)>=0;} // alleen in 2027; vanaf 2028 mogen ze samen
 function wdZaPinsNu(){return WD_ZA_PINS_POULE;}
@@ -6384,9 +6384,9 @@ function wdZaUitleg(){
    '<li>In 2026 draaide er <b>één</b> Zara-monteur per week, vanaf 2027 zijn het er <b>twee</b>.</li>'+
    '<li>Het gaat <b>om de beurt in een vaste volgorde</b>: wie dienst had gaat achteraan. Nieuwe collega\'s komen vooraan zodra ze beginnen.</li>'+
    '<li>Twee <b>poules</b>: <b>Zara Amsterdam</b> en <b>overige</b> (Rotterdam, Arnhem, Zwolle). Elke week draait er één uit elke poule.</li>'+
-   '<li><b>Vaste koppels</b>: elke Amsterdam-monteur heeft een vaste partner uit de poule overige, en elk koppel draait <b>om de 8 weken</b>. Dat lukt vanaf week 29: daarvoor zijn nog niet alle monteurs gestart en draaien JOMA02 (Z01) en ASER01 (Z03) ook regio-waakdienst, dus valt wie het langst geen dienst had in. Vanaf 2028 lopen de koppels gewoon door; heeft iemand uit een koppel die week regio-waakdienst of is hij uit dienst, dan valt iemand uit dezelfde poule in.</li>'+
+   '<li><b>Vaste koppels</b>: elke Amsterdam-monteur heeft een vaste partner uit de poule overige, en elk koppel draait <b>om de 8 weken</b>. Dat lukt vanaf week 29: daarvoor zijn nog niet alle monteurs gestart. JOMA02 (Z01) en ASER01 (Z03) doen pas vanaf Q3 (week 27 van 2027) mee in de Zara-waakdienst en zitten tot die tijd nog in de regio-waakdienst, dus valt wie het langst geen dienst had in. Vanaf 2028 lopen de koppels gewoon door; heeft iemand uit een koppel die week regio-waakdienst of is hij uit dienst, dan valt iemand uit dezelfde poule in.</li>'+
    '<li>Koppels: '+WD_ZA_KOPPELS.map(function(q){return q.join(' + ');}).join(', ')+'.</li>'+
-   '<li>Tussen twee diensten van dezelfde monteur zitten <b>minimaal 5 volle weken</b> (alleen in week 1 t/m 13 van 2027 zijn het er 4, omdat dan een deel van de monteurs nog niet gestart is).</li>'+
+   '<li>Tussen twee diensten van dezelfde monteur zitten <b>minimaal 5 volle weken</b> (alleen in week 1 t/m 26 van 2027 zijn het er 4, omdat dan een deel van de monteurs nog niet gestart is en JOMA02 en ASER01 pas vanaf Q3 meedoen).</li>'+
    '<li><b>Nieuw in de waakdienst</b> (ERMI03, ADKH01, MAKH02, ARBR01, LAHA02): alleen in 2027 nooit twee van hen samen, er staat dan altijd een ervaren monteur naast. Vanaf 2028 mogen ze wel samen. Week 1 van 2027 heeft één monteur (RESO02), vanaf week 2 zijn het er twee.</li>'+
    '<li>Wie vorig jaar een <b>feestdag</b> draaide, krijgt er dit jaar zo min mogelijk.</li>'+
    '<li>Niet in de Zara-waakdienst: '+WD_ZUIT.join(', ')+'.</li></ul></div>'+
@@ -7229,7 +7229,7 @@ function wdZaArr(c,sl){return sl==='ZB'?c.za2:c.za;}
 function wdSlotGet(c,k,sl){return wdZaIsSl(sl)?(wdZaArr(c,sl)||[])[k]:c.plan[k][sl];}
 function wdSlotSet(c,k,sl,ini){if(wdZaIsSl(sl)){var a=wdZaArr(c,sl);if(a)a[k]=ini;}else if(c.plan[k])c.plan[k][sl]=ini;}
 function wdZaIsSl(sl){return sl==='ZA'||sl==='ZB';}
-function wdZaMin(k1,k2){return (WD_JAAR===2027&&Math.max(k1,k2)<14)?5:6;} // 5 volle weken rust = 6 tussen starts (Q1 2027: 5)
+function wdZaMin(k1,k2){return (WD_JAAR===2027&&Math.min(k1,k2)<26)?5:6;} // 5 volle weken rust = 6 tussen starts (tot Q3 2027 (week 27): 5, omdat JOMA02 en ASER01 dan nog in de regio zitten)
 function wdZaRuilCheck(c,k1,s1,k2,s2){
   var a1=wdZaArr(c,s1),a2=wdZaArr(c,s2),A=a1&&a1[k1],B=a2&&a2[k2],r=[];
   if(!A||!B||A===B)return ['zelfde persoon'];
