@@ -1158,7 +1158,7 @@ body.zij #view:has(svg[aria-label^="Capaciteit"]){max-width:1240px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-start'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-weken'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -3968,7 +3968,7 @@ function capKiesLoc(iso,id){if(capSel===iso&&capLoc===id){capSel=null;capLoc=nul
   setTimeout(function(){var e=document.getElementById('caploc_'+id);if(e)e.scrollIntoView({behavior:'smooth',block:'nearest'});},60);}
 function capKies(iso){var y=window.scrollY;capLoc=null;capSel=(capSel===iso)?null:iso;render();window.scrollTo(0,y);}
 function capMaand(o){var y=window.scrollY;capMnd=o;capSel=null;capLoc=null;render();window.scrollTo(0,y);}
-function capNav(d){var y=window.scrollY;capOff+=d;render();window.scrollTo(0,y);}
+function capNav(d){var y=window.scrollY,b;if(capSel){var q=capSel.split('-');b=new Date(+q[0],q[1]-1,+q[2]);}else b=mondayOf(new Date());b.setDate(b.getDate()+7*d);capSel=fmtIsoD(b);capOff+=d;render();window.scrollTo(0,y);}
 function capChartsHtml(){
   var nu=new Date(),mnd0=null,weeks=[];
   if(capMnd!==null){mnd0=new Date(nu.getFullYear(),nu.getMonth()+capMnd,1);var mE=new Date(mnd0.getFullYear(),mnd0.getMonth()+1,0);for(var w0=mondayOf(mnd0);w0<=mE;w0=new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+7))weeks.push(new Date(w0));}
@@ -4050,30 +4050,41 @@ function capChartsHtml(){
 function sBadge(p){var t=tone(p),l=p>=NORM_RUIM?'Overbezet':p>=NORM?'Op niveau':p>=NORM_WARN?'Let op':'Onderbezet';return '<span class="sbadge" style="background:'+t.bg+';color:'+t.tx+'">'+l+'</span>';}
 function capVandaag(){var y=window.scrollY;capSel=null;capLoc=null;if(capMnd!==null)capMnd=0;else capOff=0;render();window.scrollTo(0,y);}
 var CAP_ALLE=['MI','NO','ZO','ZAM','ZRO','ZAR','ZZW','TCU'];
-function capAgg17(){var m=mondayOf(new Date());m.setDate(m.getDate()-84);var e=new Date(m);e.setDate(m.getDate()+17*7-1);return ensureRange('gchart_'+fmtIsoD(m),fmtIsoD(m),fmtIsoD(e));}
-function capSamen(agg,sw){
+var startN=1;
+function startZet(n){startN=n;render();}
+function capAggStart(n){var m=mondayOf(new Date()),a=new Date(m),e=new Date(m);a.setDate(a.getDate()-7*n);e.setDate(e.getDate()+7*n-1);return ensureRange('gstart_'+fmtIsoD(a)+'_'+n,fmtIsoD(a),fmtIsoD(e));}
+function capSamen(agg,sw,n){n=n||1;
   function dag(id,x){return ((((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)])||0)*8;}
   function wk(w){var u=0;CAP_ALLE.forEach(function(id){for(var d=0;d<7;d++){var x=new Date(w);x.setDate(w.getDate()+d);u+=dag(id,x);}});return u;}
-  var pw=new Date(sw);pw.setDate(pw.getDate()-7);
-  var r={bes:Math.round(wk(sw)),vor:Math.round(wk(pw)),nod:CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno,kn:[]};
-  CAP_ALLE.forEach(function(id){var n8=LOCMAP[id].benodigd*8;if(!n8)return;for(var d=0;d<5;d++){var x=new Date(sw);x.setDate(sw.getDate()+d);var u=dag(id,x),p=Math.round(u/n8*100);if(p<NORM_WARN)r.kn.push({id:id,x:x,p:p,u:Math.round(u),n:Math.round(n8)});}});
+  function wkN(w0){var u=0;for(var i=0;i<n;i++){var w=new Date(w0);w.setDate(w0.getDate()+7*i);u+=wk(w);}return u;}
+  var pw=new Date(sw);pw.setDate(pw.getDate()-7*n);
+  var r={n:n,bes:Math.round(wkN(sw)),vor:Math.round(wkN(pw)),nod:(CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno)*n,kn:[],leeg:[],eind:null};
+  for(var i=0;i<n;i++){var w=new Date(sw);w.setDate(sw.getDate()+7*i);r.eind=w;
+    if(wk(w)<=0){r.leeg.push(isoWeek(w));continue;}
+    CAP_ALLE.forEach(function(id){var n8=LOCMAP[id].benodigd*8;if(!n8)return;for(var d=0;d<5;d++){var x=new Date(w);x.setDate(w.getDate()+d);var u=dag(id,x),p=Math.round(u/n8*100);if(p<NORM_WARN)r.kn.push({id:id,x:x,p:p,u:Math.round(u),n:Math.round(n8),wk:isoWeek(w),iso:fmtIsoD(w)});}});}
+  r.geen=r.leeg.length===n;
   r.kn.sort(function(a,b){return a.p-b.p;});r.pct=r.nod?Math.round(r.bes/r.nod*100):0;return r;}
+function capPer(r,sw){return r.n>1?'week '+isoWeek(sw)+' t/m '+isoWeek(r.eind):'week '+isoWeek(sw);}
 function capKpiHtml(r,sw){
   var DN=['zo','ma','di','wo','do','vr','za'],iso=fmtIsoD(sw),vs=r.bes-r.vor,ver=r.bes-r.nod,k0=r.kn[0];
   function kaart(kc,t,v,e,sub,klik,ga){return '<div class="kpi" style="--kc:'+kc+'" onclick="'+klik+'"><div class="kt">'+t+'</div><div class="kv">'+v+'<small>'+e+'</small></div><div class="ks">'+sub+'</div><div class="kg">'+ga+' ›</div></div>';}
+  var kk;
+  if(r.geen)kk=kaart('var(--border-strong)','Knelpunten','–','','nog geen rooster voor '+capPer(r,sw),"capGa('"+iso+"',null)",'naar de grafiek');
+  else kk=kaart(r.kn.length?'var(--risk)':'var(--ok)','Knelpunten',r.kn.length,r.kn.length===1?'dag':'dagen',(k0?'laagste: '+LOCMAP[k0.id].naam+' '+DN[k0.x.getDay()]+' '+k0.x.getDate()+' ('+k0.p+'%)':'geen dagen onder '+NORM_WARN+'%')+(r.leeg.length?'<br>wk '+r.leeg.join(', ')+': nog geen rooster':''),k0?"capGa('"+k0.iso+"','"+k0.id+"')":"capGa('"+iso+"',null)",k0?'naar '+LOCMAP[k0.id].naam:'naar de grafiek');
   return '<div class="kpis">'+
-    kaart('var(--accent)','Beschikbaar · week '+isoWeek(sw),r.bes,'uur','<b style="color:'+(vs>=0?'var(--ok)':'var(--risk)')+'">'+(vs>=0?'+':'')+vs+' u</b> t.o.v. vorige week',"capGa('"+iso+"',null)",'naar de grafiek')+
-    kaart('var(--border-strong)','Benodigd',r.nod,'uur','FF '+CONTRACT_UREN.regio+' · Zara '+CONTRACT_UREN.zara+' · Techno '+CONTRACT_UREN.techno,"capGa('"+iso+"',null)",'naar de grafiek')+
-    kaart(tone(r.pct).tx,ver>=0?'Overschot':'Tekort',Math.abs(ver),'uur','<b>'+r.pct+'%</b> van benodigd '+sBadge(r.pct),"capGa('"+iso+"',null)",'naar de grafiek')+
-    kaart(r.kn.length?'var(--risk)':'var(--ok)','Knelpunten',r.kn.length,r.kn.length===1?'dag':'dagen',k0?'laagste: '+LOCMAP[k0.id].naam+' '+DN[k0.x.getDay()]+' '+k0.x.getDate()+' ('+k0.p+'%)':'geen dagen onder '+NORM_WARN+'%',k0?"capGa('"+iso+"','"+k0.id+"')":"capGa('"+iso+"',null)",k0?'naar '+LOCMAP[k0.id].naam:'naar de grafiek')+'</div>';}
+    kaart('var(--accent)','Beschikbaar · '+capPer(r,sw),r.bes,'uur',r.geen?'nog geen rooster':'<b style="color:'+(vs>=0?'var(--ok)':'var(--risk)')+'">'+(vs>=0?'+':'')+vs+' u</b> t.o.v. '+(r.n>1?'de '+r.n+' weken ervoor':'vorige week'),"capGa('"+iso+"',null)",'naar de grafiek')+
+    kaart('var(--border-strong)','Benodigd',r.nod,'uur','FF '+CONTRACT_UREN.regio+' · Zara '+CONTRACT_UREN.zara+' · Techno '+CONTRACT_UREN.techno+(r.n>1?' per week':''),"capGa('"+iso+"',null)",'naar de grafiek')+
+    kaart(r.geen?'var(--border-strong)':tone(r.pct).tx,ver>=0?'Overschot':'Tekort',Math.abs(ver),'uur',r.geen?'nog geen rooster':'<b>'+r.pct+'%</b> van benodigd '+sBadge(r.pct),"capGa('"+iso+"',null)",'naar de grafiek')+kk+'</div>';}
 function capSignalenHtml(r,sw,extra){
-  var DN=['zo','ma','di','wo','do','vr','za'],MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],vd=fmtIsoD(new Date()),iso=fmtIsoD(sw);
+  var DN=['zo','ma','di','wo','do','vr','za'],MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],vd=fmtIsoD(new Date());
   var L=r.kn.filter(function(k){return fmtIsoD(k.x)>=vd;});if(!L.length)L=r.kn;
-  var h='';L.slice(0,5).forEach(function(k){var t=tone(k.p);
-    h+='<div class="sig" onclick="capGa(\''+iso+'\',\''+k.id+'\')"><span class="si" style="background:'+t.bg+';color:'+t.tx+'">!</span><span class="st"><b>'+LOCMAP[k.id].naam+' · '+DN[k.x.getDay()]+' '+k.x.getDate()+' '+MN[k.x.getMonth()]+'</b>'+k.u+' van '+k.n+' u beschikbaar · '+k.p+'% '+sBadge(k.p)+'</span><span class="sp">bekijk ›</span></div>';});
+  var mx=r.n>1?8:5,h='';L.slice(0,mx).forEach(function(k){var t=tone(k.p);
+    h+='<div class="sig" onclick="capGa(\''+k.iso+'\',\''+k.id+'\')"><span class="si" style="background:'+t.bg+';color:'+t.tx+'">!</span><span class="st"><b>'+LOCMAP[k.id].naam+' · '+DN[k.x.getDay()]+' '+k.x.getDate()+' '+MN[k.x.getMonth()]+(r.n>1?' <span style="font-weight:400;color:var(--muted)">(wk '+k.wk+')</span>':'')+'</b>'+k.u+' van '+k.n+' u beschikbaar · '+k.p+'% '+sBadge(k.p)+'</span><span class="sp">bekijk ›</span></div>';});
   (extra||[]).forEach(function(x){h+='<div class="sig" data-go="'+x.go+'"><span class="si" style="background:var(--accent-bg);color:var(--accent)">'+x.i+'</span><span class="st"><b>'+x.t+'</b>'+x.s+'</span><span class="sp">open ›</span></div>';});
-  if(!h)h='<div class="sub" style="margin:0">Geen signalen deze week.</div>';
-  return '<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Signalen · week '+isoWeek(sw)+'</div>'+(r.kn.length>5?'<div class="sub" style="margin:0 0 4px">De 5 laagste dagen van '+r.kn.length+'. Klik om naar het probleem te gaan.</div>':'<div class="sub" style="margin:0 0 4px">Klik om naar het probleem te gaan.</div>')+h+'</div>';}
+  var vz='';if(r.geen)vz='<div class="sub" style="margin:0 0 4px">Voor '+capPer(r,sw)+' staat nog geen rooster. Er zijn daarom geen knelpunten berekend.</div>';
+  else{vz='<div class="sub" style="margin:0 0 4px">'+(r.kn.length>mx?'De '+mx+' laagste dagen van '+r.kn.length+'. ':'')+'Klik om naar het probleem te gaan.'+(r.leeg.length?' Week '+r.leeg.join(', ')+': nog geen rooster, niet meegeteld.':'')+'</div>';}
+  if(!h)h='<div class="sub" style="margin:0">'+(r.geen?'':'Geen signalen in '+capPer(r,sw)+'.')+'</div>';
+  return '<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Signalen · '+capPer(r,sw)+'</div>'+vz+h+'</div>';}
 function capGa(iso,id){startOn=false;if(role==='RD')boardView='grafiek';else if(isTL())tlMode='grafiek';
   var m=mondayOf(new Date()),w=new Date(iso),df=Math.round((w-m)/(7*864e5));capMnd=null;capOff=(df>4||df<-12)?df:0;capSel=iso;capLoc=id||null;
   pick=null;editCell=null;editCells=[];setCtrls();render();
@@ -8656,9 +8667,10 @@ function viewStart(){
   var rolN=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||'';
   var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct" style="font-size:18px">'+hoi+' · '+DG[nu.getDay()]+' '+nu.getDate()+' '+MN[nu.getMonth()]+'</div><div class="sub" style="margin:0">'+esc(rolN)+' · dit is het gezamenlijke overzicht van vandaag. Via de knoppen erboven ga je naar je eigen werkplek.</div></div>';
-  if(role==='RD'||isTL()){var ag=capAgg17(),sw=mondayOf(nu);
+  if(role==='RD'||isTL()){var ag=capAggStart(startN),sw=mondayOf(nu);
+    h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px"><span class="wd-lbl">Periode</span><div class="ctrl">'+[1,2,4,8].map(function(n){return '<button class="'+(startN===n?'active':'')+'" onclick="startZet('+n+')">'+(n===1?'Deze week':n+' weken')+'</button>';}).join('')+'</div></div>';
     if(!ag||!ag.loaded)h+='<div class="sub">Capaciteit laden…</div>';
-    else{var rs=capSamen(ag,sw),op=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal(),ex=[];
+    else{var rs=capSamen(ag,sw,startN),op=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal(),ex=[];
       if(op)ex.push({go:role==='RD'?'rd:voorstellen':'tl:week',i:op,t:'Te bespreken',s:op+' voorstel'+(op===1?'':'len')+' wacht'+(op===1?'':'en')+' op een besluit'});
       h+=capKpiHtml(rs,sw)+capSignalenHtml(rs,sw,ex);}}
   // dekking (niet voor Uitvoering)
