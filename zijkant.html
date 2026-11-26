@@ -50,6 +50,18 @@ header.bar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:0
 .rolechip{font-size:13px;font-weight:500;background:var(--surface-1);padding:5px 11px;border-radius:20px}
 .spacer{flex:1}
 .ctrl{display:flex;align-items:center;gap:6px}
+.dkgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+@media(max-width:860px){.dkgrid{grid-template-columns:1fr}}
+.dkrow{display:grid;grid-template-columns:128px minmax(0,1fr) 200px;gap:10px;align-items:center;padding:6px 0;border-top:0.5px solid var(--border)}
+.dkrow:first-of-type{border-top:0}
+.dkn{font-size:13px;font-weight:600}
+.dkt{font-size:12px;text-align:right;line-height:1.35}
+@media(max-width:560px){.dkrow{grid-template-columns:1fr;gap:4px}.dkt{text-align:left}}
+.dkbar{background:var(--surface-1);border-radius:99px;overflow:hidden;position:relative}
+.dkbar>i{display:block;height:100%;border-radius:99px}
+.dons{display:flex;justify-content:space-around;gap:6px;flex-wrap:wrap;margin-top:6px}
+.don{text-align:center;font-size:12px;color:var(--muted);max-width:120px}
+.don b{display:block;color:var(--text);font-size:13px;margin-top:2px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 12px}
 .kpi{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;border-top:4px solid var(--kc,var(--border-strong))}
 .kpi:hover{background:var(--surface-1)}
@@ -1158,7 +1170,7 @@ body.zij #view:has(svg[aria-label^="Capaciteit"]){max-width:1240px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-weken'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-dekking'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -4085,10 +4097,11 @@ function capSignalenHtml(r,sw,extra){
   else{vz='<div class="sub" style="margin:0 0 4px">'+(r.kn.length>mx?'De '+mx+' laagste dagen van '+r.kn.length+'. ':'')+'Klik om naar het probleem te gaan.'+(r.leeg.length?' Week '+r.leeg.join(', ')+': nog geen rooster, niet meegeteld.':'')+'</div>';}
   if(!h)h='<div class="sub" style="margin:0">'+(r.geen?'':'Geen signalen in '+capPer(r,sw)+'.')+'</div>';
   return '<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Signalen · '+capPer(r,sw)+'</div>'+vz+h+'</div>';}
-function capGa(iso,id){startOn=false;if(role==='RD')boardView='grafiek';else if(isTL())tlMode='grafiek';
+function capGa(iso,id){startOn=false;if(role==='RD')boardView='grafiek';else if(isTL())tlMode='grafiek';else if(role==='G')gView='dag';
   var m=mondayOf(new Date()),w=new Date(iso),df=Math.round((w-m)/(7*864e5));capMnd=null;capOff=(df>4||df<-12)?df:0;capSel=iso;capLoc=id||null;
   pick=null;editCell=null;editCells=[];setCtrls();render();
   setTimeout(function(){var e=id?document.getElementById('caploc_'+id):document.querySelector('.kpis');if(e)e.scrollIntoView({behavior:'smooth',block:id?'center':'start'});},80);}
+function donutSvg(p,kl){var C=2*Math.PI*38,w=Math.max(0,Math.min(100,p))/100*C;return '<svg viewBox="0 0 100 100" width="96" height="96"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--surface-1)" stroke-width="11"/><circle cx="50" cy="50" r="38" fill="none" stroke="'+kl+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+w.toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"'+(w<=0?' opacity="0"':'')+'/><text x="50" y="57" text-anchor="middle" font-size="21" font-weight="700" fill="var(--text,#222)">'+p+'%</text></svg>';}
 var totSel=null,totDag=null;   // totDag: null = hele week, anders index 0-6 van de dag
 function totSetSel(k){totSel=(k===null||(totSel===k&&totDag===null))?null:k;totDag=null;render();}
 function totKlik(k,i){if(totSel===k&&totDag===i){totSel=null;totDag=null;}else{totSel=k;totDag=i;}render();}
@@ -8667,22 +8680,30 @@ function viewStart(){
   var rolN=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||'';
   var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct" style="font-size:18px">'+hoi+' · '+DG[nu.getDay()]+' '+nu.getDate()+' '+MN[nu.getMonth()]+'</div><div class="sub" style="margin:0">'+esc(rolN)+' · dit is het gezamenlijke overzicht van vandaag. Via de knoppen erboven ga je naar je eigen werkplek.</div></div>';
-  if(role==='RD'||isTL()){var ag=capAggStart(startN),sw=mondayOf(nu);
+  if(role==='RD'||role==='G'||isTL()){var ag=capAggStart(startN),sw=mondayOf(nu);
     h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px"><span class="wd-lbl">Periode</span><div class="ctrl">'+[1,2,4,8].map(function(n){return '<button class="'+(startN===n?'active':'')+'" onclick="startZet('+n+')">'+(n===1?'Deze week':n+' weken')+'</button>';}).join('')+'</div></div>';
     if(!ag||!ag.loaded)h+='<div class="sub">Capaciteit laden…</div>';
     else{var rs=capSamen(ag,sw,startN),op=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal(),ex=[];
-      if(op)ex.push({go:role==='RD'?'rd:voorstellen':'tl:week',i:op,t:'Te bespreken',s:op+' voorstel'+(op===1?'':'len')+' wacht'+(op===1?'':'en')+' op een besluit'});
+      if(op&&role!=='G')ex.push({go:role==='RD'?'rd:voorstellen':'tl:week',i:op,t:'Te bespreken',s:op+' voorstel'+(op===1?'':'len')+' wacht'+(op===1?'':'en')+' op een besluit'});
       h+=capKpiHtml(rs,sw)+capSignalenHtml(rs,sw,ex);}}
   // dekking (niet voor Uitvoering)
   var hvA=h.length;
   var cols=columns().filter(function(c){return c.type==='cluster';});
   LOC.filter(function(l){return l.type==='zara'||l.type==='techno';}).forEach(function(l){cols.push(colFor(l.id));});
   var d0=TODAY,d1=TODAY+1<=13?TODAY+1:null;
-  h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Dekking vandaag'+(d1!==null?' en morgen':'')+'</div><div class="wd-scroll"><table class="wd-tbl"><thead><tr><th>Regio / locatie</th><th>Vandaag</th><th>Beschikbaar / nodig</th>'+(d1!==null?'<th>Morgen</th>':'')+'</tr></thead><tbody>';
-  var laag=[];
-  cols.forEach(function(c){var p0=colDekking(c,d0),b0=colBeschikbaar(c,d0);if(p0<NORM)laag.push(c.naam);
-    h+='<tr><td>'+esc(c.naam)+'</td><td>'+startBadge(p0)+'</td><td>'+uTxt(b0,c.benodigd)+'</td>'+(d1!==null?'<td>'+startBadge(colDekking(c,d1))+'</td>':'')+'</tr>';});
-  h+='</tbody></table></div>'+(laag.length?'<p class="wd-uitleg" style="margin:8px 0 0"><b>Aandacht:</b> vandaag onder de norm (100%) bij '+laag.map(esc).join(', ')+'.</p>':'<p class="wd-uitleg" style="margin:8px 0 0">Alle regio\'s en locaties zitten vandaag op of boven de norm.</p>')+'</div>';
+  var laag=[],rows='',sB0=0,sN=0,sB1=0;
+  function dbar(p,hh,op){var t=tone(p);return '<div class="dkbar" style="height:'+hh+'px;opacity:'+op+'"><i style="width:'+Math.min(100,p)+'%;background:'+t.bar+'"></i></div>';}
+  cols.forEach(function(c){var p0=colDekking(c,d0),b0=colBeschikbaar(c,d0),p1=d1!==null?colDekking(c,d1):null;if(p0<NORM)laag.push(c.naam);sB0+=b0;sN+=c.benodigd;if(d1!==null)sB1+=colBeschikbaar(c,d1);
+    rows+='<div class="dkrow"><div class="dkn">'+esc(c.naam)+'</div><div>'+dbar(p0,11,1)+(p1!==null?'<div style="height:4px"></div>'+dbar(p1,7,.5):'')+'</div><div class="dkt"><b style="color:'+tone(p0).tx+'">'+p0+'%</b> · '+uTxt(b0,c.benodigd)+(p1!==null?'<br><span style="color:var(--muted)">morgen '+p1+'%</span>':'')+'</div></div>';});
+  var pT0=sN?Math.round(sB0/sN*100):0,pT1=sN&&d1!==null?Math.round(sB1/sN*100):null;
+  var mAfw=0,mTot=0;M.forEach(function(m){if(!m.roster||m.roster[d0]===undefined)return;mTot++;var k=afwSoort(m.roster[d0]);if(k==='ziek'||k==='verlof')mAfw++;});
+  var pA=mTot?Math.round(mAfw/mTot*100):0;
+  h+='<div class="dkgrid"><div class="wd-card" style="margin:0"><div class="wd-ct">Dekking vandaag'+(d1!==null?' en morgen':'')+'</div><div class="sub" style="margin:0 0 6px">Bovenste balk = vandaag, onderste (lichter) = morgen. Vol = 100% van wat nodig is.</div>'+rows+
+    (laag.length?'<p class="wd-uitleg" style="margin:8px 0 0"><b>Aandacht:</b> vandaag onder de norm (100%) bij '+laag.map(esc).join(', ')+'.</p>':'<p class="wd-uitleg" style="margin:8px 0 0">Alle regio\'s en locaties zitten vandaag op of boven de norm.</p>')+'</div>'+
+    '<div class="wd-card" style="margin:0"><div class="wd-ct">Verdeling</div><div class="sub" style="margin:0">Alles bij elkaar, vandaag</div><div class="dons">'+
+    '<div class="don">'+donutSvg(pT0,tone(pT0).bar)+'<b>Dekking vandaag</b>'+Math.round(sB0*8)+' van '+Math.round(sN*8)+' u</div>'+
+    (pT1!==null?'<div class="don">'+donutSvg(pT1,tone(pT1).bar)+'<b>Dekking morgen</b>'+Math.round(sB1*8)+' van '+Math.round(sN*8)+' u</div>':'')+
+    '<div class="don">'+donutSvg(pA,'#e0a526')+'<b>Ziek of verlof</b>'+mAfw+' van '+mTot+' monteurs</div></div></div></div>';
   if(role==='UV')h=h.slice(0,hvA);
   // te bespreken + waakdienst
   var open=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal();
