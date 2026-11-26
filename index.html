@@ -50,6 +50,26 @@ header.bar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:0
 .rolechip{font-size:13px;font-weight:500;background:var(--surface-1);padding:5px 11px;border-radius:20px}
 .spacer{flex:1}
 .ctrl{display:flex;align-items:center;gap:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 12px}
+.kpi{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;border-top:4px solid var(--kc,var(--border-strong))}
+.kpi:hover{background:var(--surface-1)}
+.kpi .kt{font-size:12px;color:var(--muted)}
+.kpi .kv{font-size:26px;font-weight:700;line-height:1.2;margin:2px 0}
+.kpi .kv small{font-size:13px;font-weight:400;color:var(--muted);margin-left:4px}
+.kpi .ks{font-size:12px;color:var(--muted)}
+.kpi .kg{font-size:11px;color:var(--accent);margin-top:4px}
+.sig{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:10px;margin:6px 0;cursor:pointer;background:var(--surface)}
+.sig:hover{background:var(--surface-1)}
+.sig .si{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.sig .st{flex:1;font-size:13px}.sig .st b{display:block;font-size:14px}
+.sig .sp{color:var(--accent);font-size:13px;white-space:nowrap}
+.sbadge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.sbadge:before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+body.zij #app{max-width:1280px;padding-left:210px;position:relative}
+body.zij #viewToggle{position:fixed;left:max(16px,calc(50% - 640px + 16px));top:0;bottom:0;width:180px;flex-direction:column;align-items:stretch;gap:4px;padding:120px 12px 12px;background:var(--surface-1);border-right:0.5px solid var(--border);z-index:30}
+body.zij #viewToggle button{text-align:left;height:38px;font-size:14px;border:0;background:transparent;border-radius:8px}
+body.zij #viewToggle button.active{background:var(--text);color:#fff}
+@media(max-width:820px){body.zij #app{padding-left:16px}body.zij #viewToggle{position:static;width:auto;flex-direction:row;flex-wrap:wrap;padding:0;background:none;border:0}}
 #viewToggle{flex-wrap:wrap;max-width:100%}  /* 8 tabs pasten niet op een telefoon: pagina schoof 331px opzij */
 .ctrl button{height:32px;padding:0 10px;border:0.5px solid var(--border-strong);background:var(--surface);border-radius:8px;font-size:13px}
 .ctrl button:hover{background:var(--surface-1)}
@@ -1111,7 +1131,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-zatrap'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-start'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -1426,6 +1446,7 @@ function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);
 function klokZet(){var e=document.getElementById('klokChip');if(!e)return;var n=new Date(),D=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],M=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   e.innerHTML='<b style="font-size:13px">'+('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2)+'</b><br>'+D[n.getDay()].charAt(0).toUpperCase()+D[n.getDay()].slice(1)+' '+n.getDate()+' '+M[n.getMonth()]+' '+n.getFullYear()+'<br>week '+isoWeek(n);}
 setInterval(function(){try{klokZet();}catch(e){}},20000);
+if(/[?&]zij=1/.test(location.search))document.addEventListener('DOMContentLoaded',function(){document.body.classList.add('zij');});
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='log' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && boardView!=='bord' && !(boardView==='balans' && balansPeriode==='week');
@@ -3947,11 +3968,12 @@ function capChartsHtml(){
     var lx=L+40,ly=H+22;ids.forEach(function(id,j){svg+='<rect x="'+lx+'" y="'+(ly-9)+'" width="30" height="10" fill="'+pal[j%pal.length]+'"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Totaal '+LOCMAP[id].naam+'</text>';lx+=30+6.4*(LOCMAP[id].naam.length+7)+10;});
     svg+='<line x1="'+lx+'" x2="'+(lx+30)+'" y1="'+(ly-4)+'" y2="'+(ly-4)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Benodigd ('+nodig+' u)</text></svg>';
     return '<div class="ai" style="margin:0 0 14px"><div class="hd"><span class="dot"></span>'+titel+(laden?' · laden…':'')+'</div>'+svg+'</div>';}
-  var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-  var mk='<div class="ctrl" style="margin:0 0 8px;flex-wrap:wrap;gap:6px;align-items:center"><span class="wd-lbl" style="margin-right:4px">Maand</span><button class="'+(capMnd===null?'active':'')+'" onclick="capMaand(null)">17 weken</button>';
-  for(var mo=-6;mo<=4;mo++){var dm=new Date(nu.getFullYear(),nu.getMonth()+mo,1);mk+='<button class="'+(capMnd===mo?'active':'')+'" onclick="capMaand('+mo+')">'+MN[dm.getMonth()]+(dm.getFullYear()!==nu.getFullYear()?' '+String(dm.getFullYear()).slice(2):'')+'</button>';}
-  mk+='</div>';
-  var nav=mk+(capMnd===null?'<div class="ctrl" style="margin:0 0 12px;flex-wrap:wrap;gap:6px;align-items:center"><button onclick="capNav(-4)">‹ 4 weken</button><span style="font-size:13px">week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</span><button onclick="capNav(4)">4 weken ›</button>'+(capOff!==0?'<button class="linkbtn" onclick="capNav(-capOff)">terug naar nu</button>':'')+'</div>':'<p class="sub" style="margin:0 0 12px">'+MN[mnd0.getMonth()]+' '+mnd0.getFullYear()+' · week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</p>');
+  var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],MNL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  var wE=new Date(weeks[N-1]);wE.setDate(wE.getDate()+6);
+  var lab=capMnd!==null?MNL[mnd0.getMonth()]+' '+mnd0.getFullYear():'week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+' <span style="color:var(--muted)">· '+weeks[0].getDate()+' '+MN[weeks[0].getMonth()]+' – '+wE.getDate()+' '+MN[wE.getMonth()]+' '+wE.getFullYear()+'</span>';
+  var terug=capMnd!==null?'capMaand('+(capMnd-1)+')':'capNav(-4)',vooruit=capMnd!==null?'capMaand('+(capMnd+1)+')':'capNav(4)';
+  var nav='<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px"><div class="ctrl"><button onclick="'+terug+'">‹</button><span class="daylabel" style="font-weight:600;padding:0 6px">'+lab+'</span><button onclick="'+vooruit+'">›</button><button onclick="capVandaag()">vandaag</button></div>'+
+    '<span class="spacer" style="flex:1"></span><div class="ctrl"><button class="'+(capMnd===null?'active':'')+'" onclick="capMaand(null)">Week</button><button class="'+(capMnd!==null?'active':'')+'" onclick="capMaand('+(capMnd===null?0:capMnd)+')">Maand</button></div></div>';
   var selW=weeks.filter(function(w){return fmtIsoD(w)===selIso;})[0],detail='';
   function dagChart(titel,g,ids){
     var dg=[];for(var d=0;d<7;d++){var x=new Date(selW);x.setDate(selW.getDate()+d);dg.push(x);}
@@ -3989,13 +4011,46 @@ function capChartsHtml(){
         '<text x="'+(L+i*bw+bw/2)+'" y="'+(H-B+34)+'" text-anchor="middle" font-size="13" font-weight="700" fill="'+(wk?'#999':tone(p).tx)+'">'+(wk?'–':p+'%')+'</text>';});
     svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nod)+'" y2="'+y(nod)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/></svg>';
     var wp=nod?Math.round(tot/(nod*5)*100):0;
-    return '<div id="caploc_'+id+'" class="ai" style="margin:-6px 0 14px;border:2px solid #2f6fd0"><div class="hd" style="justify-content:space-between"><span><span class="dot" style="background:'+pal[j%pal.length]+'"></span>'+LOCMAP[id].naam+' · week '+isoWeek(selW)+' · per dag</span><span style="font-weight:700;color:'+tone(wp).tx+'">'+(laden?'laden…':Math.round(tot)+' / '+Math.round(nod*5)+' u · '+wp+'%')+'</span></div><div class="wd-mut" style="margin:0 0 4px">streep = nodig per werkdag ('+Math.round(nod)+' u) · onder elke dag de bezetting</div>'+svg+'<div style="text-align:right"><button class="linkbtn" onclick="capKiesLoc(\''+fmtIsoD(selW)+'\',\''+id+'\')">sluiten &#10006;</button></div></div>';}
+    return '<div id="caploc_'+id+'" class="ai" style="margin:-6px 0 14px;border:2px solid #2f6fd0"><div class="hd" style="justify-content:space-between"><span><span class="dot" style="background:'+pal[j%pal.length]+'"></span>'+LOCMAP[id].naam+' · week '+isoWeek(selW)+' · per dag</span><span style="font-weight:700;color:'+tone(wp).tx+'">'+(laden?'laden…':Math.round(tot)+' / '+Math.round(nod*5)+' u · '+wp+'% '+sBadge(wp))+'</span></div><div class="wd-mut" style="margin:0 0 4px">streep = nodig per werkdag ('+Math.round(nod)+' u) · onder elke dag de bezetting</div>'+svg+'<div style="text-align:right"><button class="linkbtn" onclick="capKiesLoc(\''+fmtIsoD(selW)+'\',\''+id+'\')">sluiten &#10006;</button></div></div>';}
   function met(ids,h){var r='';ids.forEach(function(id,j){r+=locDag(id,j);});return h+r;}
   var DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],MF=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   var kop='';
-  return kop+'<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De grijze lijn is het benodigde aantal uren per week. Klik op een week voor de dagen, of op een kleur (bijv. Zuiden) en eronder zie je die regio per dag met de bezetting.</p>'+nav+
+  var sw0=weeks.filter(function(w){return fmtIsoD(w)===selIso;})[0]||weeks[0];
+  var kpis=laden?'':capKpiHtml(capSamen(agg,sw0),sw0);
+  return kop+'<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De grijze lijn is het benodigde aantal uren per week. Klik op een week voor de dagen, of op een kleur (bijv. Zuiden) en eronder zie je die regio per dag met de bezetting.</p>'+nav+kpis+
     met(['MI','NO','ZO'],chart('Capaciteit FF Regio','regio',['MI','NO','ZO']))+met(['ZAM','ZRO','ZAR','ZZW'],chart('Capaciteit Zara locatie','zara',['ZAM','ZRO','ZAR','ZZW']))+met(['TCU'],chart('Capaciteit Technocenter','techno',['TCU']))+detail;
 }
+function sBadge(p){var t=tone(p),l=p>=NORM_RUIM?'Overbezet':p>=NORM?'Op niveau':p>=NORM_WARN?'Let op':'Onderbezet';return '<span class="sbadge" style="background:'+t.bg+';color:'+t.tx+'">'+l+'</span>';}
+function capVandaag(){var y=window.scrollY;capSel=null;capLoc=null;if(capMnd!==null)capMnd=0;else capOff=0;render();window.scrollTo(0,y);}
+var CAP_ALLE=['MI','NO','ZO','ZAM','ZRO','ZAR','ZZW','TCU'];
+function capAgg17(){var m=mondayOf(new Date());m.setDate(m.getDate()-84);var e=new Date(m);e.setDate(m.getDate()+17*7-1);return ensureRange('gchart_'+fmtIsoD(m),fmtIsoD(m),fmtIsoD(e));}
+function capSamen(agg,sw){
+  function dag(id,x){return ((((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)])||0)*8;}
+  function wk(w){var u=0;CAP_ALLE.forEach(function(id){for(var d=0;d<7;d++){var x=new Date(w);x.setDate(w.getDate()+d);u+=dag(id,x);}});return u;}
+  var pw=new Date(sw);pw.setDate(pw.getDate()-7);
+  var r={bes:Math.round(wk(sw)),vor:Math.round(wk(pw)),nod:CONTRACT_UREN.regio+CONTRACT_UREN.zara+CONTRACT_UREN.techno,kn:[]};
+  CAP_ALLE.forEach(function(id){var n8=LOCMAP[id].benodigd*8;if(!n8)return;for(var d=0;d<5;d++){var x=new Date(sw);x.setDate(sw.getDate()+d);var u=dag(id,x),p=Math.round(u/n8*100);if(p<NORM_WARN)r.kn.push({id:id,x:x,p:p,u:Math.round(u),n:Math.round(n8)});}});
+  r.kn.sort(function(a,b){return a.p-b.p;});r.pct=r.nod?Math.round(r.bes/r.nod*100):0;return r;}
+function capKpiHtml(r,sw){
+  var DN=['zo','ma','di','wo','do','vr','za'],iso=fmtIsoD(sw),vs=r.bes-r.vor,ver=r.bes-r.nod,k0=r.kn[0];
+  function kaart(kc,t,v,e,sub,klik,ga){return '<div class="kpi" style="--kc:'+kc+'" onclick="'+klik+'"><div class="kt">'+t+'</div><div class="kv">'+v+'<small>'+e+'</small></div><div class="ks">'+sub+'</div><div class="kg">'+ga+' ›</div></div>';}
+  return '<div class="kpis">'+
+    kaart('var(--accent)','Beschikbaar · week '+isoWeek(sw),r.bes,'uur','<b style="color:'+(vs>=0?'var(--ok)':'var(--risk)')+'">'+(vs>=0?'+':'')+vs+' u</b> t.o.v. vorige week',"capGa('"+iso+"',null)",'naar de grafiek')+
+    kaart('var(--border-strong)','Benodigd',r.nod,'uur','FF '+CONTRACT_UREN.regio+' · Zara '+CONTRACT_UREN.zara+' · Techno '+CONTRACT_UREN.techno,"capGa('"+iso+"',null)",'naar de grafiek')+
+    kaart(tone(r.pct).tx,ver>=0?'Overschot':'Tekort',Math.abs(ver),'uur','<b>'+r.pct+'%</b> van benodigd '+sBadge(r.pct),"capGa('"+iso+"',null)",'naar de grafiek')+
+    kaart(r.kn.length?'var(--risk)':'var(--ok)','Knelpunten',r.kn.length,r.kn.length===1?'dag':'dagen',k0?'laagste: '+LOCMAP[k0.id].naam+' '+DN[k0.x.getDay()]+' '+k0.x.getDate()+' ('+k0.p+'%)':'geen dagen onder '+NORM_WARN+'%',k0?"capGa('"+iso+"','"+k0.id+"')":"capGa('"+iso+"',null)",k0?'naar '+LOCMAP[k0.id].naam:'naar de grafiek')+'</div>';}
+function capSignalenHtml(r,sw,extra){
+  var DN=['zo','ma','di','wo','do','vr','za'],MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],vd=fmtIsoD(new Date()),iso=fmtIsoD(sw);
+  var L=r.kn.filter(function(k){return fmtIsoD(k.x)>=vd;});if(!L.length)L=r.kn;
+  var h='';L.slice(0,5).forEach(function(k){var t=tone(k.p);
+    h+='<div class="sig" onclick="capGa(\''+iso+'\',\''+k.id+'\')"><span class="si" style="background:'+t.bg+';color:'+t.tx+'">!</span><span class="st"><b>'+LOCMAP[k.id].naam+' · '+DN[k.x.getDay()]+' '+k.x.getDate()+' '+MN[k.x.getMonth()]+'</b>'+k.u+' van '+k.n+' u beschikbaar · '+k.p+'% '+sBadge(k.p)+'</span><span class="sp">bekijk ›</span></div>';});
+  (extra||[]).forEach(function(x){h+='<div class="sig" data-go="'+x.go+'"><span class="si" style="background:var(--accent-bg);color:var(--accent)">'+x.i+'</span><span class="st"><b>'+x.t+'</b>'+x.s+'</span><span class="sp">open ›</span></div>';});
+  if(!h)h='<div class="sub" style="margin:0">Geen signalen deze week.</div>';
+  return '<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Signalen · week '+isoWeek(sw)+'</div>'+(r.kn.length>5?'<div class="sub" style="margin:0 0 4px">De 5 laagste dagen van '+r.kn.length+'. Klik om naar het probleem te gaan.</div>':'<div class="sub" style="margin:0 0 4px">Klik om naar het probleem te gaan.</div>')+h+'</div>';}
+function capGa(iso,id){startOn=false;if(role==='RD')boardView='grafiek';else if(isTL())tlMode='grafiek';
+  var m=mondayOf(new Date()),w=new Date(iso),df=Math.round((w-m)/(7*864e5));capMnd=null;capOff=(df>4||df<-12)?df:0;capSel=iso;capLoc=id||null;
+  pick=null;editCell=null;editCells=[];setCtrls();render();
+  setTimeout(function(){var e=id?document.getElementById('caploc_'+id):document.querySelector('.kpis');if(e)e.scrollIntoView({behavior:'smooth',block:id?'center':'start'});},80);}
 var totSel=null,totDag=null;   // totDag: null = hele week, anders index 0-6 van de dag
 function totSetSel(k){totSel=(k===null||(totSel===k&&totDag===null))?null:k;totDag=null;render();}
 function totKlik(k,i){if(totSel===k&&totDag===i){totSel=null;totDag=null;}else{totSel=k;totDag=i;}render();}
@@ -8574,6 +8629,11 @@ function viewStart(){
   var rolN=(ROLES.filter(function(r){return r.id===role;})[0]||{}).naam||'';
   var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   var h='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct" style="font-size:18px">'+hoi+' · '+DG[nu.getDay()]+' '+nu.getDate()+' '+MN[nu.getMonth()]+'</div><div class="sub" style="margin:0">'+esc(rolN)+' · dit is het gezamenlijke overzicht van vandaag. Via de knoppen erboven ga je naar je eigen werkplek.</div></div>';
+  if(role==='RD'||isTL()){var ag=capAgg17(),sw=mondayOf(nu);
+    if(!ag||!ag.loaded)h+='<div class="sub">Capaciteit laden…</div>';
+    else{var rs=capSamen(ag,sw),op=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal(),ex=[];
+      if(op)ex.push({go:role==='RD'?'rd:voorstellen':'tl:week',i:op,t:'Te bespreken',s:op+' voorstel'+(op===1?'':'len')+' wacht'+(op===1?'':'en')+' op een besluit'});
+      h+=capKpiHtml(rs,sw)+capSignalenHtml(rs,sw,ex);}}
   // dekking (niet voor Uitvoering)
   var hvA=h.length;
   var cols=columns().filter(function(c){return c.type==='cluster';});
