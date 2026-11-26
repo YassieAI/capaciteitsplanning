@@ -1143,7 +1143,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-schoon'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-weekdekking'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -8661,19 +8661,32 @@ function viewStart(){
       h+=capKpiHtml(rs,sw);}}
   // dekking (niet voor Uitvoering)
   var hvA=h.length;
-  var cols=columns().filter(function(c){return c.type==='cluster';});
-  LOC.filter(function(l){return l.type==='zara'||l.type==='techno';}).forEach(function(l){cols.push(colFor(l.id));});
-  var d0=TODAY,d1=TODAY+1<=13?TODAY+1:null;
-  var laag=[],rows='',sB0=0,sN=0,sB1=0;
-  function dbar(p,hh,op){var t=tone(p);return '<div class="dkbar" style="height:'+hh+'px;opacity:'+op+'"><i style="width:'+Math.min(100,p)+'%;background:'+t.bar+'"></i></div>';}
-  cols.forEach(function(c){var p0=colDekking(c,d0),b0=colBeschikbaar(c,d0),p1=d1!==null?colDekking(c,d1):null;if(p0<NORM)laag.push(c.naam);sB0+=b0;sN+=c.benodigd;if(d1!==null)sB1+=colBeschikbaar(c,d1);
-    rows+='<div class="dkrow"><div class="dkn">'+esc(c.naam)+'</div><div>'+dbar(p0,11,1)+(p1!==null?'<div style="height:4px"></div>'+dbar(p1,7,.5):'')+'</div><div class="dkt"><b style="color:'+tone(p0).tx+'">'+p0+'%</b> · '+uTxt(b0,c.benodigd)+(p1!==null?'<br><span style="color:var(--muted)">morgen '+p1+'%</span>':'')+'</div></div>';});
-  var pT0=sN?Math.round(sB0/sN*100):0,pT1=sN&&d1!==null?Math.round(sB1/sN*100):null;
-  var mAfw=0,mTot=0;M.forEach(function(m){if(!m.roster||m.roster[d0]===undefined)return;mTot++;var k=afwSoort(m.roster[d0]);if(k==='ziek'||k==='verlof')mAfw++;});
-  var pA=mTot?Math.round(mAfw/mTot*100):0;
-  h+='<div class="dkgrid"><div class="wd-card" style="margin:0"><div class="wd-ct">Dekking vandaag'+(d1!==null?' en morgen':'')+'</div><div class="sub" style="margin:0 0 6px">Bovenste balk = vandaag, onderste (lichter) = morgen. Vol = 100% van wat nodig is.</div>'+rows+
-    (laag.length?'<p class="wd-uitleg" style="margin:8px 0 0"><b>Aandacht:</b> vandaag onder de norm (100%) bij '+laag.map(esc).join(', ')+'.</p>':'<p class="wd-uitleg" style="margin:8px 0 0">Alle regio\'s en locaties zitten vandaag op of boven de norm.</p>')+'</div>'+
-    '</div>';
+  var sw2=mondayOf(nu),nw2=new Date(sw2);nw2.setDate(nw2.getDate()+7);var e2=new Date(sw2);e2.setDate(e2.getDate()+13);
+  var ag2=ensureRange('gtwee_'+fmtIsoD(sw2),fmtIsoD(sw2),fmtIsoD(e2));
+  if(!ag2||!ag2.loaded)h+='<div class="wd-card"><div class="wd-ct">Dekking deze week en volgende week</div><div class="sub" style="margin:0">Laden…</div></div>';
+  else{
+    function wkp(id,w){var n8=LOCMAP[id].benodigd*8*5,u=0;if(!n8)return null;for(var d=0;d<5;d++){var x=new Date(w);x.setDate(w.getDate()+d);u+=(((ag2.byLocDay[id]||{})[fmtIsoD(x)])||0)*8;}
+      var tot=0;for(var d2=0;d2<7;d2++){var y=new Date(w);y.setDate(w.getDate()+d2);tot+=(((ag2.byLocDay[id]||{})[fmtIsoD(y)])||0);}
+      return tot>0?Math.round(u/n8*100):null;}
+    var ids=CAP_ALLE.filter(function(id){return LOCMAP[id];}),dat=ids.map(function(id){return {id:id,a:wkp(id,sw2),b:wkp(id,nw2)};});
+    var mx=120;dat.forEach(function(r){if(r.a!==null&&r.a>mx)mx=r.a;if(r.b!==null&&r.b>mx)mx=r.b;});mx=Math.min(160,Math.ceil(mx/10)*10);
+    var W=900,H=240,L=44,R=12,T=18,B=52,pw=W-L-R,ph=H-T-B,gw=pw/dat.length,bw=Math.min(30,gw/2-8);
+    function yy(v){return T+ph-ph*Math.min(v,mx)/mx;}
+    var sv='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Dekking per locatie, deze week en volgende week" style="display:block">';
+    [0,50,100,150].filter(function(v){return v<=mx;}).forEach(function(v){sv+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy(v)+'" y2="'+yy(v)+'" stroke="var(--border,#e5e2d8)"/><text x="'+(L-6)+'" y="'+(yy(v)+4)+'" font-size="11" text-anchor="end" fill="var(--muted,#6b6a63)">'+v+'%</text>';});
+    dat.forEach(function(r,i){var cx=L+gw*i+gw/2,nm=LOCMAP[r.id].naam.split(' ');
+      [[r.a,sw2,-bw-2,1],[r.b,nw2,2,.5]].forEach(function(q){var x=cx+q[2];
+        if(q[0]===null){sv+='<text x="'+(x+bw/2)+'" y="'+(T+ph-4)+'" font-size="10" text-anchor="middle" fill="var(--muted,#6b6a63)">–</text>';return;}
+        var t=tone(q[0]),y0=yy(q[0]);
+        sv+='<g style="cursor:pointer" onclick="capGa(\''+fmtIsoD(q[1])+'\',\''+r.id+'\')"><title>'+esc(LOCMAP[r.id].naam)+' · week '+isoWeek(q[1])+': '+q[0]+'%</title><rect x="'+x+'" y="'+y0+'" width="'+bw+'" height="'+Math.max(1,T+ph-y0)+'" rx="3" fill="'+t.bar+'" opacity="'+q[3]+'"/><text x="'+(x+bw/2)+'" y="'+(y0-4)+'" font-size="11" font-weight="600" text-anchor="middle" fill="'+t.tx+'">'+q[0]+'%</text></g>';});
+      var l1=nm.length>1?nm[0]:LOCMAP[r.id].naam,l2=nm.length>1?nm.slice(1).join(' '):'';
+      sv+='<text x="'+cx+'" y="'+(H-B+16)+'" font-size="11" text-anchor="middle" fill="var(--text,#1a1a19)">'+esc(l1)+'</text>'+(l2?'<text x="'+cx+'" y="'+(H-B+29)+'" font-size="11" text-anchor="middle" fill="var(--text,#1a1a19)">'+esc(l2)+'</text>':'');});
+    sv+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy(100)+'" y2="'+yy(100)+'" stroke="#1a1a19" stroke-width="1.4" stroke-dasharray="6 4" opacity=".7"/><text x="'+(W-R)+'" y="'+(yy(100)-4)+'" font-size="10" text-anchor="end" fill="#1a1a19">norm 100%</text></svg>';
+    var laag=[];dat.forEach(function(r){var m=[];if(r.a!==null&&r.a<NORM_WARN)m.push('wk '+isoWeek(sw2)+' '+r.a+'%');if(r.b!==null&&r.b<NORM_WARN)m.push('wk '+isoWeek(nw2)+' '+r.b+'%');if(m.length)laag.push(esc(LOCMAP[r.id].naam)+' ('+m.join(', ')+')');});
+    var leegB=dat.every(function(r){return r.b===null;});
+    h+='<div class="wd-card" style="margin-bottom:12px"><div class="wd-ct">Dekking deze week en volgende week</div><div class="sub" style="margin:0 0 6px">Per locatie, ma t/m vr. <b>Donker = week '+isoWeek(sw2)+'</b>, <b>licht = week '+isoWeek(nw2)+'</b>. Vol = 100% van wat nodig is. Klik op een kolom voor de dagen.</div>'+sv+
+      (leegB?'<p class="wd-uitleg" style="margin:6px 0 0">Voor week '+isoWeek(nw2)+' is nog geen rooster ingevuld.</p>':'')+
+      (laag.length?'<p class="wd-uitleg" style="margin:6px 0 0"><b>Aandacht:</b> ruim onder de norm (onder '+NORM_WARN+'%): '+laag.join('; ')+'.</p>':'')+'</div>';}
   if(role==='UV')h=h.slice(0,hvA);
   // te bespreken + waakdienst
   var open=proposals.filter(function(p){return p.status==='open';}).length+wdOpenAantal();
