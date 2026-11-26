@@ -1090,7 +1090,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <div id="app" class="hidden">
   <header class="bar">
-    <span class="rolechip" id="roleChip"></span>
+    <span class="rolechip" id="roleChip"></span><span id="klokChip" style="font-size:12px;color:var(--muted);margin-left:8px;white-space:nowrap"></span>
     <div class="ctrl" id="groupToggle">
       <button data-g="regio5" class="active">Regio's</button>
       <button data-g="cluster3">3 gebieden</button>
@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-dag'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-klein'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -1423,6 +1423,9 @@ function dShort(idx){var d=dateFor(idx);return WD[d.getDay()]+'<br>'+d.getDate()
 
 /* ---------- render: shell ---------- */
 function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);}
+function klokZet(){var e=document.getElementById('klokChip');if(!e)return;var n=new Date(),D=['zo','ma','di','wo','do','vr','za'],M=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  e.textContent=D[n.getDay()]+' '+n.getDate()+' '+M[n.getMonth()]+' · '+('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2)+' · wk '+isoWeek(n);}
+setInterval(function(){try{klokZet();}catch(e){}},20000);
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
   var rdBoardNav = role==='RD' && boardView!=='waak' && boardView!=='log' && boardView!=='week' && boardView!=='voorstellen' && boardView!=='prognose' && boardView!=='grafiek' && boardView!=='bord' && !(boardView==='balans' && balansPeriode==='week');
@@ -1472,7 +1475,7 @@ function setCtrls(){
     if(!startOn&&role==='PL')allen.forEach(function(b){b.classList.toggle('active',b.dataset.pl===plView);});
     if(!startOn&&role==='UV')allen.forEach(function(b){b.classList.toggle('active',!b.dataset.start);});}
   document.getElementById('dayLabel').innerHTML=dLabel(curDay);
-  document.getElementById('roleChip').textContent=ROLES.filter(function(r){return r.id===role;})[0].naam;
+  klokZet();document.getElementById('roleChip').textContent=ROLES.filter(function(r){return r.id===role;})[0].naam;
   document.getElementById('groupToggle').querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.dataset.g===groupMode);});
 }
 
@@ -3937,9 +3940,9 @@ function capChartsHtml(){
       data[i].forEach(function(u,j){if(u<=0)return;var y1=y(acc+u),y0=y(acc);svg+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+cw+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+pal[j%pal.length]+'"'+clk+'><title>'+LOCMAP[ids[j]].naam+' · wk '+isoWeek(w)+': '+Math.round(u)+' u</title></rect>';acc+=u;});
       tot=acc;if(tot>0)svg+='<text x="'+(x0+cw/2)+'" y="'+(y(tot)-4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text,#222)">'+Math.round(tot)+'</text>';
       svg+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-T+6)+'" text-anchor="middle" font-size="11" fill="var(--muted,#888)">'+isoWeek(w)+'</text>';});
-    svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodig)+'" y2="'+y(nodig)+'" stroke="#555" stroke-width="3"/>';
+    svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodig)+'" y2="'+y(nodig)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/>';
     var lx=L+40,ly=H+22;ids.forEach(function(id,j){svg+='<rect x="'+lx+'" y="'+(ly-9)+'" width="30" height="10" fill="'+pal[j%pal.length]+'"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Totaal '+LOCMAP[id].naam+'</text>';lx+=30+6.4*(LOCMAP[id].naam.length+7)+10;});
-    svg+='<line x1="'+lx+'" x2="'+(lx+30)+'" y1="'+(ly-4)+'" y2="'+(ly-4)+'" stroke="#555" stroke-width="3"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Benodigd ('+nodig+' u)</text></svg>';
+    svg+='<line x1="'+lx+'" x2="'+(lx+30)+'" y1="'+(ly-4)+'" y2="'+(ly-4)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Benodigd ('+nodig+' u)</text></svg>';
     return '<div class="ai" style="margin:0 0 14px"><div class="hd"><span class="dot"></span>'+titel+(laden?' · laden…':'')+'</div>'+svg+'</div>';}
   var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
   var mk='<div class="ctrl" style="margin:0 0 8px;flex-wrap:wrap;gap:6px;align-items:center"><span class="wd-lbl" style="margin-right:4px">Maand</span><button class="'+(capMnd===null?'active':'')+'" onclick="capMaand(null)">17 weken</button>';
@@ -3960,7 +3963,7 @@ function capChartsHtml(){
       data[i].forEach(function(u,j){if(u<=0)return;var y1=y(acc+u),y0=y(acc);svg+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+cw+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+pal[j%pal.length]+'"><title>'+LOCMAP[ids[j]].naam+' · '+NM[x.getDay()]+' '+x.getDate()+': '+Math.round(u)+' u</title></rect>';acc+=u;});
       if(acc>0)svg+='<text x="'+(x0+cw/2)+'" y="'+(y(acc)-4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text,#222)">'+Math.round(acc)+'</text>';
       svg+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-T+8)+'" text-anchor="middle" font-size="11" font-weight="'+(vandaag?'700':'400')+'" fill="'+(wk?'#999':'var(--text,#222)')+'">'+NM[x.getDay()]+' '+x.getDate()+(vandaag?' · vandaag':'')+'</text>';});
-    svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodigD)+'" y2="'+y(nodigD)+'" stroke="#555" stroke-width="3"/></svg>';
+    svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodigD)+'" y2="'+y(nodigD)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/></svg>';
     return '<div style="font-weight:700;margin:12px 0 2px">'+titel+' <span class="wd-mut" style="font-weight:400">· per dag, streep = nodig per werkdag ('+Math.round(nodigD)+' u)</span></div>'+svg;}
   if(selW){var dagenL=[],dagenD=[];for(var d=0;d<7;d++){var x=new Date(selW);x.setDate(selW.getDate()+d);dagenD.push(x);dagenL.push({iso:fmtIsoD(x),label:WD[x.getDay()]+' '+x.getDate()});}
     function uSel(id){var u=0;dagenD.forEach(function(x){u+=(((agg&&agg.byLocDay&&agg.byLocDay[id])||{})[fmtIsoD(x)]||0)*8;});return u;}
@@ -3969,7 +3972,7 @@ function capChartsHtml(){
         return '<div style="font-weight:700;margin:10px 0 2px">'+gr[0]+'</div>'+gr[1].map(function(id){var c=colFor(id),u=uSel(id),con=LOCMAP[id].benodigd*8*5,p=con?Math.round(u/con*100):0,t=tone(p),o=!!capOpen[c.key];
           return '<div onclick="capToggle(\''+c.key+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin:4px 0;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;background:var(--surface-1)"><span>'+(o?'&#9662; ':'&#9656; ')+LOCMAP[id].naam+'</span><span style="font-weight:700;color:'+t.tx+'">'+(laden?'laden…':Math.round(u)+' / '+Math.round(con)+' u · '+p+'%')+'</span></div>'+(o?'<div style="text-align:right"><button class="linkbtn" onclick="capToggle(\''+c.key+'\')">&#8592; terug · sluiten &#10006;</button></div>'+monteurPaneel(c,dagenL):'');}).join('');}).join('')+'</div>';}
   var DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],MF=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-  var kop='<div class="ai" style="margin:0 0 12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;border:2px solid #2f6fd0"><div><b style="font-size:17px">Vandaag: '+DG[nu.getDay()]+' '+nu.getDate()+' '+MF[nu.getMonth()]+' '+nu.getFullYear()+'</b></div><div style="font-size:15px"><span id="capKlok" style="font-weight:700">'+('0'+nu.getHours()).slice(-2)+':'+('0'+nu.getMinutes()).slice(-2)+'</span> · <b>week '+isoWeek(nu)+'</b></div></div>';
+  var kop='';
   return kop+'<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De grijze lijn is het benodigde aantal uren per week. Klik op een week (blauw omlijnd) en eronder zie je die week per dag.</p>'+nav+
     chart('Capaciteit FF Regio','regio',['MI','NO','ZO'])+chart('Capaciteit Zara locatie','zara',['ZAM','ZRO','ZAR','ZZW'])+chart('Capaciteit Technocenter','techno',['TCU'])+detail;
 }
