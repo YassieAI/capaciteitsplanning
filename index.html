@@ -1090,7 +1090,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <div id="app" class="hidden">
   <header class="bar">
-    <span class="rolechip" id="roleChip"></span><span id="klokChip" style="font-size:12px;color:var(--muted);margin-left:8px;white-space:nowrap"></span>
+    <span id="klokChip" style="font-size:11px;line-height:1.25;color:#000;margin-right:10px;white-space:nowrap;display:inline-block;vertical-align:middle"></span><span class="rolechip" id="roleChip"></span>
     <div class="ctrl" id="groupToggle">
       <button data-g="regio5" class="active">Regio's</button>
       <button data-g="cluster3">3 gebieden</button>
@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-klein'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-klok'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -1423,8 +1423,8 @@ function dShort(idx){var d=dateFor(idx);return WD[d.getDay()]+'<br>'+d.getDate()
 
 /* ---------- render: shell ---------- */
 function show(id,on){document.getElementById(id).classList.toggle('hidden',!on);}
-function klokZet(){var e=document.getElementById('klokChip');if(!e)return;var n=new Date(),D=['zo','ma','di','wo','do','vr','za'],M=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-  e.textContent=D[n.getDay()]+' '+n.getDate()+' '+M[n.getMonth()]+' · '+('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2)+' · wk '+isoWeek(n);}
+function klokZet(){var e=document.getElementById('klokChip');if(!e)return;var n=new Date(),D=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],M=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  e.innerHTML='<b style="font-size:13px">'+('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2)+'</b><br>'+D[n.getDay()].charAt(0).toUpperCase()+D[n.getDay()].slice(1)+' '+n.getDate()+' '+M[n.getMonth()]+' '+n.getFullYear()+'<br>week '+isoWeek(n);}
 setInterval(function(){try{klokZet();}catch(e){}},20000);
 function setCtrls(){
   // de dag-navigatiebalk stuurt curDay; verberg hem in weergaves die hun eigen ‹ ›-navigatie hebben
