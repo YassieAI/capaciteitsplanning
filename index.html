@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261125-xlchart'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261125-maand'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -2791,7 +2791,7 @@ function viewManagerG(){
   /* Eén duidelijke indeling: weeknummers → totale capaciteit → lijst per regio/locatie → klik = monteurs */
   var regs=columns().filter(function(c){return c.type==='cluster';});
   LOC.filter(function(l){return l.type==='zara';}).forEach(function(l){regs.push(colFor(l.id));});
-  return capChartsHtml()+maandStrip()+totaalCapBlokMaand();
+  return capChartsHtml();
 }
 var grafiekDicht={};
 function lijstToggle(k){grafiekDicht[k]=!grafiekDicht[k];render();}
@@ -3908,11 +3908,14 @@ function teamCapWeek(){var mon=mondayOf(new Date());mon.setDate(mon.getDate()+wg
   var agg=ensureRange('gweek_'+fmtIsoD(mon),fmtIsoD(mon),fmtIsoD(end)),laden=!agg||!agg.loaded,dagen=[];for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);dagen.push(d);}
   return '<h2>Capaciteit per team · week '+isoWeek(mon)+'</h2>'+teamCapHtml(agg,dagen,laden);}
 /* gestapelde weekgrafieken zoals in Excel: per week een kolom, gevuld met de regio's/locaties, groene lijn = benodigd */
-var capOff=0;
+var capOff=0,capMnd=null;
+function capMaand(o){var y=window.scrollY;capMnd=o;render();window.scrollTo(0,y);}
 function capNav(d){var y=window.scrollY;capOff+=d;render();window.scrollTo(0,y);}
 function capChartsHtml(){
-  var N=17,mon0=mondayOf(new Date());mon0.setDate(mon0.getDate()+(capOff-12)*7);
-  var weeks=[];for(var i=0;i<N;i++){var w=new Date(mon0);w.setDate(mon0.getDate()+i*7);weeks.push(w);}
+  var nu=new Date(),mnd0=null,weeks=[];
+  if(capMnd!==null){mnd0=new Date(nu.getFullYear(),nu.getMonth()+capMnd,1);var mE=new Date(mnd0.getFullYear(),mnd0.getMonth()+1,0);for(var w0=mondayOf(mnd0);w0<=mE;w0=new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+7))weeks.push(new Date(w0));}
+  else{var mon0=mondayOf(nu);mon0.setDate(mon0.getDate()+(capOff-12)*7);for(var i=0;i<17;i++){var w=new Date(mon0);w.setDate(mon0.getDate()+i*7);weeks.push(w);}}
+  var N=weeks.length;
   var last=new Date(weeks[N-1]);last.setDate(last.getDate()+6);
   var agg=ensureRange('gchart_'+fmtIsoD(weeks[0]),fmtIsoD(weeks[0]),fmtIsoD(last)),laden=!agg||!agg.loaded;
   var pal=['#1f5f8b','#e87722','#226b22','#3ba0dc','#9b2d9b'];
@@ -3932,7 +3935,11 @@ function capChartsHtml(){
     var lx=L+40,ly=H+22;ids.forEach(function(id,j){svg+='<rect x="'+lx+'" y="'+(ly-9)+'" width="30" height="10" fill="'+pal[j%pal.length]+'"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Totaal '+LOCMAP[id].naam+'</text>';lx+=36+8*(LOCMAP[id].naam.length+7)+14;});
     svg+='<line x1="'+lx+'" x2="'+(lx+30)+'" y1="'+(ly-4)+'" y2="'+(ly-4)+'" stroke="#4ea72e" stroke-width="3"/><text x="'+(lx+36)+'" y="'+ly+'" font-size="12" fill="var(--text,#222)">Benodigd ('+nodig+' u)</text></svg>';
     return '<div class="ai" style="margin:0 0 14px"><div class="hd"><span class="dot"></span>'+titel+(laden?' · laden…':'')+'</div>'+svg+'</div>';}
-  var nav='<div class="ctrl" style="margin:0 0 12px;flex-wrap:wrap;gap:6px;align-items:center"><button onclick="capNav(-4)">‹ 4 weken</button><span style="font-size:13px">week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</span><button onclick="capNav(4)">4 weken ›</button>'+(capOff!==0?'<button class="linkbtn" onclick="capNav(-capOff)">terug naar nu</button>':'')+'</div>';
+  var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  var mk='<div class="ctrl" style="margin:0 0 8px;flex-wrap:wrap;gap:6px;align-items:center"><span class="wd-lbl" style="margin-right:4px">Maand</span><button class="'+(capMnd===null?'active':'')+'" onclick="capMaand(null)">17 weken</button>';
+  for(var mo=-6;mo<=4;mo++){var dm=new Date(nu.getFullYear(),nu.getMonth()+mo,1);mk+='<button class="'+(capMnd===mo?'active':'')+'" onclick="capMaand('+mo+')">'+MN[dm.getMonth()]+(dm.getFullYear()!==nu.getFullYear()?' '+String(dm.getFullYear()).slice(2):'')+'</button>';}
+  mk+='</div>';
+  var nav=mk+(capMnd===null?'<div class="ctrl" style="margin:0 0 12px;flex-wrap:wrap;gap:6px;align-items:center"><button onclick="capNav(-4)">‹ 4 weken</button><span style="font-size:13px">week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</span><button onclick="capNav(4)">4 weken ›</button>'+(capOff!==0?'<button class="linkbtn" onclick="capNav(-capOff)">terug naar nu</button>':'')+'</div>':'<p class="sub" style="margin:0 0 12px">'+MN[mnd0.getMonth()]+' '+mnd0.getFullYear()+' · week '+isoWeek(weeks[0])+' t/m '+isoWeek(weeks[N-1])+'</p>');
   return '<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De groene lijn is het benodigde aantal uren per week.</p>'+nav+
     chart('Capaciteit FF Regio','regio',['MI','NO','ZO'])+chart('Capaciteit Zara locatie','zara',['ZAM','ZRO','ZAR','ZZW'])+chart('Capaciteit Technocenter','techno',['TCU']);
 }
