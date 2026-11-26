@@ -1088,6 +1088,19 @@ tr.wp-best td{background:var(--ok-bg)}
 .wd-wijzig{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;border:0.5px solid var(--accent);background:var(--surface);color:var(--accent);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
 .wd-wijzig:hover{background:var(--accent-bg)}
 @media (max-width:560px){.wd-vn-grid{grid-template-columns:1fr 1fr 20px 1fr}}
+
+body.zij #zijTop{position:fixed;left:max(16px,calc(50% - 640px + 16px));top:0;width:180px;padding:22px 12px 0;z-index:31;box-sizing:border-box}
+body.zij #zijTop .allinqlogo{display:block;height:34px;width:auto;margin:0 0 10px}
+body.zij #zijTop .allinqlogo path:first-child{fill:var(--text,#1a1a18)}
+body.zij #zijTop .zt1{font-weight:700;font-size:15px;line-height:1.2}
+body.zij #zijTop .zt2{font-size:12px;color:var(--muted);margin-bottom:14px}
+body.zij #zijTop #klokChip{display:block!important;margin:0 0 8px!important}
+body.zij #zijTop .rolechip{display:inline-block}
+body.zij #viewToggle{padding-top:250px!important}
+body.zij header.bar{padding:4px 0;border-bottom:0;min-height:0}
+body.zij header.bar:not(:has(.ctrl:not(#viewToggle):not([style*="none"]) button)){display:none}
+body.zij #zijBot{position:fixed;left:max(16px,calc(50% - 640px + 16px));bottom:14px;width:180px;padding:0 20px;z-index:31;box-sizing:border-box}
+@media(max-width:820px){body.zij #zijTop,body.zij #zijBot{position:static;width:auto;padding:12px 0}body.zij #viewToggle{padding-top:0!important}}
 </style>
 </head>
 <body>
@@ -8930,6 +8943,15 @@ window.__t={render:render,setPgView:function(v){pgView=v;render();},PG_A:PG_A,PG
 
 /* hoogte van de bovenbalk bijhouden, zodat tabelkoppen er net onder blijven staan */
 setTimeout(function(){var h=document.querySelector('header.bar');if(!h)return;var l=-1;function z(){var x=Math.round(h.getBoundingClientRect().height);if(x!==l){l=x;document.documentElement.style.setProperty('--barh',x+'px');}}z();if(window.ResizeObserver)new ResizeObserver(z).observe(h,{box:'border-box'});window.addEventListener('resize',z);window.addEventListener('scroll',z,{passive:true});setInterval(z,700);},0);
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  var lg=document.querySelector('#login .allinqlogo');var t=document.createElement('div');t.id='zijTop';
+  t.innerHTML=(lg?lg.outerHTML:'')+'<div class="zt1">Capaciteitsplanning</div><div class="zt2">Field Force</div>';
+  var k=document.getElementById('klokChip'),r=document.getElementById('roleChip');if(k)t.appendChild(k);if(r)t.appendChild(r);
+  var b=document.createElement('div');b.id='zijBot';var lo=document.getElementById('logout');if(lo)b.appendChild(lo);
+  var app=document.getElementById('app');app.insertBefore(t,app.firstChild);app.appendChild(b);
+});
 </script>
 </body>
 </html>
