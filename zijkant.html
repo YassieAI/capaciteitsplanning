@@ -1102,6 +1102,15 @@ body.zij header.bar:not(:has(.ctrl:not(#viewToggle):not([style*="none"]) button)
 body.zij #zijBot{position:fixed;left:max(16px,calc(50% - 640px + 16px));bottom:14px;width:180px;padding:0 20px;z-index:31;box-sizing:border-box}
 @media(max-width:820px){body.zij #zijTop,body.zij #zijBot{position:static;width:auto;padding:12px 0}body.zij #viewToggle{padding-top:0!important}}
 </style>
+<style>
+body.zij #app{max-width:1780px!important;margin:0!important;padding:0 32px 40px 256px!important}
+body.zij #viewToggle{left:0!important;width:224px!important;padding-left:18px!important;padding-right:18px!important;box-sizing:border-box}
+body.zij #zijTop{left:0!important;width:224px!important;padding:24px 18px 0!important}
+body.zij #zijBot{left:0!important;width:224px!important;padding:0 18px!important}
+body.zij #zijTop .rolechip{margin:0}
+body.zij #zijTop #klokChip{font-size:12px!important}
+@media(max-width:820px){body.zij #app{padding:0 16px 40px!important}body.zij #viewToggle,body.zij #zijTop,body.zij #zijBot{width:auto!important}}
+</style>
 </head>
 <body>
 
