@@ -1111,7 +1111,7 @@ tr.wp-best td{background:var(--ok-bg)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
 <script>
-var APP_V='20261126-klok'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
+var APP_V='20261126-regio'; // versie: verhoog bij elke wijziging, dan laadt een oude (gecachte) pagina zichzelf opnieuw
 (function(){if(location.protocol==='file:')return;try{fetch(location.pathname+'?nc='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=/var APP_V='([^']+)'/.exec(t);if(m&&m[1]!==APP_V){var k='appv_'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash);}}).catch(function(){});}catch(e){}})();
 /* ---------- data ---------- */
 var WOON={
@@ -3915,6 +3915,8 @@ function teamCapWeek(){var mon=mondayOf(new Date());mon.setDate(mon.getDate()+wg
 /* gestapelde weekgrafieken zoals in Excel: per week een kolom, gevuld met de regio's/locaties, groene lijn = benodigd */
 var capOff=0,capMnd=0,capSel=null;
 setInterval(function(){var e=document.getElementById('capKlok');if(e){var n=new Date();e.textContent=('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);}},20000);
+function capKiesLoc(iso,id){capSel=iso;var k=id,was=!!capOpen[k]&&capSel===iso;capOpen={};capOpen[k]=true;render();
+  setTimeout(function(){var e=document.getElementById('caprow_'+k);if(e)e.scrollIntoView({behavior:'smooth',block:'center'});},60);}
 function capKies(iso){var y=window.scrollY;capSel=(capSel===iso)?null:iso;render();window.scrollTo(0,y);}
 function capMaand(o){var y=window.scrollY;capMnd=o;capSel=null;render();window.scrollTo(0,y);}
 function capNav(d){var y=window.scrollY;capOff+=d;render();window.scrollTo(0,y);}
@@ -3937,7 +3939,7 @@ function capChartsHtml(){
     for(var v=0;v<=top;v+=stap)svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--border,#ddd)" stroke-width="1"/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="11" fill="var(--muted,#888)">'+v+'</text>';
     weeks.forEach(function(w,i){var x0=L+i*bw+bw*.25,cw=bw*.5,acc=0,tot=0,iso=fmtIsoD(w),clk=' onclick="capKies(\''+iso+'\')" style="cursor:pointer"';
       svg+='<rect x="'+(L+i*bw)+'" y="'+T+'" width="'+bw+'" height="'+(ph+22)+'" fill="'+(iso===selIso?'rgba(47,111,208,.14)':'transparent')+'" stroke="'+(iso===selIso?'#2f6fd0':'none')+'" stroke-width="2"'+clk+'/>'+(iso===nowIso?'<text x="'+(L+i*bw+bw/2)+'" y="'+(T+10)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#2f6fd0">nu</text>':'');
-      data[i].forEach(function(u,j){if(u<=0)return;var y1=y(acc+u),y0=y(acc);svg+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+cw+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+pal[j%pal.length]+'"'+clk+'><title>'+LOCMAP[ids[j]].naam+' · wk '+isoWeek(w)+': '+Math.round(u)+' u</title></rect>';acc+=u;});
+      data[i].forEach(function(u,j){if(u<=0)return;var y1=y(acc+u),y0=y(acc);svg+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+cw+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+pal[j%pal.length]+'" onclick="capKiesLoc(\''+iso+'\',\''+ids[j]+'\')" style="cursor:pointer"><title>'+LOCMAP[ids[j]].naam+' · wk '+isoWeek(w)+': '+Math.round(u)+' u</title></rect>';acc+=u;});
       tot=acc;if(tot>0)svg+='<text x="'+(x0+cw/2)+'" y="'+(y(tot)-4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text,#222)">'+Math.round(tot)+'</text>';
       svg+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-T+6)+'" text-anchor="middle" font-size="11" fill="var(--muted,#888)">'+isoWeek(w)+'</text>';});
     svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(nodig)+'" y2="'+y(nodig)+'" stroke="#222" stroke-width="2.5" stroke-dasharray="7 5"/>';
@@ -3970,10 +3972,10 @@ function capChartsHtml(){
     detail='<div class="ai" style="margin:0 0 14px;border:2px solid #2f6fd0"><div class="hd"><span class="dot" style="background:#2f6fd0"></span>Gekozen: week '+isoWeek(selW)+' · '+selW.getDate()+'/'+(selW.getMonth()+1)+' t/m '+dagenD[6].getDate()+'/'+(dagenD[6].getMonth()+1)+' · per dag</div>'+dagChart('Field Force','regio',['MI','NO','ZO'])+dagChart('Zara','zara',['ZAM','ZRO','ZAR','ZZW'])+dagChart('Technocenter','techno',['TCU'])+'<div class="wd-sub2" style="margin-top:14px">Totaal van de week · klik op een regel voor de monteurs</div>'+
       [['Field Force',['MI','NO','ZO']],['Zara',['ZAM','ZRO','ZAR','ZZW']],['Technocenter',['TCU']]].map(function(gr){
         return '<div style="font-weight:700;margin:10px 0 2px">'+gr[0]+'</div>'+gr[1].map(function(id){var c=colFor(id),u=uSel(id),con=LOCMAP[id].benodigd*8*5,p=con?Math.round(u/con*100):0,t=tone(p),o=!!capOpen[c.key];
-          return '<div onclick="capToggle(\''+c.key+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin:4px 0;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;background:var(--surface-1)"><span>'+(o?'&#9662; ':'&#9656; ')+LOCMAP[id].naam+'</span><span style="font-weight:700;color:'+t.tx+'">'+(laden?'laden…':Math.round(u)+' / '+Math.round(con)+' u · '+p+'%')+'</span></div>'+(o?'<div style="text-align:right"><button class="linkbtn" onclick="capToggle(\''+c.key+'\')">&#8592; terug · sluiten &#10006;</button></div>'+monteurPaneel(c,dagenL):'');}).join('');}).join('')+'</div>';}
+          return '<div id="caprow_'+c.key+'" onclick="capToggle(\''+c.key+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin:4px 0;border:1px solid var(--border,#ddd);border-radius:10px;cursor:pointer;background:var(--surface-1)"><span>'+(o?'&#9662; ':'&#9656; ')+LOCMAP[id].naam+'</span><span style="font-weight:700;color:'+t.tx+'">'+(laden?'laden…':Math.round(u)+' / '+Math.round(con)+' u · '+p+'%')+'</span></div>'+(o?'<div style="text-align:right"><button class="linkbtn" onclick="capToggle(\''+c.key+'\')">&#8592; terug · sluiten &#10006;</button></div>'+monteurPaneel(c,dagenL):'');}).join('');}).join('')+'</div>';}
   var DG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],MF=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   var kop='';
-  return kop+'<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De grijze lijn is het benodigde aantal uren per week. Klik op een week (blauw omlijnd) en eronder zie je die week per dag.</p>'+nav+
+  return kop+'<h2>Capaciteit per week</h2><p class="sub">Beschikbare uren per week, gevuld met de regio\'s of locaties. De grijze lijn is het benodigde aantal uren per week. Klik op een week voor de dagen, of op een kleur (bijv. Zuiden) en het openklapt eronder met de monteurs.</p>'+nav+
     chart('Capaciteit FF Regio','regio',['MI','NO','ZO'])+chart('Capaciteit Zara locatie','zara',['ZAM','ZRO','ZAR','ZZW'])+chart('Capaciteit Technocenter','techno',['TCU'])+detail;
 }
 var totSel=null,totDag=null;   // totDag: null = hele week, anders index 0-6 van de dag
