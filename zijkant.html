@@ -1111,6 +1111,11 @@ body.zij #zijTop .rolechip{margin:0}
 body.zij #zijTop #klokChip{font-size:12px!important}
 @media(max-width:820px){body.zij #app{padding:0 16px 40px!important}body.zij #viewToggle,body.zij #zijTop,body.zij #zijBot{width:auto!important}}
 </style>
+<style>
+body.zij #viewToggle button{transition:background .12s,color .12s}
+body.zij #viewToggle button:hover:not(.active){background:var(--surface)!important;color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+body.zij #view:has(svg[aria-label^="Capaciteit"]){max-width:1240px}
+</style>
 </head>
 <body>
 
